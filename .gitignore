@@ -1,0 +1,71 @@
+# ============================================
+# gonsai2 - AI-Optimized Project Structure
+# Kent Beck's Augmented Coding Principles
+# ============================================
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+connection-test.log
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js.snap
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# AI-Generated artifacts
+.ai-cache/
+.claude-cache/
+ai-sessions/
+
+# Sensitive data
+secrets/
+credentials/
+*.key
+*.pem
+*.cert
+
+# Database
+*.sqlite
+*.db
+
+# OS
+Thumbs.db
+.DS_Store

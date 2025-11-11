@@ -1,0 +1,38 @@
+{
+  "name": "gonsai2",
+  "version": "0.1.0",
+  "description": "AI-Optimized Project with n8n and MongoDB integration",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "setup": "./setup-api-key.sh",
+    "test:connection": "ts-node features/n8n-integration/test-connection.ts",
+    "test:workflow": "ts-node features/n8n-integration/test-workflow-execution.ts",
+    "test:websocket": "ts-node features/n8n-integration/test-websocket.ts",
+    "dev": "ts-node index.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts"
+  },
+  "keywords": [
+    "n8n",
+    "mongodb",
+    "ai",
+    "automation",
+    "workflow"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "ws": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

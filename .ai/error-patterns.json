@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "n8n Error Patterns Knowledge Base",
+  "description": "AI-readable error patterns for automated diagnosis and healing",
+  "version": "1.0.0",
+  "errorCategories": {
+    "connection": {
+      "description": "Network and service connectivity errors",
+      "patterns": [
+        {
+          "id": "mongodb-connection-timeout",
+          "signature": "MongoServerError.*connection.*timeout",
+          "severity": "high",
+          "impact": "Workflow execution fails",
+          "commonCauses": [
+            "MongoDB container not running",
+            "Network misconfiguration",
+            "MongoDB accepting connections on wrong interface"
+          ],
+          "diagnosticSteps": [
+            "docker ps | grep mongodb - Check if container is running",
+            "docker logs my-mongodb-container - Check MongoDB logs",
+            "docker exec my-mongodb-container mongosh --eval 'db.version()' - Test connection"
+          ],
+          "autoHealingActions": [
+            {
+              "action": "restart-mongodb-container",
+              "command": "docker restart my-mongodb-container",
+              "successCriteria": "Container returns to healthy state",
+              "requiresApproval": false
+            }
+          ],
+          "manualResolution": "If auto-healing fails, check /home/gon/docker-mongo-ubuntu/.env configuration"
+        },
+        {
+          "id": "n8n-api-unauthorized",
+          "signature": "401.*Unauthorized.*API",
+          "severity": "critical",
+          "impact": "Cannot communicate with n8n",
+          "commonCauses": [
+            "N8N_API_KEY not set or invalid",
+            "API key expired or revoked",
+            "Wrong API endpoint URL"
+          ],
+          "diagnosticSteps": [
+            "Check .env file for N8N_API_KEY",
+            "Verify API key in n8n UI (Settings > API)",
+            "Test: curl -H 'X-N8N-API-KEY: key' http://localhost:5678/api/v1/workflows"
+          ],
+          "autoHealingActions": [],
+          "manualResolution": "Generate new API key in n8n UI and update .env file"
+        }
+      ]
+    },
+    "execution": {
+      "description": "Workflow execution and runtime errors",
+      "patterns": [
+        {
+          "id": "workflow-execution-timeout",
+          "signature": "Execution.*timeout|Workflow.*took too long",
+          "severity": "medium",
+          "impact": "Workflow did not complete",
+          "commonCauses": [
+            "Long-running operation without timeout",
+            "Infinite loop in workflow logic",
+            "External service not responding"
+          ],
+          "diagnosticSteps": [
+            "Check workflow execution logs in n8n UI",
+            "Review node execution times",
+            "Identify bottleneck node"
+          ],
+          "autoHealingActions": [
+            {
+              "action": "retry-with-increased-timeout",
+              "successCriteria": "Workflow completes successfully",
+              "requiresApproval": true
+            }
+          ],
+          "manualResolution": "Optimize workflow logic or add timeout configuration"
+        },
+        {
+          "id": "data-validation-failed",
+          "signature": "Validation.*failed|Invalid.*data",
+          "severity": "low",
+          "impact": "Data not processed",
+          "commonCauses": [
+            "Unexpected data structure from external API",
+            "Missing required fields",
+            "Type mismatch"
+          ],
+          "diagnosticSteps": [
+            "Review input data in execution logs",
+            "Compare against expected schema",
+            "Check external API documentation for changes"
+          ],
+          "autoHealingActions": [
+            {
+              "action": "log-sample-and-skip",
+              "description": "Log invalid data for analysis and continue",
+              "requiresApproval": false
+            }
+          ],
+          "manualResolution": "Update validation logic or contact data provider"
+        }
+      ]
+    },
+    "authentication": {
+      "description": "Authentication and authorization errors",
+      "patterns": [
+        {
+          "id": "mongodb-auth-failed",
+          "signature": "Authentication failed.*MongoDB",
+          "severity": "critical",
+          "impact": "Cannot access database",
+          "commonCauses": [
+            "Wrong username or password",
+            "User not created in MongoDB",
+            "Insufficient privileges"
+          ],
+          "diagnosticSteps": [
+            "Verify MONGODB_USER and MONGODB_PASSWORD in .env",
+            "Check MongoDB user: docker exec my-mongodb-container mongosh -u superadmin --authenticationDatabase admin",
+            "Review user privileges"
+          ],
+          "autoHealingActions": [],
+          "manualResolution": "Update credentials in .env or create user in MongoDB"
+        }
+      ]
+    },
+    "resource": {
+      "description": "Resource exhaustion and limits",
+      "patterns": [
+        {
+          "id": "redis-queue-full",
+          "signature": "Redis.*queue.*full|Too many pending executions",
+          "severity": "high",
+          "impact": "New executions cannot be queued",
+          "commonCauses": [
+            "Worker not processing fast enough",
+            "Worker crashed",
+            "Sudden spike in workflow executions"
+          ],
+          "diagnosticSteps": [
+            "Check n8n-worker container: docker ps | grep n8n-worker",
+            "Check queue length: docker exec n8n-redis redis-cli llen bull:n8n:queue",
+            "Review worker logs: docker logs n8n-worker"
+          ],
+          "autoHealingActions": [
+            {
+              "action": "restart-worker",
+              "command": "docker restart n8n-worker",
+              "successCriteria": "Queue starts processing",
+              "requiresApproval": false
+            },
+            {
+              "action": "scale-workers",
+              "description": "Add more workers to docker-compose.yml",
+              "requiresApproval": true
+            }
+          ],
+          "manualResolution": "Optimize workflows or increase worker capacity"
+        }
+      ]
+    }
+  },
+  "healingStrategies": {
+    "automatic": {
+      "description": "Can be executed without human approval",
+      "criteria": [
+        "Low risk of data loss",
+        "Reversible action",
+        "Well-tested resolution"
+      ]
+    },
+    "semi-automatic": {
+      "description": "Requires human approval before execution",
+      "criteria": [
+        "Medium risk",
+        "Impacts production data",
+        "May require rollback"
+      ]
+    },
+    "manual": {
+      "description": "Requires human intervention",
+      "criteria": [
+        "High risk",
+        "Complex diagnosis needed",
+        "No known auto-healing action"
+      ]
+    }
+  },
+  "metadata": {
+    "lastUpdated": "2024-11-11T22:00:00Z",
+    "totalPatterns": 6,
+    "aiReadable": true,
+    "purpose": "Enable AI to diagnose and heal n8n integration errors autonomously"
+  }
+}

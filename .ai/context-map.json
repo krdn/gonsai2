@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "n8n Workflow Context Map",
+  "description": "AI-optimized context mapping for n8n workflows - enables Claude to understand workflow dependencies and execution patterns",
+  "version": "1.0.0",
+  "workflows": {
+    "example-workflow-id": {
+      "name": "Example Data Processing Workflow",
+      "description": "Processes incoming webhook data and stores in MongoDB",
+      "trigger": {
+        "type": "webhook",
+        "path": "/webhook/data-processor",
+        "method": "POST"
+      },
+      "nodes": [
+        {
+          "id": "webhook-trigger",
+          "type": "n8n-nodes-base.webhook",
+          "purpose": "Receives incoming data from external systems"
+        },
+        {
+          "id": "data-validator",
+          "type": "n8n-nodes-base.function",
+          "purpose": "Validates incoming data structure and business rules"
+        },
+        {
+          "id": "mongodb-insert",
+          "type": "n8n-nodes-base.mongodb",
+          "purpose": "Persists validated data to MongoDB collection"
+        }
+      ],
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "userId": { "type": "string", "description": "User identifier" },
+            "action": { "type": "string", "description": "Action type" },
+            "timestamp": { "type": "string", "format": "date-time" }
+          },
+          "required": ["userId", "action"]
+        }
+      },
+      "outputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "recordId": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      },
+      "dependencies": {
+        "external": ["MongoDB"],
+        "internal": []
+      },
+      "errorPatterns": [
+        {
+          "pattern": "MongoDB connection timeout",
+          "frequency": "rare",
+          "resolution": "Check MongoDB container status and network connectivity"
+        }
+      ],
+      "executionMetrics": {
+        "averageDuration": "250ms",
+        "successRate": 0.98,
+        "lastExecuted": "2024-11-11T00:00:00Z"
+      },
+      "aiContext": {
+        "complexity": "simple",
+        "testable": true,
+        "modificationSafety": "high",
+        "notes": "This workflow is well-tested and can be safely modified by AI"
+      }
+    }
+  },
+  "globalContext": {
+    "n8nVersion": "latest",
+    "environment": "development",
+    "baseUrl": "http://localhost:5678",
+    "webhookBaseUrl": "http://localhost:5678/webhook",
+    "commonErrorPatterns": [
+      {
+        "pattern": "API Key not found",
+        "cause": "N8N_API_KEY environment variable not set",
+        "solution": "Check .env file and restart application"
+      },
+      {
+        "pattern": "Workflow not found",
+        "cause": "Invalid workflow ID or workflow deleted",
+        "solution": "Verify workflow exists in n8n UI"
+      }
+    ],
+    "bestPractices": [
+      "Always validate webhook input data",
+      "Use error workflows for critical failures",
+      "Monitor execution metrics regularly",
+      "Keep workflow documentation up-to-date"
+    ]
+  },
+  "metadata": {
+    "lastUpdated": "2024-11-11T22:00:00Z",
+    "updatedBy": "Claude Code",
+    "purpose": "Provides AI-readable context for n8n workflow integration"
+  }
+}
