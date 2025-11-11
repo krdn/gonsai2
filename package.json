@@ -9,6 +9,8 @@
     "test:connection": "ts-node features/n8n-integration/test-connection.ts",
     "test:workflow": "ts-node features/n8n-integration/test-workflow-execution.ts",
     "test:websocket": "ts-node features/n8n-integration/test-websocket.ts",
+    "init:mongodb": "ts-node infrastructure/mongodb/scripts/initialize-db.ts",
+    "test:mongodb": "ts-node infrastructure/mongodb/scripts/test-mongodb.ts",
     "dev": "ts-node index.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts"
@@ -30,6 +32,7 @@
   },
   "dependencies": {
     "dotenv": "^16.0.0",
+    "mongodb": "^7.0.0",
     "ws": "^8.0.0"
   },
   "engines": {
