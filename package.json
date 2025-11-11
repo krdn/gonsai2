@@ -11,6 +11,8 @@
     "test:websocket": "ts-node features/n8n-integration/test-websocket.ts",
     "init:mongodb": "ts-node infrastructure/mongodb/scripts/initialize-db.ts",
     "test:mongodb": "ts-node infrastructure/mongodb/scripts/test-mongodb.ts",
+    "server": "ts-node apps/backend/src/server.ts",
+    "server:dev": "nodemon --watch apps/backend/src --exec ts-node apps/backend/src/server.ts",
     "dev": "ts-node index.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts"
@@ -25,14 +27,24 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^20.0.0",
-    "@types/ws": "^8.5.0",
+    "@types/ws": "^8.18.1",
+    "nodemon": "^3.1.10",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.0.0",
+    "express": "^5.1.0",
+    "express-validator": "^7.3.0",
+    "helmet": "^8.1.0",
     "mongodb": "^7.0.0",
+    "morgan": "^1.10.1",
+    "winston": "^3.18.3",
     "ws": "^8.0.0"
   },
   "engines": {
