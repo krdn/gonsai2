@@ -6,10 +6,11 @@
 
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
+import { authenticateJWT } from '../middleware/auth.middleware';
 import { databaseService } from '../services/database.service';
 import bcrypt from 'bcryptjs';
 import { log } from '../utils/logger';
+import { ObjectId } from 'mongodb';
 
 const router = Router();
 
@@ -17,13 +18,20 @@ const router = Router();
  * GET /api/users/me
  * 현재 로그인한 사용자 정보 조회
  */
-router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.get('/me', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
   try {
-    const authReq = req as AuthRequest;
-    const userId = authReq.userId;
+    const userId = req.userId;
 
-    const db = await databaseService.getDatabase();
-    const user = await db.collection('users').findOne({ _id: userId });
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: 'User ID not found in request',
+      });
+      return;
+    }
+
+    const db = databaseService.getDb();
+    const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
 
     if (!user) {
       res.status(404).json({
@@ -56,7 +64,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
 router.patch(
   '/me',
   [
-    authMiddleware,
+    authenticateJWT,
     body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
     body('email').optional().isEmail().withMessage('Valid email is required'),
     body('currentPassword').optional().isString(),
@@ -75,12 +83,19 @@ router.patch(
         return;
       }
 
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
+      const userId = req.userId;
       const { name, email, currentPassword, newPassword } = req.body;
 
-      const db = await databaseService.getDatabase();
-      const user = await db.collection('users').findOne({ _id: userId });
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'User ID not found in request',
+        });
+        return;
+      }
+
+      const db = databaseService.getDb();
+      const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
 
       if (!user) {
         res.status(404).json({
@@ -138,10 +153,10 @@ router.patch(
 
       // 업데이트 수행
       updateData.updatedAt = new Date();
-      await db.collection('users').updateOne({ _id: userId }, { $set: updateData });
+      await db.collection('users').updateOne({ _id: new ObjectId(userId) }, { $set: updateData });
 
       // 업데이트된 사용자 정보 조회
-      const updatedUser = await db.collection('users').findOne({ _id: userId });
+      const updatedUser = await db.collection('users').findOne({ _id: new ObjectId(userId) });
       const { password, ...userWithoutPassword } = updatedUser!;
 
       res.status(200).json({
