@@ -39,7 +39,7 @@ export class AppError extends Error {
 /**
  * 404 Not Found 핸들러
  */
-export function notFoundHandler(req: Request, res: Response, next: NextFunction): void {
+export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
   const error = new AppError(
     404,
     `Cannot ${req.method} ${req.path}`

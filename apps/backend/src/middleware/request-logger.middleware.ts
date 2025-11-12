@@ -19,7 +19,7 @@ export const requestLogger = morgan(
     stream: morganStream,
     skip: (req) => {
       // 헬스체크 엔드포인트는 로깅 스킵
-      return req.path === '/health' || req.path === '/';
+      return req.url === '/health' || req.url === '/';
     },
   }
 );

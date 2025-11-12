@@ -14,6 +14,14 @@ import { COLLECTIONS } from '../../../../infrastructure/mongodb/schemas/types';
 
 const router = Router();
 
+// n8n API 응답 타입
+interface N8nExecutionResponse {
+  data: {
+    executionId: string;
+    [key: string]: any;
+  };
+}
+
 // 모든 워크플로우 라우트는 인증 필요
 router.use(authenticateN8nApiKey);
 
@@ -122,7 +130,7 @@ router.post('/:id/execute', asyncHandler(async (req: Request, res: Response): Pr
     return;
   }
 
-  const n8nResponse = await response.json();
+  const n8nResponse = await response.json() as N8nExecutionResponse;
 
   // MongoDB에 실행 기록 저장
   const client = new MongoClient(envConfig.MONGODB_URI);
