@@ -5,9 +5,9 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { MongoClient } from 'mongodb';
 import { envConfig } from '../utils/env-validator';
 import { log } from '../utils/logger';
+import { databaseService } from '../services/database.service';
 import { ApiResponse, ExecuteWorkflowRequest, ExecuteWorkflowResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { COLLECTIONS } from '../../../../infrastructure/mongodb/schemas/types';
@@ -69,35 +69,28 @@ router.get('/', asyncHandler(async (_req: Request, res: Response): Promise<void>
 router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
 
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
+  const workflow = await databaseService
+    .getDb()
+    .collection(COLLECTIONS.WORKFLOWS)
+    .findOne({ n8nWorkflowId: id });
 
-  try {
-    const workflow = await client
-      .db()
-      .collection(COLLECTIONS.WORKFLOWS)
-      .findOne({ n8nWorkflowId: id });
-
-    if (!workflow) {
-      res.status(404).json({
-        success: false,
-        error: 'Workflow not found',
-        message: `Workflow with ID ${id} does not exist`,
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    const response: ApiResponse = {
-      success: true,
-      data: workflow,
+  if (!workflow) {
+    res.status(404).json({
+      success: false,
+      error: 'Workflow not found',
+      message: `Workflow with ID ${id} does not exist`,
       timestamp: new Date().toISOString(),
-    };
-
-    res.json(response);
-  } finally {
-    await client.close();
+    });
+    return;
   }
+
+  const response: ApiResponse = {
+    success: true,
+    data: workflow,
+    timestamp: new Date().toISOString(),
+  };
+
+  res.json(response);
 }));
 
 /**
@@ -142,46 +135,39 @@ router.post('/:id/execute', asyncHandler(async (req: Request, res: Response): Pr
   const n8nResponse = await response.json() as N8nExecutionResponse;
 
   // MongoDB에 실행 기록 저장
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
+  const executionRecord = {
+    n8nExecutionId: n8nResponse.data.executionId,
+    workflowId: id,
+    n8nWorkflowId: id,
+    status: 'running' as const,
+    mode: 'manual' as const,
+    startedAt: new Date(),
+    inputData: body.inputData,
+    createdAt: new Date(),
+  };
 
-  try {
-    const executionRecord = {
-      n8nExecutionId: n8nResponse.data.executionId,
-      workflowId: id,
-      n8nWorkflowId: id,
-      status: 'running' as const,
-      mode: 'manual' as const,
-      startedAt: new Date(),
-      inputData: body.inputData,
-      createdAt: new Date(),
-    };
+  await databaseService
+    .getDb()
+    .collection(COLLECTIONS.EXECUTIONS)
+    .insertOne(executionRecord);
 
-    await client
-      .db()
-      .collection(COLLECTIONS.EXECUTIONS)
-      .insertOne(executionRecord);
+  log.info('Workflow execution started', {
+    executionId: n8nResponse.data.executionId,
+    workflowId: id,
+  });
 
-    log.info('Workflow execution started', {
+  const apiResponse: ApiResponse<ExecuteWorkflowResponse> = {
+    success: true,
+    data: {
       executionId: n8nResponse.data.executionId,
       workflowId: id,
-    });
+      status: 'running',
+      startedAt: executionRecord.startedAt.toISOString(),
+    },
+    timestamp: new Date().toISOString(),
+  };
 
-    const apiResponse: ApiResponse<ExecuteWorkflowResponse> = {
-      success: true,
-      data: {
-        executionId: n8nResponse.data.executionId,
-        workflowId: id,
-        status: 'running',
-        startedAt: executionRecord.startedAt.toISOString(),
-      },
-      timestamp: new Date().toISOString(),
-    };
-
-    res.status(202).json(apiResponse);
-  } finally {
-    await client.close();
-  }
+  res.status(202).json(apiResponse);
 }));
 
 /**

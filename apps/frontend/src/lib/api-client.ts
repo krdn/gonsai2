@@ -8,7 +8,6 @@
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const API_KEY = process.env.NEXT_PUBLIC_N8N_API_KEY || '';
 
 /**
  * API 클라이언트 에러 클래스
@@ -25,12 +24,12 @@ export class ApiClientError extends Error {
 }
 
 /**
- * HTTP 헤더 생성 (인증 포함)
+ * HTTP 헤더 생성
+ * 인증은 백엔드에서 처리 (서버측 n8n API 키 사용)
  */
 function getHeaders(customHeaders: HeadersInit = {}): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    'X-API-Key': API_KEY,
     ...customHeaders,
   };
 }

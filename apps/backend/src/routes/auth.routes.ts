@@ -18,9 +18,21 @@ const router = Router();
 router.post(
   '/signup',
   [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Valid email is required'),
+    body('name')
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Name must be between 2 and 50 characters')
+      .matches(/^[a-zA-Z0-9가-힣\s]+$/)
+      .withMessage('Name can only contain letters, numbers, and spaces'),
+    body('password')
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -74,8 +86,14 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password').exists().withMessage('Password is required'),
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Valid email is required'),
+    body('password')
+      .exists()
+      .notEmpty()
+      .withMessage('Password is required'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {

@@ -13,8 +13,16 @@ import { log } from '../utils/logger';
 /**
  * JWT 시크릿 키 (환경 변수에서 가져옴)
  */
-const JWT_SECRET = process.env.JWT_SECRET || 'gonsai2-default-secret-change-in-production';
-const JWT_EXPIRES_IN = '7d'; // 7일
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+// JWT_SECRET 필수 검증
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error(
+    'CRITICAL SECURITY ERROR: JWT_SECRET must be set in environment variables and be at least 32 characters long. ' +
+    'Generate with: openssl rand -base64 32'
+  );
+}
 
 /**
  * JWT 페이로드 인터페이스

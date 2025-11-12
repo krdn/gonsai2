@@ -27,7 +27,14 @@ class DatabaseService {
         uri: envConfig.MONGODB_URI?.replace(/\/\/.*@/, '//***:***@'), // 비밀번호 마스킹
       });
 
-      this.client = new MongoClient(envConfig.MONGODB_URI!);
+      // 커넥션 풀 설정 포함
+      this.client = new MongoClient(envConfig.MONGODB_URI!, {
+        maxPoolSize: 10,
+        minPoolSize: 2,
+        maxIdleTimeMS: 30000,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
       await this.client.connect();
 
       // 데이터베이스 선택 (URI에서 자동으로 선택)

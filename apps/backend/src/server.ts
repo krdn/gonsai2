@@ -8,6 +8,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { createServer, Server as HTTPServer } from 'http';
 import { envConfig, printConfig } from './utils/env-validator';
 import { log } from './utils/logger';
@@ -32,25 +33,60 @@ import userRoutes from './routes/user.routes';
 function createApp(): Application {
   const app = express();
 
-  // 기본 미들웨어
-  app.use(helmet()); // 보안 헤더
+  // 보안 헤더 (강화 설정)
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }));
+
+  // Rate Limiting (DDoS 방어)
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15분
+    max: 100, // IP당 최대 100 요청
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(limiter);
+
+  // 인증 엔드포인트에 더 엄격한 rate limit
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5, // 15분에 5번만 허용
+    message: 'Too many authentication attempts, please try again later.',
+  });
+
+  // CORS 설정
   app.use(cors({
     origin: envConfig.NODE_ENV === 'production'
       ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
       : '*',
     credentials: true,
   }));
-  app.use(express.json({ limit: '10mb' })); // JSON 파싱
-  app.use(express.urlencoded({ extended: true })); // URL-encoded 파싱
-  app.use(cookieParser()); // 쿠키 파싱
-  app.use(requestLogger); // HTTP 요청 로깅
+
+  // Body 파싱 (크기 제한)
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(cookieParser());
+  app.use(requestLogger);
 
   // API 라우트
   app.get('/', healthRoutes);
   app.use('/health', healthRoutes);
   app.use('/webhooks', webhookRoutes);
   app.use('/api/workflows', workflowsRoutes);
-  app.use('/api/auth', authRoutes); // 인증 라우트
+  app.use('/api/auth', authLimiter, authRoutes); // 인증 라우트 (rate limit 적용)
   app.use('/api/users', userRoutes); // 사용자 프로필 라우트
 
   // 404 처리
