@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { History, RefreshCw, CheckCircle, XCircle, Clock, Filter, ChevronDown, ChevronUp, HelpCircle, X } from 'lucide-react';
+import { workflowsApi, ApiClientError } from '@/lib/api-client';
 
 interface WorkflowExecution {
   id: string;
@@ -33,8 +34,6 @@ export default function ExecutionsPage() {
   const [limit, setLimit] = useState(20);
   const [showHelp, setShowHelp] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
   useEffect(() => {
     loadWorkflows();
   }, []);
@@ -47,17 +46,7 @@ export default function ExecutionsPage() {
 
   const loadWorkflows = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/workflows`, {
-        headers: {
-          'X-API-Key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('워크플로우 조회 실패');
-      }
-
-      const data = await response.json();
+      const data = await workflowsApi.list();
       setWorkflows(data.data || []);
 
       // 첫 번째 워크플로우의 실행 내역 로드
@@ -79,17 +68,7 @@ export default function ExecutionsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_URL}/api/workflows/${workflowId}/executions?limit=${limit}`, {
-        headers: {
-          'X-API-Key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('실행 내역 조회 실패');
-      }
-
-      const data = await response.json();
+      const data = await workflowsApi.executions(workflowId, limit);
       const executionsData = data.data || [];
 
       // 워크플로우 이름 추가

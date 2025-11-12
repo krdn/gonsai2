@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Play, Square, RefreshCw, Workflow, CheckCircle, XCircle, Clock, HelpCircle, X } from 'lucide-react';
+import { workflowsApi, ApiClientError } from '@/lib/api-client';
 
 interface Workflow {
   id: string;
@@ -31,8 +32,6 @@ export default function WorkflowsPage() {
   const [recentExecutions, setRecentExecutions] = useState<Record<string, WorkflowExecution[]>>({});
   const [showHelp, setShowHelp] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
   useEffect(() => {
     loadWorkflows();
   }, []);
@@ -42,17 +41,7 @@ export default function WorkflowsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_URL}/api/workflows`, {
-        headers: {
-          'X-API-Key': 'n8n_api_48e15b34-3c9b-4f4d-af29-bd7bc8a5bb7e',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('워크플로우 조회 실패');
-      }
-
-      const data = await response.json();
+      const data = await workflowsApi.list();
       setWorkflows(data.data || []);
 
       // 각 워크플로우의 최근 실행 내역 조회
@@ -71,19 +60,11 @@ export default function WorkflowsPage() {
 
   const loadWorkflowExecutions = async (workflowId: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/workflows/${workflowId}/executions?limit=5`, {
-        headers: {
-          'X-API-Key': 'n8n_api_48e15b34-3c9b-4f4d-af29-bd7bc8a5bb7e',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRecentExecutions(prev => ({
-          ...prev,
-          [workflowId]: data.data || [],
-        }));
-      }
+      const data = await workflowsApi.executions(workflowId, 5);
+      setRecentExecutions(prev => ({
+        ...prev,
+        [workflowId]: data.data || [],
+      }));
     } catch (err) {
       console.error(`워크플로우 ${workflowId} 실행 내역 조회 오류:`, err);
     }
@@ -93,23 +74,7 @@ export default function WorkflowsPage() {
     try {
       setExecuting(prev => ({ ...prev, [workflowId]: true }));
 
-      const response = await fetch(`${API_URL}/api/workflows/${workflowId}/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'n8n_api_48e15b34-3c9b-4f4d-af29-bd7bc8a5bb7e',
-        },
-        body: JSON.stringify({
-          inputData: {},
-          options: { waitForExecution: false },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('워크플로우 실행 실패');
-      }
-
-      const data = await response.json();
+      const data = await workflowsApi.execute(workflowId, {}, { waitForExecution: false });
       console.log('워크플로우 실행 성공:', data);
 
       // 실행 내역 새로고침
