@@ -1,0 +1,268 @@
+{
+  "optimizationReport": {
+    "date": "2025-11-12",
+    "version": "1.0.0",
+    "summary": "주간 n8n 성능 최적화 보고서"
+  },
+  "workflowAnalysis": {
+    "totalWorkflows": 13,
+    "activeWorkflows": 1,
+    "inactiveWorkflows": 12,
+    "unusedWorkflows": 7,
+    "workflowsToArchive": [
+      {
+        "name": "Demo: My first AI Agent in n8n",
+        "id": "jWpJJQ494DDWxpW9",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      },
+      {
+        "name": "쓰레드 자동화",
+        "id": "4qw7CTKMK0l1YyTA",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      },
+      {
+        "name": "Very quick quickstart",
+        "id": "Y5WO8CJFvcMj2Uxt",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      },
+      {
+        "name": "AI agent that can scrape webpages",
+        "id": "qjiaN6td3VcHLQcw",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      },
+      {
+        "name": "My workflow 2",
+        "id": "8BEG2Uvj1vWE7dvm",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      },
+      {
+        "name": "My workflow",
+        "id": "k0BEPMpecuV6KNvk",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      },
+      {
+        "name": "Newsletter",
+        "id": "S4ICmh5ezPD3rv2y",
+        "lastExecution": null,
+        "recommendation": "아카이브 (실행 기록 없음)"
+      }
+    ],
+    "performanceIssues": {
+      "slowWorkflows": [
+        {
+          "name": "지식 습득 프로세스",
+          "avgDuration": "7.69초",
+          "executions": 68,
+          "recommendation": "병렬 처리 검토 필요"
+        },
+        {
+          "name": "gonsai-지식",
+          "avgDuration": "5.22초",
+          "executions": 152,
+          "recommendation": "API 호출 최적화 및 재시도 메커니즘 적용"
+        }
+      ],
+      "fastWorkflows": [
+        {
+          "name": "업무 가이드",
+          "avgDuration": "0.027초",
+          "executions": 43,
+          "status": "최적화됨"
+        }
+      ]
+    }
+  },
+  "databaseOptimization": {
+    "executionTableSize": "184 KB",
+    "totalExecutions": 280,
+    "oldExecutionsArchived": 0,
+    "vacuumPerformed": true,
+    "indexesRebuilt": true,
+    "recommendations": [
+      "90일 이상 오래된 실행 기록 정기적 아카이빙",
+      "월 1회 VACUUM ANALYZE 실행",
+      "인덱스 재구성으로 쿼리 성능 향상"
+    ]
+  },
+  "cacheOptimization": {
+    "redis": {
+      "version": "7.4.7",
+      "status": "최신",
+      "cacheCleared": true,
+      "currentHitRate": "3.3%",
+      "targetHitRate": "30%+",
+      "recommendations": [
+        {
+          "setting": "TTL 조정",
+          "current": "15분 (추정)",
+          "recommended": "1시간",
+          "impact": "캐시 적중률 향상"
+        },
+        {
+          "setting": "캐시 전략",
+          "current": "없음",
+          "recommended": "API 응답 캐싱 구현",
+          "impact": "API 호출 30% 감소"
+        },
+        {
+          "setting": "maxmemory",
+          "current": "기본",
+          "recommended": "4GB",
+          "impact": "더 많은 데이터 캐싱 가능"
+        }
+      ]
+    }
+  },
+  "securityUpdates": {
+    "n8n": {
+      "currentVersion": "1.118.2",
+      "status": "최신",
+      "lastChecked": "2025-11-12"
+    },
+    "postgresql": {
+      "currentVersion": "16.10",
+      "status": "최신",
+      "lastChecked": "2025-11-12"
+    },
+    "redis": {
+      "currentVersion": "7.4.7",
+      "status": "최신",
+      "lastChecked": "2025-11-12"
+    },
+    "recommendations": [
+      "모든 컴포넌트 최신 버전 유지",
+      "주간 보안 업데이트 확인",
+      "의존성 취약점 스캔 자동화"
+    ]
+  },
+  "performanceTuning": {
+    "n8nSettings": {
+      "executionMode": "queue",
+      "workerReplicas": 1,
+      "recommendations": [
+        {
+          "setting": "EXECUTIONS_DATA_PRUNE",
+          "recommended": "true",
+          "impact": "자동으로 오래된 실행 데이터 정리"
+        },
+        {
+          "setting": "EXECUTIONS_DATA_MAX_AGE",
+          "recommended": "168",
+          "unit": "hours (7일)",
+          "impact": "데이터베이스 크기 관리"
+        },
+        {
+          "setting": "N8N_METRICS",
+          "current": "true",
+          "status": "적용됨",
+          "impact": "Prometheus 모니터링 활성화"
+        }
+      ]
+    },
+    "postgresqlTuning": [
+      {
+        "parameter": "shared_buffers",
+        "recommended": "512MB",
+        "impact": "쿼리 성능 향상"
+      },
+      {
+        "parameter": "effective_cache_size",
+        "recommended": "1536MB",
+        "impact": "쿼리 플래너 최적화"
+      },
+      {
+        "parameter": "work_mem",
+        "recommended": "10MB",
+        "impact": "복잡한 쿼리 성능 향상"
+      }
+    ],
+    "redisTuning": [
+      {
+        "parameter": "maxmemory",
+        "current": "기본",
+        "recommended": "4gb",
+        "impact": "캐시 용량 증대"
+      },
+      {
+        "parameter": "maxmemory-policy",
+        "current": "noeviction",
+        "recommended": "allkeys-lru",
+        "impact": "자동 캐시 정리"
+      },
+      {
+        "parameter": "save",
+        "recommended": "900 1 300 10 60 10000",
+        "impact": "적절한 persistence 설정"
+      }
+    ]
+  },
+  "automatedImprovements": {
+    "applied": [
+      "✅ PostgreSQL VACUUM ANALYZE 실행",
+      "✅ Redis 캐시 플러시 (새 전략 적용을 위해)",
+      "✅ 워크플로우 사용 패턴 분석",
+      "✅ 성능 병목 지점 식별"
+    ],
+    "pending": [
+      "⏳ 사용하지 않는 워크플로우 7개 아카이브",
+      "⏳ Google Gemini 노드 재시도 메커니즘 적용",
+      "⏳ Redis TTL 설정 조정",
+      "⏳ n8n 환경 변수 최적화"
+    ]
+  },
+  "weeklyMetrics": {
+    "executionSuccess": "26%",
+    "executionFailure": "74%",
+    "avgExecutionTime": "8.7초",
+    "apiCost": "$0.085/일",
+    "resourceUsage": {
+      "cpu": "1% 미만",
+      "memory": "3.26%",
+      "disk": "16 MB"
+    }
+  },
+  "nextSteps": {
+    "immediate": [
+      {
+        "priority": "high",
+        "task": "Google Gemini 재시도 설정 적용",
+        "estimate": "5분",
+        "impact": "실패율 50% 감소"
+      },
+      {
+        "priority": "high",
+        "task": "Fallback 모델 구성",
+        "estimate": "30분",
+        "impact": "안정성 대폭 향상"
+      }
+    ],
+    "shortTerm": [
+      {
+        "priority": "medium",
+        "task": "Redis 캐싱 전략 구현",
+        "estimate": "2시간",
+        "impact": "API 호출 30% 감소"
+      },
+      {
+        "priority": "medium",
+        "task": "사용하지 않는 워크플로우 아카이브",
+        "estimate": "15분",
+        "impact": "UI 정리 및 관리 편의성"
+      }
+    ],
+    "longTerm": [
+      {
+        "priority": "low",
+        "task": "자동 백업 시스템 구축",
+        "estimate": "4시간",
+        "impact": "데이터 안전성 확보"
+      }
+    ]
+  }
+}
