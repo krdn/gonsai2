@@ -27,29 +27,38 @@ router.use(authenticateN8nApiKey);
 
 /**
  * GET /api/workflows
- * 모든 워크플로우 조회
+ * 모든 워크플로우 조회 (n8n API 프록시)
  */
 router.get('/', asyncHandler(async (_req: Request, res: Response): Promise<void> => {
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
-
   try {
-    const workflows = await client
-      .db()
-      .collection(COLLECTIONS.WORKFLOWS)
-      .find()
-      .sort({ updatedAt: -1 })
-      .toArray();
+    // n8n API에서 직접 워크플로우 조회
+    const n8nResponse = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows`, {
+      headers: {
+        'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+      },
+    });
+
+    if (!n8nResponse.ok) {
+      throw new Error(`n8n API request failed: ${n8nResponse.status}`);
+    }
+
+    const n8nData = await n8nResponse.json() as { data?: any[] };
 
     const response: ApiResponse = {
       success: true,
-      data: workflows,
+      data: n8nData.data || [],
       timestamp: new Date().toISOString(),
     };
 
     res.json(response);
-  } finally {
-    await client.close();
+  } catch (error) {
+    log.error('Failed to fetch workflows from n8n', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch workflows',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
   }
 }));
 
@@ -177,46 +186,44 @@ router.post('/:id/execute', asyncHandler(async (req: Request, res: Response): Pr
 
 /**
  * GET /api/workflows/:id/executions
- * 워크플로우 실행 기록 조회
+ * 워크플로우 실행 기록 조회 (n8n API 프록시)
  */
 router.get('/:id/executions', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { limit = 10, skip = 0 } = req.query;
-
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
+  const { limit = 10 } = req.query;
 
   try {
-    const executions = await client
-      .db()
-      .collection(COLLECTIONS.EXECUTIONS)
-      .find({ n8nWorkflowId: id })
-      .sort({ startedAt: -1 })
-      .skip(Number(skip))
-      .limit(Number(limit))
-      .toArray();
+    // n8n API에서 실행 기록 조회
+    const n8nResponse = await fetch(
+      `${envConfig.N8N_BASE_URL}/api/v1/executions?workflowId=${id}&limit=${limit}`,
+      {
+        headers: {
+          'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+        },
+      }
+    );
 
-    const total = await client
-      .db()
-      .collection(COLLECTIONS.EXECUTIONS)
-      .countDocuments({ n8nWorkflowId: id });
+    if (!n8nResponse.ok) {
+      throw new Error(`n8n API request failed: ${n8nResponse.status}`);
+    }
+
+    const n8nData = await n8nResponse.json() as { data?: any[] };
 
     const response: ApiResponse = {
       success: true,
-      data: {
-        executions,
-        pagination: {
-          total,
-          limit: Number(limit),
-          skip: Number(skip),
-        },
-      },
+      data: n8nData.data || [],
       timestamp: new Date().toISOString(),
     };
 
     res.json(response);
-  } finally {
-    await client.close();
+  } catch (error) {
+    log.error('Failed to fetch executions from n8n', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch executions',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
   }
 }));
 

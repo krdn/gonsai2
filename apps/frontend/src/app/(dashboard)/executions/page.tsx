@@ -49,7 +49,7 @@ export default function ExecutionsPage() {
     try {
       const response = await fetch(`${API_URL}/api/workflows`, {
         headers: {
-          'X-API-Key': 'n8n_api_48e15b34-3c9b-4f4d-af29-bd7bc8a5bb7e',
+          'X-API-Key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc',
         },
       });
 
@@ -81,7 +81,7 @@ export default function ExecutionsPage() {
 
       const response = await fetch(`${API_URL}/api/workflows/${workflowId}/executions?limit=${limit}`, {
         headers: {
-          'X-API-Key': 'n8n_api_48e15b34-3c9b-4f4d-af29-bd7bc8a5bb7e',
+          'X-API-Key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc',
         },
       });
 
