@@ -7,6 +7,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { createServer, Server as HTTPServer } from 'http';
 import { envConfig, printConfig } from './utils/env-validator';
 import { log } from './utils/logger';
@@ -16,11 +17,13 @@ import {
   notFoundHandler,
 } from './middleware';
 import { websocketService } from './services/websocket.service';
+import { databaseService } from './services/database.service';
 
 // Routes
 import healthRoutes from './routes/health.routes';
 import webhookRoutes from './routes/webhook.routes';
 import workflowsRoutes from './routes/workflows.routes';
+import authRoutes from './routes/auth.routes';
 
 /**
  * Express 애플리케이션 생성
@@ -38,6 +41,7 @@ function createApp(): Application {
   }));
   app.use(express.json({ limit: '10mb' })); // JSON 파싱
   app.use(express.urlencoded({ extended: true })); // URL-encoded 파싱
+  app.use(cookieParser()); // 쿠키 파싱
   app.use(requestLogger); // HTTP 요청 로깅
 
   // API 라우트
@@ -45,6 +49,7 @@ function createApp(): Application {
   app.use('/health', healthRoutes);
   app.use('/webhooks', webhookRoutes);
   app.use('/api/workflows', workflowsRoutes);
+  app.use('/api/auth', authRoutes); // 인증 라우트
 
   // 404 처리
   app.use(notFoundHandler);
@@ -62,6 +67,9 @@ async function startServer(): Promise<void> {
   try {
     // 환경 변수 출력
     printConfig();
+
+    // MongoDB 연결
+    await databaseService.connect();
 
     // Express 앱 생성
     const app = createApp();
@@ -83,6 +91,7 @@ async function startServer(): Promise<void> {
 
       log.info('📚 API Endpoints:', {
         health: `http://${envConfig.HOST}:${envConfig.PORT}/health`,
+        auth: `http://${envConfig.HOST}:${envConfig.PORT}/api/auth/login`,
         webhooks: `http://${envConfig.HOST}:${envConfig.PORT}/webhooks/n8n`,
         workflows: `http://${envConfig.HOST}:${envConfig.PORT}/api/workflows`,
         websocket: `ws://${envConfig.HOST}:${envConfig.PORT}/ws`,
@@ -112,6 +121,9 @@ function setupGracefulShutdown(server: HTTPServer): void {
 
     // WebSocket 서버 종료
     websocketService.shutdown();
+
+    // MongoDB 연결 종료
+    await databaseService.disconnect();
 
     // 기타 정리 작업
     setTimeout(() => {

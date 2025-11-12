@@ -1,0 +1,151 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import type {
+  AuthContextType,
+  User,
+  LoginResponse,
+  SignupResponse,
+} from '@/types/auth';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  // 초기 로드 시 로컬 스토리지에서 사용자 정보 복원
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('[Auth] Failed to parse stored user:', error);
+        localStorage.removeItem('user');
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '로그인에 실패했습니다.');
+      }
+
+      const data: LoginResponse = await response.json();
+
+      // 사용자 정보 저장 (쿠키는 백엔드에서 HttpOnly로 설정됨)
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // 대시보드로 리다이렉트
+      router.push('/workflows');
+    } catch (error) {
+      console.error('[Auth] Login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (email: string, password: string, name: string) => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '회원가입에 실패했습니다.');
+      }
+
+      const data: SignupResponse = await response.json();
+
+      // 사용자 정보 저장 (쿠키는 백엔드에서 HttpOnly로 설정됨)
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // 대시보드로 리다이렉트
+      router.push('/workflows');
+    } catch (error) {
+      console.error('[Auth] Signup error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    console.log('[Auth] Logout started');
+
+    // 클라이언트 측 상태 먼저 정리
+    setUser(null);
+    localStorage.removeItem('user');
+    console.log('[Auth] Local state cleared');
+
+    try {
+      // 백엔드 로그아웃 API 호출 (서버 측 쿠키 삭제)
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      console.log('[Auth] Logout API response:', response.status);
+    } catch (error) {
+      console.error('[Auth] Logout error:', error);
+      // 에러가 발생해도 클라이언트 측 로그아웃은 진행
+    }
+
+    console.log('[Auth] Redirecting to login page');
+    // 페이지 강제 새로고침을 통한 완전한 상태 초기화
+    window.location.href = '/login';
+  };
+
+  const updateUser = (data: Partial<User>) => {
+    if (!user) return;
+
+    const updatedUser = { ...user, ...data };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        signup,
+        logout,
+        updateUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
