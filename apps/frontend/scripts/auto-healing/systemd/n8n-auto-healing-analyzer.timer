@@ -1,0 +1,17 @@
+[Unit]
+Description=n8n Auto-Healing Error Analyzer Timer
+Documentation=https://github.com/YOUR_REPO/gonsai2
+Requires=n8n-auto-healing-analyzer.service
+
+[Timer]
+# 매시간 정각에 실행
+OnCalendar=hourly
+
+# 부하 분산을 위한 랜덤 지연
+RandomizedDelaySec=5min
+
+# 시스템이 절전 모드에서 깨어났을 때 놓친 작업 실행
+Persistent=true
+
+[Install]
+WantedBy=timers.target

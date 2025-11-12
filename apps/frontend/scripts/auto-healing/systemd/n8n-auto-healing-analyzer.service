@@ -1,0 +1,43 @@
+[Unit]
+Description=n8n Auto-Healing Error Analyzer Service
+Documentation=https://github.com/YOUR_REPO/gonsai2
+After=network-online.target
+Wants=network-online.target
+Requires=n8n-auto-healing-analyzer.timer
+
+[Service]
+Type=oneshot
+User=%i
+Group=%i
+WorkingDirectory=/home/%i/projects/gonsai2/apps/frontend
+
+# 환경 변수
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/%i/.nvm/versions/node/v20.11.0/bin"
+Environment="NODE_ENV=production"
+EnvironmentFile=-/home/%i/projects/gonsai2/apps/frontend/.env.local
+
+# 스크립트 실행 (ts-node 필요)
+ExecStart=/home/%i/.nvm/versions/node/v20.11.0/bin/ts-node /home/%i/projects/gonsai2/apps/frontend/scripts/auto-healing/analyze-errors.ts /home/%i/projects/gonsai2/apps/frontend/scripts/auto-healing/logs/errors.json
+
+# 로깅
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=n8n-auto-healing-analyzer
+
+# 보안 설정
+PrivateTmp=yes
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/%i/projects/gonsai2/apps/frontend/scripts/auto-healing/logs
+ReadWritePaths=/home/%i/projects/gonsai2/apps/frontend/scripts/auto-healing/state
+
+# 리소스 제한
+CPUQuota=75%
+MemoryLimit=1G
+
+# 타임아웃 (분석에 시간이 걸릴 수 있음)
+TimeoutSec=600
+
+[Install]
+WantedBy=multi-user.target

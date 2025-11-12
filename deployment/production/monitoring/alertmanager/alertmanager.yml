@@ -1,0 +1,224 @@
+# =============================================================================
+# Alertmanager 설정
+# =============================================================================
+
+global:
+  # SMTP 설정 (이메일 알림용)
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@yourdomain.com'
+  smtp_auth_username: 'your-email@gmail.com'
+  smtp_auth_password: 'your-app-password'
+  smtp_require_tls: true
+
+  # Slack OAuth Token (선택사항)
+  slack_api_url: 'https://slack.com/api/chat.postMessage'
+
+  # 기본 알림 시간
+  resolve_timeout: 5m
+
+# 알림 템플릿
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# 라우팅 규칙
+route:
+  # 기본 수신자
+  receiver: 'default-receiver'
+
+  # 그룹화 설정
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+
+  # 하위 라우팅 규칙
+  routes:
+    # Critical 알림 - 즉시 전송
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 5m
+      continue: true
+
+    # 데이터베이스 알림
+    - match:
+        category: database
+      receiver: 'database-team'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # n8n 워크플로우 알림
+    - match:
+        category: workflow
+      receiver: 'workflow-team'
+      group_wait: 1m
+      repeat_interval: 30m
+
+    # 리소스 알림
+    - match:
+        category: resources
+      receiver: 'infrastructure-team'
+      group_wait: 5m
+      repeat_interval: 2h
+
+    # 백업 알림
+    - match:
+        category: backup
+      receiver: 'backup-team'
+      repeat_interval: 24h
+
+    # 야간 알림 억제 (warning만)
+    - match:
+        severity: warning
+      active_time_intervals:
+        - business-hours
+
+# 알림 억제 규칙
+inhibit_rules:
+  # ServiceDown이 발생하면 같은 서비스의 다른 알림 억제
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match:
+      alertname: '.+'
+    equal:
+      - 'job'
+      - 'instance'
+
+  # Critical 알림이 있으면 같은 카테고리의 Warning 억제
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal:
+      - 'category'
+      - 'service'
+
+# 시간 간격 정의
+time_intervals:
+  # 업무 시간 (월-금, 9AM-6PM KST)
+  - name: business-hours
+    time_intervals:
+      - weekdays: ['monday:friday']
+        times:
+          - start_time: '09:00'
+            end_time: '18:00'
+        location: 'Asia/Seoul'
+
+# 수신자 설정
+receivers:
+  # ==========================================================================
+  # 기본 수신자 (모든 알림)
+  # ==========================================================================
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'team@yourdomain.com'
+        headers:
+          Subject: '[{{ .GroupLabels.severity | toUpper }}] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <p><strong>환경:</strong> {{ .GroupLabels.environment }}</p>
+          <p><strong>요약:</strong></p>
+          <ul>
+          {{ range .Alerts }}
+            <li>{{ .Annotations.summary }}</li>
+          {{ end }}
+          </ul>
+
+  # ==========================================================================
+  # Critical 알림 (즉시 대응 필요)
+  # ==========================================================================
+  - name: 'critical-alerts'
+    # 이메일
+    email_configs:
+      - to: 'oncall@yourdomain.com,team@yourdomain.com'
+        headers:
+          Subject: '🚨 [CRITICAL] {{ .GroupLabels.alertname }}'
+        send_resolved: true
+
+    # Slack
+    slack_configs:
+      - channel: '#alerts-critical'
+        api_url: '{{ .CommonAnnotations.slack_webhook_url }}'
+        title: '🚨 Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+        send_resolved: true
+        color: 'danger'
+
+    # PagerDuty (선택사항)
+    # pagerduty_configs:
+    #   - service_key: 'your-pagerduty-service-key'
+    #     description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+
+  # ==========================================================================
+  # 데이터베이스 팀
+  # ==========================================================================
+  - name: 'database-team'
+    email_configs:
+      - to: 'database-team@yourdomain.com'
+        headers:
+          Subject: '[Database] {{ .GroupLabels.alertname }}'
+
+    slack_configs:
+      - channel: '#database-alerts'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Component:* {{ .Labels.component }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # ==========================================================================
+  # 워크플로우 팀 (n8n)
+  # ==========================================================================
+  - name: 'workflow-team'
+    email_configs:
+      - to: 'workflow-team@yourdomain.com'
+        headers:
+          Subject: '[Workflow] {{ .GroupLabels.alertname }}'
+
+    slack_configs:
+      - channel: '#workflow-alerts'
+        title: 'Workflow Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # ==========================================================================
+  # 인프라 팀
+  # ==========================================================================
+  - name: 'infrastructure-team'
+    email_configs:
+      - to: 'infra-team@yourdomain.com'
+        headers:
+          Subject: '[Infrastructure] {{ .GroupLabels.alertname }}'
+
+    slack_configs:
+      - channel: '#infra-alerts'
+        title: 'Infrastructure Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Instance:* {{ .Labels.instance }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # ==========================================================================
+  # 백업 팀
+  # ==========================================================================
+  - name: 'backup-team'
+    email_configs:
+      - to: 'backup-team@yourdomain.com'
+        headers:
+          Subject: '[Backup] {{ .GroupLabels.alertname }}'
+        send_resolved: true

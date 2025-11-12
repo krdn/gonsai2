@@ -9,6 +9,7 @@
     "test:connection": "ts-node features/n8n-integration/test-connection.ts",
     "test:workflow": "ts-node features/n8n-integration/test-workflow-execution.ts",
     "test:websocket": "ts-node features/n8n-integration/test-websocket.ts",
+    "test:agent": "ts-node features/agent-orchestration/tests/agent-manager.test.ts",
     "init:mongodb": "ts-node infrastructure/mongodb/scripts/initialize-db.ts",
     "test:mongodb": "ts-node infrastructure/mongodb/scripts/test-mongodb.ts",
     "server": "ts-node apps/backend/src/server.ts",
@@ -37,13 +38,19 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@types/bull": "^3.15.9",
+    "@types/cron": "^2.0.1",
+    "bull": "^4.16.5",
     "cors": "^2.8.5",
+    "cron": "^4.3.4",
     "dotenv": "^16.0.0",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
     "helmet": "^8.1.0",
+    "ioredis": "^5.8.2",
     "mongodb": "^7.0.0",
     "morgan": "^1.10.1",
+    "redis": "^5.9.0",
     "winston": "^3.18.3",
     "ws": "^8.0.0"
   },

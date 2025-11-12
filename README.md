@@ -15,18 +15,53 @@ gonsai2는 n8n 워크플로우 자동화와 MongoDB를 활용한 AI 기반 프�
 
 ```
 gonsai2/
-├── packages/              # Monorepo 패키지
-│   ├── core/             # 핵심 비즈니스 로직
-│   ├── n8n-client/       # n8n API 클라이언트
-│   ├── database/         # MongoDB 스키마 및 모델
-│   └── api/              # REST API 서버
-├── docs/                 # 프로젝트 문서화
-│   ├── architecture/     # 아키텍처 다이어그램
-│   ├── api/              # API 명세
-│   └── ai-context/       # AI 협업 컨텍스트
-├── scripts/              # 유틸리티 스크립트
-├── .github/              # GitHub Actions 워크플로우
-└── docker/               # Docker 관련 설정
+├── apps/                         # 애플리케이션 레이어
+│   └── backend/                  # Express 백엔드 서버
+│       ├── src/
+│       │   ├── middleware/       # 인증, 로깅, 에러 처리
+│       │   ├── routes/           # API 라우트
+│       │   ├── services/         # WebSocket, n8n 연동
+│       │   ├── types/            # TypeScript 타입 정의
+│       │   ├── utils/            # 환경 검증, 로거
+│       │   └── server.ts         # 서버 엔트리포인트
+│       └── README.md             # 백엔드 API 문서
+│
+├── features/                     # 기능별 모듈
+│   ├── agent-orchestration/     # AI Agent 실행 엔진
+│   │   ├── services/
+│   │   │   ├── agent-manager.service.ts
+│   │   │   ├── execution-queue.service.ts
+│   │   │   └── n8n-client.service.ts
+│   │   ├── types/
+│   │   │   └── agent.types.ts
+│   │   ├── tests/
+│   │   │   └── agent-manager.test.ts
+│   │   └── ARCHITECTURE.md       # 상세 아키텍처 문서
+│   │
+│   └── n8n-integration/          # n8n 워크플로우 연동
+│       ├── test-connection.ts
+│       ├── test-workflow-execution.ts
+│       └── test-websocket.ts
+│
+├── infrastructure/               # 인프라 레이어
+│   └── mongodb/
+│       ├── schemas/              # MongoDB 스키마 정의
+│       │   ├── workflows.schema.ts
+│       │   ├── executions.schema.ts
+│       │   ├── agents.schema.ts
+│       │   └── analytics.schema.ts
+│       └── scripts/
+│           ├── initialize-db.ts
+│           └── test-mongodb.ts
+│
+├── docs/                         # 프로젝트 문서화
+│   ├── architecture/             # 아키텍처 다이어그램
+│   ├── api/                      # API 명세
+│   └── ai-context/               # AI 협업 컨텍스트
+│
+├── scripts/                      # 유틸리티 스크립트
+├── .github/                      # GitHub Actions 워크플로우
+└── docker/                       # Docker 관련 설정
 ```
 
 ## 🔧 기술 스택
@@ -56,13 +91,26 @@ nano .env
 ```
 
 **필수 환경 변수:**
+- `N8N_BASE_URL`: n8n 서버 주소 (기본값: http://localhost:5678)
 - `N8N_API_KEY`: n8n UI에서 생성 (Settings > API)
-- `MONGODB_PASSWORD`: MongoDB superadmin 비밀번호
-- `JWT_SECRET`: 인증용 시크릿 키 생성
+- `MONGODB_URI`: MongoDB 연결 문자열
+- `REDIS_URL`: Redis 서버 주소 (Bull 큐용, 기본값: redis://localhost:6379)
 
 ```bash
-# JWT_SECRET 생성
-openssl rand -base64 32
+# .env 예시
+NODE_ENV=development
+PORT=3000
+HOST=localhost
+WS_PORT=3001
+
+N8N_BASE_URL=http://localhost:5678
+N8N_API_KEY=your-api-key-here
+N8N_WEBHOOK_SECRET=optional-webhook-secret
+
+MONGODB_URI=mongodb://superadmin:password@localhost:27017/gonsai2?authSource=admin
+REDIS_URL=redis://localhost:6379
+
+LOG_LEVEL=info
 ```
 
 ### 2. Docker 서비스 확인
@@ -70,7 +118,7 @@ openssl rand -base64 32
 기존 Docker 컨테이너가 실행 중인지 확인:
 
 ```bash
-docker ps | grep -E 'n8n|mongodb'
+docker ps | grep -E 'n8n|mongodb|redis'
 ```
 
 **실행 중이어야 하는 컨테이너:**
@@ -80,14 +128,37 @@ docker ps | grep -E 'n8n|mongodb'
 - ✅ `n8n-postgres` - PostgreSQL (내부용)
 - ✅ `n8n-redis` - Redis 큐 (내부용)
 
-### 3. 프로젝트 설치
+### 3. MongoDB 초기화
+
+```bash
+# MongoDB 스키마 및 인덱스 생성
+npm run init:mongodb
+```
+
+### 4. 프로젝트 설치 및 실행
 
 ```bash
 # 의존성 설치
 npm install
 
-# 개발 서버 시작
-npm run dev
+# 개발 서버 시작 (Express + WebSocket)
+npm run server:dev
+
+# 또는 프로덕션 모드
+npm run server
+```
+
+### 5. API 테스트
+
+```bash
+# Health Check
+curl http://localhost:3000/health
+
+# WebSocket 연결 테스트
+npm run test:websocket
+
+# Agent 실행 테스트
+npm run test:agent
 ```
 
 ## 📦 Docker 연동
@@ -217,19 +288,37 @@ function processWorkflowExecution(execution: WorkflowExecution) {
 
 ## 🧪 테스트
 
+### 통합 테스트
+
 ```bash
-# 단위 테스트
-npm test
+# n8n 연결 테스트
+npm run test:connection
 
-# 통합 테스트
-npm run test:integration
+# 워크플로우 실행 테스트
+npm run test:workflow
 
-# E2E 테스트
-npm run test:e2e
+# WebSocket 연결 테스트
+npm run test:websocket
 
-# 커버리지
-npm run test:coverage
+# MongoDB 연결 테스트
+npm run test:mongodb
+
+# Agent Manager 통합 테스트
+npm run test:agent
 ```
+
+### 테스트 시나리오
+
+**Agent Manager 테스트** (`npm run test:agent`):
+1. 워크플로우 로딩 및 캐싱
+2. AI 노드 자동 식별
+3. 파라미터 검증
+4. 워크플로우 실행 (큐 추가)
+5. 동기 실행 (executeAndWait)
+6. Agent 통계 조회
+7. 큐 관리
+8. 캐시 관리
+9. 에러 처리
 
 ## 📈 개발 워크플로우
 

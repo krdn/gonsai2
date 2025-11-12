@@ -1,0 +1,627 @@
+/**
+ * Custom CSS for Docusaurus
+ *
+ * This file contains custom styles for the documentation site.
+ */
+
+:root {
+  /* Primary Colors */
+  --ifm-color-primary: #2563eb;
+  --ifm-color-primary-dark: #1d4ed8;
+  --ifm-color-primary-darker: #1e40af;
+  --ifm-color-primary-darkest: #1e3a8a;
+  --ifm-color-primary-light: #3b82f6;
+  --ifm-color-primary-lighter: #60a5fa;
+  --ifm-color-primary-lightest: #93c5fd;
+
+  /* Font Family */
+  --ifm-font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ifm-font-family-monospace: 'Fira Code', 'JetBrains Mono', 'Consolas',
+    'Monaco', 'Courier New', monospace;
+
+  /* Code Block */
+  --ifm-code-font-size: 90%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /* Navbar */
+  --ifm-navbar-height: 60px;
+  --ifm-navbar-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ifm-navbar-background-color: #ffffff;
+
+  /* Sidebar */
+  --ifm-sidebar-width: 280px;
+
+  /* Footer */
+  --ifm-footer-background-color: #1f2937;
+  --ifm-footer-color: #e5e7eb;
+  --ifm-footer-link-color: #93c5fd;
+  --ifm-footer-link-hover-color: #dbeafe;
+
+  /* Typography */
+  --ifm-heading-font-weight: 700;
+  --ifm-font-weight-semibold: 600;
+  --ifm-font-weight-bold: 700;
+
+  /* Border Radius */
+  --ifm-global-radius: 0.375rem;
+  --ifm-button-border-radius: 0.375rem;
+  --ifm-card-border-radius: 0.5rem;
+
+  /* Spacing */
+  --ifm-spacing-horizontal: 1.5rem;
+  --ifm-spacing-vertical: 1.5rem;
+}
+
+/* Dark Mode Colors */
+[data-theme='dark'] {
+  --ifm-color-primary: #3b82f6;
+  --ifm-color-primary-dark: #2563eb;
+  --ifm-color-primary-darker: #1d4ed8;
+  --ifm-color-primary-darkest: #1e40af;
+  --ifm-color-primary-light: #60a5fa;
+  --ifm-color-primary-lighter: #93c5fd;
+  --ifm-color-primary-lightest: #bfdbfe;
+
+  --ifm-background-color: #111827;
+  --ifm-background-surface-color: #1f2937;
+
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.1);
+
+  --ifm-navbar-background-color: #1f2937;
+  --ifm-navbar-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+
+  --ifm-footer-background-color: #111827;
+}
+
+/* ============================================ */
+/* Global Styles */
+/* ============================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ============================================ */
+/* Typography */
+/* ============================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--ifm-heading-font-weight);
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+  line-height: 1.3;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  padding-bottom: 0.5rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  line-height: 1.75;
+}
+
+/* ============================================ */
+/* Code Blocks */
+/* ============================================ */
+
+code {
+  background-color: var(--ifm-color-emphasis-200);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875em;
+  font-family: var(--ifm-font-family-monospace);
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.prism-code {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  border-radius: var(--ifm-global-radius);
+}
+
+/* Highlighted Code Line */
+.theme-code-block-highlighted-line {
+  background-color: var(--docusaurus-highlighted-code-line-bg);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+  border-left: 3px solid var(--ifm-color-primary);
+}
+
+/* Code Block Title */
+.prism-code[title] {
+  padding-top: 3rem;
+}
+
+div[class*='codeBlockTitle'] {
+  background-color: var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-emphasis-800);
+  font-weight: var(--ifm-font-weight-semibold);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  border-top-left-radius: var(--ifm-global-radius);
+  border-top-right-radius: var(--ifm-global-radius);
+}
+
+[data-theme='dark'] div[class*='codeBlockTitle'] {
+  background-color: #374151;
+  color: #e5e7eb;
+  border-bottom-color: #4b5563;
+}
+
+/* ============================================ */
+/* Links */
+/* ============================================ */
+
+a {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.markdown a:not(.hash-link) {
+  color: var(--ifm-color-primary);
+  font-weight: 500;
+}
+
+.markdown a:not(.hash-link):hover {
+  color: var(--ifm-color-primary-dark);
+}
+
+/* ============================================ */
+/* Tables */
+/* ============================================ */
+
+table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+table thead {
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+table thead tr th {
+  font-weight: var(--ifm-font-weight-semibold);
+  text-align: left;
+  border-bottom: 2px solid var(--ifm-color-emphasis-300);
+  padding: 0.75rem 1rem;
+}
+
+table tbody tr td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+table tbody tr:hover {
+  background-color: var(--ifm-color-emphasis-50);
+}
+
+[data-theme='dark'] table thead {
+  background-color: #374151;
+}
+
+[data-theme='dark'] table tbody tr:hover {
+  background-color: #1f2937;
+}
+
+/* ============================================ */
+/* Admonitions */
+/* ============================================ */
+
+.admonition {
+  margin: 1.5rem 0;
+  border-radius: var(--ifm-global-radius);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.admonition-heading {
+  font-weight: var(--ifm-font-weight-semibold);
+}
+
+/* Note */
+.admonition-note {
+  border-left: 4px solid #3b82f6;
+}
+
+/* Tip */
+.admonition-tip {
+  border-left: 4px solid #10b981;
+}
+
+/* Warning */
+.admonition-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+/* Danger */
+.admonition-danger {
+  border-left: 4px solid #ef4444;
+}
+
+/* ============================================ */
+/* Navbar */
+/* ============================================ */
+
+.navbar {
+  box-shadow: var(--ifm-navbar-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.navbar__title {
+  font-weight: var(--ifm-font-weight-bold);
+}
+
+.navbar__link {
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.navbar__link:hover {
+  color: var(--ifm-color-primary);
+}
+
+/* ============================================ */
+/* Sidebar */
+/* ============================================ */
+
+.menu {
+  padding: 1rem;
+}
+
+.menu__link {
+  border-radius: var(--ifm-global-radius);
+  transition: all 0.2s ease;
+}
+
+.menu__link:hover {
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+.menu__link--active {
+  background-color: var(--ifm-color-primary-lighter);
+  color: var(--ifm-color-primary-darkest);
+  font-weight: var(--ifm-font-weight-semibold);
+}
+
+[data-theme='dark'] .menu__link--active {
+  background-color: var(--ifm-color-primary-dark);
+  color: #ffffff;
+}
+
+.menu__list-item-collapsible:hover {
+  background-color: transparent;
+}
+
+/* ============================================ */
+/* TOC (Table of Contents) */
+/* ============================================ */
+
+.table-of-contents {
+  font-size: 0.875rem;
+}
+
+.table-of-contents__link {
+  color: var(--ifm-color-emphasis-700);
+  transition: color 0.2s ease;
+}
+
+.table-of-contents__link:hover {
+  color: var(--ifm-color-primary);
+}
+
+.table-of-contents__link--active {
+  color: var(--ifm-color-primary);
+  font-weight: var(--ifm-font-weight-semibold);
+  border-left: 2px solid var(--ifm-color-primary);
+}
+
+/* ============================================ */
+/* Footer */
+/* ============================================ */
+
+.footer {
+  padding: 3rem 0;
+}
+
+.footer__title {
+  font-weight: var(--ifm-font-weight-semibold);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.footer__link-item {
+  transition: color 0.2s ease;
+}
+
+.footer__link-item:hover {
+  color: var(--ifm-footer-link-hover-color);
+  text-decoration: none;
+}
+
+/* ============================================ */
+/* Buttons */
+/* ============================================ */
+
+.button {
+  border-radius: var(--ifm-button-border-radius);
+  font-weight: var(--ifm-font-weight-semibold);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.button--primary {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}
+
+.button--primary:hover {
+  background-color: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-dark);
+}
+
+/* ============================================ */
+/* Cards */
+/* ============================================ */
+
+.card {
+  border-radius: var(--ifm-card-border-radius);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ============================================ */
+/* Pagination */
+/* ============================================ */
+
+.pagination-nav {
+  margin-top: 3rem;
+}
+
+.pagination-nav__link {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  transition: all 0.2s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+/* ============================================ */
+/* Search */
+/* ============================================ */
+
+.DocSearch-Button {
+  border-radius: var(--ifm-global-radius);
+  transition: all 0.2s ease;
+}
+
+.DocSearch-Button:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================ */
+/* Custom Components */
+/* ============================================ */
+
+/* Feature Cards */
+.feature-card {
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: var(--ifm-card-border-radius);
+  transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.feature-card__icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--ifm-color-primary);
+}
+
+.feature-card__title {
+  font-size: 1.25rem;
+  font-weight: var(--ifm-font-weight-semibold);
+  margin-bottom: 0.5rem;
+}
+
+.feature-card__description {
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.6;
+}
+
+/* API Method Badges */
+.api-method {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: var(--ifm-font-weight-bold);
+  text-transform: uppercase;
+  font-family: var(--ifm-font-family-monospace);
+}
+
+.api-method--get {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.api-method--post {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.api-method--put {
+  background-color: #f59e0b;
+  color: #ffffff;
+}
+
+.api-method--patch {
+  background-color: #8b5cf6;
+  color: #ffffff;
+}
+
+.api-method--delete {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: var(--ifm-font-weight-semibold);
+}
+
+.status-badge--success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge--error {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge--warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+[data-theme='dark'] .status-badge--success {
+  background-color: #065f46;
+  color: #d1fae5;
+}
+
+[data-theme='dark'] .status-badge--error {
+  background-color: #991b1b;
+  color: #fee2e2;
+}
+
+[data-theme='dark'] .status-badge--warning {
+  background-color: #92400e;
+  color: #fef3c7;
+}
+
+[data-theme='dark'] .status-badge--info {
+  background-color: #1e40af;
+  color: #dbeafe;
+}
+
+/* ============================================ */
+/* Responsive */
+/* ============================================ */
+
+@media (max-width: 996px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.375rem;
+  }
+
+  .feature-card {
+    padding: 1rem;
+  }
+}
+
+/* ============================================ */
+/* Utilities */
+/* ============================================ */
+
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: 2rem;
+}
+
+.mb-4 {
+  margin-bottom: 2rem;
+}
+
+.p-4 {
+  padding: 2rem;
+}
+
+/* ============================================ */
+/* Print Styles */
+/* ============================================ */
+
+@media print {
+  .navbar,
+  .footer,
+  .pagination-nav,
+  .table-of-contents,
+  .theme-doc-sidebar-container {
+    display: none;
+  }
+
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+}

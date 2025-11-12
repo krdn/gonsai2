@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # n8n test instance
+  n8n-test:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n-test
+    ports:
+      - '5679:5678'
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5679/
+      - GENERIC_TIMEZONE=UTC
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres-test
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n_test
+      - DB_POSTGRESDB_USER=n8n_test
+      - DB_POSTGRESDB_PASSWORD=test_password
+      - EXECUTIONS_MODE=regular
+      - N8N_LOG_LEVEL=debug
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --spider -q http://localhost:5678/healthz || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PostgreSQL for n8n test
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: postgres-test
+    environment:
+      - POSTGRES_USER=n8n_test
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_DB=n8n_test
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U n8n_test']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-test-data:
+
+networks:
+  test-network:
+    driver: bridge

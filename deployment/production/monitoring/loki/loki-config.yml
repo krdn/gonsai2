@@ -1,0 +1,124 @@
+# =============================================================================
+# Loki 설정
+# =============================================================================
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info
+
+# 수집 설정
+ingester:
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+  chunk_idle_period: 5m
+  chunk_retain_period: 30s
+  max_chunk_age: 1h
+  chunk_target_size: 1048576
+  chunk_encoding: snappy
+  wal:
+    enabled: true
+    dir: /loki/wal
+
+# 스키마 설정
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+# 스토리지 설정
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/boltdb-shipper-active
+    cache_location: /loki/boltdb-shipper-cache
+    cache_ttl: 24h
+    shared_store: filesystem
+  filesystem:
+    directory: /loki/chunks
+
+# 압축 설정
+compactor:
+  working_directory: /loki/compactor
+  shared_store: filesystem
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+
+# 제한 설정
+limits_config:
+  # 수집 제한
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  ingestion_rate_mb: 10
+  ingestion_burst_size_mb: 20
+
+  # 쿼리 제한
+  max_query_length: 721h
+  max_query_parallelism: 32
+  max_streams_per_user: 0
+  max_global_streams_per_user: 5000
+
+  # 레이블 제한
+  max_label_name_length: 1024
+  max_label_value_length: 2048
+  max_label_names_per_series: 30
+
+  # 보관 기간 (30일)
+  retention_period: 720h
+
+  # Per-stream rate limits
+  per_stream_rate_limit: 3MB
+  per_stream_rate_limit_burst: 15MB
+
+# 쿼리 프론트엔드
+query_range:
+  align_queries_with_step: true
+  max_retries: 5
+  cache_results: true
+  results_cache:
+    cache:
+      enable_fifocache: true
+      fifocache:
+        max_size_items: 1024
+        validity: 24h
+
+# 쿼리 스케줄러
+query_scheduler:
+  max_outstanding_requests_per_tenant: 256
+
+# Ruler (알림 및 기록 규칙)
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /loki/rules
+  rule_path: /loki/rules-temp
+  alertmanager_url: http://alertmanager:9093
+  ring:
+    kvstore:
+      store: inmemory
+  enable_api: true
+  enable_alertmanager_v2: true
+
+# 테이블 관리자
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 720h
+
+# Analytics
+analytics:
+  reporting_enabled: false

@@ -1,0 +1,961 @@
+openapi: 3.1.0
+info:
+  title: n8n Workflow Management API
+  version: 1.0.0
+  description: |
+    Next.js 15 기반 n8n 워크플로우 관리 API
+
+    ## 인증
+
+    모든 API 요청은 다음 중 하나의 인증 방법을 사용해야 합니다:
+
+    - **API Key**: `X-N8N-API-KEY` 헤더에 API 키 포함
+    - **JWT Bearer Token**: `Authorization: Bearer <token>` 헤더에 JWT 토큰 포함
+
+    ## Rate Limiting
+
+    - IP 기반: 60 requests/minute
+    - API Key 기반: 300 requests/minute
+
+    ## 에러 응답
+
+    모든 에러 응답은 다음 형식을 따릅니다:
+
+    ```json
+    {
+      "error": {
+        "code": "ERROR_CODE",
+        "message": "Error message",
+        "details": {}
+      }
+    }
+    ```
+
+  contact:
+    name: API Support
+    email: dev@example.com
+    url: https://github.com/your-org/your-repo
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: 인증 관련 API
+  - name: Workflows
+    description: 워크플로우 관리 API
+  - name: Executions
+    description: 실행 내역 API
+  - name: Webhooks
+    description: Webhook 관리 API
+  - name: Credentials
+    description: 인증 정보 관리 API
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-N8N-API-KEY
+      description: n8n API Key
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer Token
+
+  schemas:
+    # Common Schemas
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Validation failed
+            details:
+              type: object
+              additionalProperties: true
+
+    PaginationParams:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: Number of items per page
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of items to skip
+
+    # Workflow Schemas
+    Workflow:
+      type: object
+      required:
+        - id
+        - name
+        - active
+        - nodes
+        - connections
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Workflow unique identifier
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Workflow name
+        active:
+          type: boolean
+          description: Whether the workflow is active
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        connections:
+          type: object
+          description: Node connections
+          additionalProperties: true
+        settings:
+          $ref: '#/components/schemas/WorkflowSettings'
+        staticData:
+          type: object
+          description: Static data stored between executions
+          additionalProperties: true
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkflowNode:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - position
+        - parameters
+      properties:
+        id:
+          type: string
+          description: Node unique identifier
+        name:
+          type: string
+          description: Node display name
+        type:
+          type: string
+          description: Node type (e.g., n8n-nodes-base.httpRequest)
+        typeVersion:
+          type: integer
+          default: 1
+        position:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+          description: Node position [x, y]
+        parameters:
+          type: object
+          description: Node parameters
+          additionalProperties: true
+        credentials:
+          type: object
+          description: Credential mappings
+          additionalProperties:
+            type: string
+        disabled:
+          type: boolean
+          default: false
+        notes:
+          type: string
+        notesInFlow:
+          type: boolean
+
+    WorkflowSettings:
+      type: object
+      properties:
+        executionOrder:
+          type: string
+          enum: [v0, v1]
+          default: v1
+        saveDataErrorExecution:
+          type: string
+          enum: [all, none]
+          default: all
+        saveDataSuccessExecution:
+          type: string
+          enum: [all, none]
+          default: all
+        saveManualExecutions:
+          type: boolean
+          default: true
+        timezone:
+          type: string
+          default: UTC
+
+    CreateWorkflowRequest:
+      type: object
+      required:
+        - name
+        - nodes
+        - connections
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        connections:
+          type: object
+          additionalProperties: true
+        active:
+          type: boolean
+          default: false
+        settings:
+          $ref: '#/components/schemas/WorkflowSettings'
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateWorkflowRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        active:
+          type: boolean
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        connections:
+          type: object
+          additionalProperties: true
+        settings:
+          $ref: '#/components/schemas/WorkflowSettings'
+        tags:
+          type: array
+          items:
+            type: string
+
+    # Execution Schemas
+    Execution:
+      type: object
+      required:
+        - id
+        - workflowId
+        - mode
+        - startedAt
+        - status
+        - finished
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflowId:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [manual, trigger, webhook, error]
+        startedAt:
+          type: string
+          format: date-time
+        stoppedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [running, success, error, waiting]
+        finished:
+          type: boolean
+        retryOf:
+          type: string
+          format: uuid
+        retrySuccessId:
+          type: string
+          format: uuid
+        error:
+          $ref: '#/components/schemas/ExecutionError'
+        data:
+          type: object
+          description: Execution data
+          additionalProperties: true
+
+    ExecutionError:
+      type: object
+      properties:
+        message:
+          type: string
+        node:
+          type: string
+        stack:
+          type: string
+        level:
+          type: string
+          enum: [warning, error]
+
+    ExecuteWorkflowRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          description: Input data for the workflow
+          additionalProperties: true
+
+    # Authentication Schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+        - user
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token (expires in 7 days)
+        refreshToken:
+          type: string
+          description: JWT refresh token (expires in 30 days)
+        user:
+          $ref: '#/components/schemas/User'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+
+    # Credential Schemas
+    Credential:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+        data:
+          type: object
+          description: Encrypted credential data
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and return JWT tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Get a new access token using refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Workflow Endpoints
+  /workflows:
+    get:
+      tags:
+        - Workflows
+      summary: List all workflows
+      description: Get a list of all workflows with optional filtering
+      operationId: getWorkflows
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: active
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter by tags
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                  total:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Workflows
+      summary: Create a new workflow
+      description: Create a new workflow with the provided configuration
+      operationId: createWorkflow
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /workflows/{id}:
+    get:
+      tags:
+        - Workflows
+      summary: Get a workflow by ID
+      description: Retrieve a specific workflow by its ID
+      operationId: getWorkflow
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Workflow'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - Workflows
+      summary: Update a workflow
+      description: Update an existing workflow
+      operationId: updateWorkflow
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Workflows
+      summary: Delete a workflow
+      description: Delete a workflow by its ID
+      operationId: deleteWorkflow
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow deleted successfully
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /workflows/{id}/execute:
+    post:
+      tags:
+        - Workflows
+      summary: Execute a workflow
+      description: Trigger a manual execution of a workflow
+      operationId: executeWorkflow
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteWorkflowRequest'
+      responses:
+        '200':
+          description: Execution started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Execution'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Execution Endpoints
+  /executions:
+    get:
+      tags:
+        - Executions
+      summary: List executions
+      description: Get a list of workflow executions with optional filtering
+      operationId: getExecutions
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: workflowId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by workflow ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [running, success, error, waiting]
+          description: Filter by execution status
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Execution'
+                  total:
+                    type: integer
+
+  /executions/{id}:
+    get:
+      tags:
+        - Executions
+      summary: Get an execution by ID
+      description: Retrieve details of a specific execution
+      operationId: getExecution
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Execution'
+        '404':
+          description: Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /executions/{id}/stop:
+    post:
+      tags:
+        - Executions
+      summary: Stop a running execution
+      description: Stop a currently running workflow execution
+      operationId: stopExecution
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Execution'
+        '404':
+          description: Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /executions/{id}/retry:
+    post:
+      tags:
+        - Executions
+      summary: Retry a failed execution
+      description: Retry a failed workflow execution
+      operationId: retryExecution
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution retried successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Execution'
+        '404':
+          description: Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Credential Endpoints
+  /credentials:
+    get:
+      tags:
+        - Credentials
+      summary: List all credentials
+      description: Get a list of all stored credentials
+      operationId: getCredentials
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Credential'
+
+  /credentials/{id}:
+    get:
+      tags:
+        - Credentials
+      summary: Get a credential by ID
+      description: Retrieve a specific credential by its ID
+      operationId: getCredential
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Credential'
+        '404':
+          description: Credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Credentials
+      summary: Delete a credential
+      description: Delete a credential by its ID
+      operationId: deleteCredential
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Credential deleted successfully
+        '404':
+          description: Credential not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

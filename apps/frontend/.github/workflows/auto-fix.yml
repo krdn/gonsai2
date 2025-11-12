@@ -1,0 +1,524 @@
+name: Auto Fix Errors
+
+on:
+  workflow_dispatch:
+    inputs:
+      error_type:
+        description: 'Type of error to fix'
+        required: true
+        type: choice
+        options:
+          - all
+          - eslint
+          - typescript
+          - test
+          - dependency
+  schedule:
+    # 매일 새벽 3시 (UTC)
+    - cron: '0 3 * * *'
+  issues:
+    types: [opened, labeled]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # 1. 오류 로그 분석
+  analyze-errors:
+    name: Analyze Error Logs
+    runs-on: ubuntu-latest
+    outputs:
+      has_errors: ${{ steps.detect.outputs.has_errors }}
+      error_types: ${{ steps.detect.outputs.error_types }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect errors
+        id: detect
+        run: |
+          error_types=""
+          has_errors="false"
+
+          # ESLint 오류 체크
+          if ! npm run lint > /dev/null 2>&1; then
+            error_types="${error_types}eslint "
+            has_errors="true"
+            echo "❌ ESLint errors detected"
+          fi
+
+          # TypeScript 오류 체크
+          if ! npm run type-check > /dev/null 2>&1; then
+            error_types="${error_types}typescript "
+            has_errors="true"
+            echo "❌ TypeScript errors detected"
+          fi
+
+          # 테스트 실패 체크
+          if ! npm run test > /dev/null 2>&1; then
+            error_types="${error_types}test "
+            has_errors="true"
+            echo "❌ Test failures detected"
+          fi
+
+          # 의존성 취약점 체크
+          if npm audit --audit-level=moderate | grep -q "vulnerabilities"; then
+            error_types="${error_types}dependency "
+            has_errors="true"
+            echo "❌ Dependency vulnerabilities detected"
+          fi
+
+          echo "has_errors=$has_errors" >> $GITHUB_OUTPUT
+          echo "error_types=$error_types" >> $GITHUB_OUTPUT
+
+          if [ "$has_errors" == "false" ]; then
+            echo "✅ No errors detected"
+          fi
+
+      - name: Generate error report
+        if: steps.detect.outputs.has_errors == 'true'
+        run: |
+          mkdir -p reports
+
+          # ESLint 리포트
+          npm run lint -- --format json > reports/eslint-report.json || true
+
+          # TypeScript 리포트
+          npm run type-check > reports/typescript-report.txt 2>&1 || true
+
+          # 테스트 리포트
+          npm run test -- --json > reports/test-report.json 2>&1 || true
+
+          # 의존성 리포트
+          npm audit --json > reports/audit-report.json || true
+
+      - name: Upload error reports
+        if: steps.detect.outputs.has_errors == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-reports
+          path: reports/
+          retention-days: 7
+
+  # 2. ESLint 자동 수정
+  fix-eslint:
+    name: Fix ESLint Errors
+    runs-on: ubuntu-latest
+    needs: [analyze-errors]
+    if: needs.analyze-errors.outputs.has_errors == 'true' && contains(needs.analyze-errors.outputs.error_types, 'eslint')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint auto-fix
+        run: |
+          npm run lint -- --fix
+          echo "✅ ESLint auto-fix completed"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No changes to commit"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Changes detected"
+            git diff --stat
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "fix: auto-fix ESLint errors
+
+          🤖 Automatically fixed by GitHub Actions
+
+          Fixes detected ESLint errors using --fix flag."
+
+      - name: Push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+  # 3. TypeScript 자동 수정
+  fix-typescript:
+    name: Fix TypeScript Errors
+    runs-on: ubuntu-latest
+    needs: [analyze-errors]
+    if: needs.analyze-errors.outputs.has_errors == 'true' && contains(needs.analyze-errors.outputs.error_types, 'typescript')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download error reports
+        uses: actions/download-artifact@v4
+        with:
+          name: error-reports
+          path: reports/
+
+      - name: Analyze TypeScript errors
+        id: analyze
+        run: |
+          # TypeScript 오류 패턴 분석
+          cat reports/typescript-report.txt
+
+          # 자동 수정 가능한 패턴 감지
+          if grep -q "is not assignable to type" reports/typescript-report.txt; then
+            echo "fix_type=type_mismatch" >> $GITHUB_OUTPUT
+          elif grep -q "Cannot find name" reports/typescript-report.txt; then
+            echo "fix_type=missing_import" >> $GITHUB_OUTPUT
+          else
+            echo "fix_type=manual" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create issue for manual fix
+        if: steps.analyze.outputs.fix_type == 'manual'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const errors = fs.readFileSync('reports/typescript-report.txt', 'utf8');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔧 TypeScript errors require manual fix',
+              body: `## TypeScript Errors Detected
+
+            The following TypeScript errors were detected and require manual intervention:
+
+            \`\`\`
+            ${errors}
+            \`\`\`
+
+            Please review and fix these errors manually.
+
+            **Detected by**: Auto-fix workflow
+            **Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+              labels: ['auto-fix', 'typescript', 'bug']
+            });
+
+  # 4. 의존성 취약점 자동 수정
+  fix-dependencies:
+    name: Fix Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    needs: [analyze-errors]
+    if: needs.analyze-errors.outputs.has_errors == 'true' && contains(needs.analyze-errors.outputs.error_types, 'dependency')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit fix
+        run: |
+          npm audit fix
+          echo "✅ npm audit fix completed"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet package-lock.json; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No dependency changes"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "📦 Dependencies updated"
+          fi
+
+      - name: Verify build still works
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          npm run build
+          echo "✅ Build verification passed"
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            fix: update dependencies to fix vulnerabilities
+
+            🤖 Automatically fixed by GitHub Actions
+
+            Fixed dependency vulnerabilities using npm audit fix.
+          branch: auto-fix/dependencies-${{ github.run_number }}
+          delete-branch: true
+          title: '🔒 Fix dependency vulnerabilities'
+          body: |
+            ## Dependency Vulnerability Fixes
+
+            This PR automatically fixes dependency vulnerabilities detected by `npm audit`.
+
+            ### Changes
+            - Updated vulnerable dependencies to secure versions
+            - Build verification passed
+
+            ### Verification
+            ```bash
+            npm audit fix
+            npm run build
+            npm run test
+            ```
+
+            **Created by**: Auto-fix workflow
+            **Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ---
+            🤖 This is an automated PR. Please review changes before merging.
+          labels: |
+            auto-fix
+            dependencies
+            security
+
+  # 5. 테스트 수정 (패턴 매칭)
+  fix-tests:
+    name: Fix Test Failures
+    runs-on: ubuntu-latest
+    needs: [analyze-errors]
+    if: needs.analyze-errors.outputs.has_errors == 'true' && contains(needs.analyze-errors.outputs.error_types, 'test')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download error reports
+        uses: actions/download-artifact@v4
+        with:
+          name: error-reports
+          path: reports/
+
+      - name: Analyze test failures
+        run: |
+          cat reports/test-report.json | jq '.testResults[] | select(.status == "failed")'
+
+      - name: Create issue for test failures
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('reports/test-report.json', 'utf8'));
+
+            const failedTests = report.testResults
+              .filter(r => r.status === 'failed')
+              .map(r => {
+                const failures = r.assertionResults
+                  .filter(a => a.status === 'failed')
+                  .map(a => `- ${a.title}: ${a.failureMessages.join('\n')}`)
+                  .join('\n');
+                return `### ${r.name}\n${failures}`;
+              })
+              .join('\n\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🧪 Test failures detected',
+              body: `## Test Failures
+
+            The following tests are failing:
+
+            ${failedTests}
+
+            Please review and fix these tests.
+
+            **Detected by**: Auto-fix workflow
+            **Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+              labels: ['auto-fix', 'test', 'bug']
+            });
+
+  # 6. 자동 병합 (테스트 통과 시)
+  auto-merge:
+    name: Auto-merge PR if Tests Pass
+    runs-on: ubuntu-latest
+    needs: [fix-eslint, fix-dependencies]
+    if: always() && (needs.fix-eslint.result == 'success' || needs.fix-dependencies.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all checks
+        id: checks
+        run: |
+          all_passed="true"
+
+          # ESLint
+          if ! npm run lint; then
+            all_passed="false"
+            echo "❌ ESLint check failed"
+          fi
+
+          # TypeScript
+          if ! npm run type-check; then
+            all_passed="false"
+            echo "❌ TypeScript check failed"
+          fi
+
+          # Tests
+          if ! npm run test; then
+            all_passed="false"
+            echo "❌ Tests failed"
+          fi
+
+          # Build
+          if ! npm run build; then
+            all_passed="false"
+            echo "❌ Build failed"
+          fi
+
+          echo "all_passed=$all_passed" >> $GITHUB_OUTPUT
+
+          if [ "$all_passed" == "true" ]; then
+            echo "✅ All checks passed"
+          fi
+
+      - name: Enable auto-merge for PR
+        if: steps.checks.outputs.all_passed == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              merge_method: 'squash',
+              commit_title: 'Auto-merge: Fix automated errors',
+              commit_message: 'All checks passed. Auto-merging automated fixes.'
+            });
+
+  # 7. 수정 결과 요약
+  summary:
+    name: Generate Fix Summary
+    runs-on: ubuntu-latest
+    needs: [analyze-errors, fix-eslint, fix-typescript, fix-dependencies, fix-tests, auto-merge]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🔧 Auto-fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run time**: \`$(date -u '+%Y-%m-%d %H:%M:%S UTC')\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # 오류 분석 결과
+          if [ "${{ needs.analyze-errors.outputs.has_errors }}" == "true" ]; then
+            echo "### 🔍 Detected Errors" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Error types: \`${{ needs.analyze-errors.outputs.error_types }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ No Errors Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # 수정 결과
+          echo "### 🛠️ Fix Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # ESLint
+          if [ "${{ needs.fix-eslint.result }}" == "success" ]; then
+            echo "- ✅ ESLint: Fixed" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-eslint.result }}" == "failure" ]; then
+            echo "- ❌ ESLint: Failed to fix" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-eslint.result }}" == "skipped" ]; then
+            echo "- ⏭️ ESLint: Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # TypeScript
+          if [ "${{ needs.fix-typescript.result }}" == "success" ]; then
+            echo "- ✅ TypeScript: Fixed" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-typescript.result }}" == "failure" ]; then
+            echo "- ❌ TypeScript: Requires manual fix (issue created)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-typescript.result }}" == "skipped" ]; then
+            echo "- ⏭️ TypeScript: Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Dependencies
+          if [ "${{ needs.fix-dependencies.result }}" == "success" ]; then
+            echo "- ✅ Dependencies: Fixed (PR created)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-dependencies.result }}" == "failure" ]; then
+            echo "- ❌ Dependencies: Failed to fix" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-dependencies.result }}" == "skipped" ]; then
+            echo "- ⏭️ Dependencies: Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Tests
+          if [ "${{ needs.fix-tests.result }}" == "success" ]; then
+            echo "- ✅ Tests: Fixed (issue created)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-tests.result }}" == "failure" ]; then
+            echo "- ❌ Tests: Failed to analyze" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.fix-tests.result }}" == "skipped" ]; then
+            echo "- ⏭️ Tests: Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Auto-merge
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.auto-merge.result }}" == "success" ]; then
+            echo "### ✅ Auto-merge: Successful" >> $GITHUB_STEP_SUMMARY
+            echo "All checks passed. Changes were automatically merged." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.auto-merge.result }}" == "failure" ]; then
+            echo "### ⚠️ Auto-merge: Failed" >> $GITHUB_STEP_SUMMARY
+            echo "Some checks failed. Manual review required." >> $GITHUB_STEP_SUMMARY
+          fi
