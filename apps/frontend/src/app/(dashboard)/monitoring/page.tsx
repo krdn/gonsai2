@@ -8,14 +8,14 @@ import {
   MetricsCharts,
   NotificationCenter,
 } from '@/components/monitoring';
-import { getSocketClient } from '@/lib/socket-client';
+import { getWebSocketClient } from '@/lib/websocket';
 
 export default function MonitoringPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
 
   useEffect(() => {
-    const socket = getSocketClient();
+    const socket = getWebSocketClient();
 
     const connectToSocket = async () => {
       try {
@@ -23,7 +23,7 @@ export default function MonitoringPage() {
         setIsConnected(socket.isConnected());
         setIsConnecting(false);
       } catch (error) {
-        console.error('[Monitoring] Socket connection failed:', error);
+        console.error('[Monitoring] WebSocket connection failed:', error);
         setIsConnected(false);
         setIsConnecting(false);
       }
