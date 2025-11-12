@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChevronDown, LogOut, User as UserIcon } from 'lucide-react';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +80,7 @@ export function UserMenu() {
           <button
             onClick={() => {
               setIsOpen(false);
-              // TODO: 프로필 페이지로 이동
+              router.push('/profile');
             }}
             className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >

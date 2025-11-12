@@ -24,6 +24,7 @@ import healthRoutes from './routes/health.routes';
 import webhookRoutes from './routes/webhook.routes';
 import workflowsRoutes from './routes/workflows.routes';
 import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
 
 /**
  * Express 애플리케이션 생성
@@ -50,6 +51,7 @@ function createApp(): Application {
   app.use('/webhooks', webhookRoutes);
   app.use('/api/workflows', workflowsRoutes);
   app.use('/api/auth', authRoutes); // 인증 라우트
+  app.use('/api/users', userRoutes); // 사용자 프로필 라우트
 
   // 404 처리
   app.use(notFoundHandler);
