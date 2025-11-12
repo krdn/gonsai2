@@ -266,7 +266,7 @@ export default function WorkflowsPage() {
                     )}
                   </button>
                   <a
-                    href={`http://localhost:5678/workflow/${workflow.id}`}
+                    href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/workflow/${workflow.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"

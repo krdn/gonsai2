@@ -338,7 +338,7 @@ export default function ExecutionsPage() {
                       )}
                     </button>
                     <a
-                      href={`http://localhost:5678/execution/${execution.id}`}
+                      href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/execution/${execution.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
