@@ -13,16 +13,18 @@ import { log } from '../utils/logger';
 /**
  * JWT 시크릿 키 (환경 변수에서 가져옴)
  */
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_SECRET_ENV = process.env.JWT_SECRET;
 
 // JWT_SECRET 필수 검증
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
+if (!JWT_SECRET_ENV || JWT_SECRET_ENV.length < 32) {
   throw new Error(
     'CRITICAL SECURITY ERROR: JWT_SECRET must be set in environment variables and be at least 32 characters long. ' +
-    'Generate with: openssl rand -base64 32'
+      'Generate with: openssl rand -base64 32'
   );
 }
+
+// TypeScript를 위한 const assertion (validation 통과 후 string 타입 보장)
+const JWT_SECRET: string = JWT_SECRET_ENV;
 
 /**
  * JWT 페이로드 인터페이스
@@ -65,9 +67,10 @@ class AuthService {
       email,
     };
 
+    // jsonwebtoken의 StringValue 브랜드 타입 이슈를 우회하기 위해 any 캐스팅 사용
     return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
-    });
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    } as any);
   }
 
   /**

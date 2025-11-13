@@ -8,6 +8,7 @@
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_KEY = process.env.NEXT_PUBLIC_N8N_API_KEY || '';
 
 /**
  * API 클라이언트 에러 클래스
@@ -25,11 +26,12 @@ export class ApiClientError extends Error {
 
 /**
  * HTTP 헤더 생성
- * 인증은 백엔드에서 처리 (서버측 n8n API 키 사용)
+ * X-API-Key 헤더를 포함하여 백엔드 인증 처리
  */
 function getHeaders(customHeaders: HeadersInit = {}): HeadersInit {
   return {
     'Content-Type': 'application/json',
+    'X-API-Key': API_KEY,
     ...customHeaders,
   };
 }
@@ -37,10 +39,7 @@ function getHeaders(customHeaders: HeadersInit = {}): HeadersInit {
 /**
  * Fetch 래퍼 함수 - 공통 에러 처리
  */
-async function fetchWithErrorHandling<T = any>(
-  url: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   try {
     const response = await fetch(url, {
       ...options,
@@ -61,9 +60,7 @@ async function fetchWithErrorHandling<T = any>(
     if (error instanceof ApiClientError) {
       throw error;
     }
-    throw new Error(
-      error instanceof Error ? error.message : 'Unknown error occurred'
-    );
+    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
   }
 }
 
@@ -94,9 +91,7 @@ export const workflowsApi = {
    * 워크플로우 실행 기록 조회
    */
   executions: (id: string, limit: number = 10) =>
-    fetchWithErrorHandling(
-      `${API_URL}/api/workflows/${id}/executions?limit=${limit}`
-    ),
+    fetchWithErrorHandling(`${API_URL}/api/workflows/${id}/executions?limit=${limit}`),
 };
 
 /**
@@ -112,9 +107,7 @@ export const executionsApi = {
    * 워크플로우별 실행 기록 조회
    */
   listByWorkflow: (workflowId: string, limit: number = 10) =>
-    fetchWithErrorHandling(
-      `${API_URL}/api/workflows/${workflowId}/executions?limit=${limit}`
-    ),
+    fetchWithErrorHandling(`${API_URL}/api/workflows/${workflowId}/executions?limit=${limit}`),
 };
 
 /**

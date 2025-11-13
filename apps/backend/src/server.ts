@@ -10,15 +10,19 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { createServer, Server as HTTPServer } from 'http';
+import swaggerUi from 'swagger-ui-express';
 import { envConfig, printConfig } from './utils/env-validator';
 import { log } from './utils/logger';
 import {
   requestLogger,
   errorHandler,
   notFoundHandler,
+  correlationIdMiddleware,
 } from './middleware';
 import { websocketService } from './services/websocket.service';
 import { databaseService } from './services/database.service';
+import { cacheService } from './services/cache.service';
+import { swaggerSpec } from './config/swagger.config';
 
 // Routes
 import healthRoutes from './routes/health.routes';
@@ -34,21 +38,23 @@ function createApp(): Application {
   const app = express();
 
   // 보안 헤더 (강화 설정)
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
       },
-    },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  }));
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+    })
+  );
 
   // Rate Limiting (DDoS 방어)
   const limiter = rateLimit({
@@ -68,18 +74,42 @@ function createApp(): Application {
   });
 
   // CORS 설정
-  app.use(cors({
-    origin: envConfig.NODE_ENV === 'production'
-      ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
-      : '*',
-    credentials: true,
-  }));
+  app.use(
+    cors({
+      origin:
+        envConfig.NODE_ENV === 'production'
+          ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
+          : '*',
+      credentials: true,
+    })
+  );
 
   // Body 파싱 (크기 제한)
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser());
+
+  // Correlation ID 미들웨어 (로깅 전에 적용)
+  app.use(correlationIdMiddleware);
   app.use(requestLogger);
+
+  // Swagger UI (개발 환경에서만)
+  if (envConfig.NODE_ENV !== 'production') {
+    app.use(
+      '/api-docs',
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerSpec, {
+        explorer: true,
+        customSiteTitle: 'Gonsai2 API Documentation',
+      })
+    );
+
+    // JSON 형태의 OpenAPI spec 제공
+    app.get('/api-docs.json', (_req, res) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(swaggerSpec);
+    });
+  }
 
   // API 라우트
   app.get('/', healthRoutes);
@@ -109,6 +139,9 @@ async function startServer(): Promise<void> {
     // MongoDB 연결
     await databaseService.connect();
 
+    // Redis 연결 (선택사항)
+    await cacheService.connect();
+
     // Express 앱 생성
     const app = createApp();
 
@@ -133,12 +166,15 @@ async function startServer(): Promise<void> {
         webhooks: `http://${envConfig.HOST}:${envConfig.PORT}/webhooks/n8n`,
         workflows: `http://${envConfig.HOST}:${envConfig.PORT}/api/workflows`,
         websocket: `ws://${envConfig.HOST}:${envConfig.PORT}/ws`,
+        apiDocs:
+          envConfig.NODE_ENV !== 'production'
+            ? `http://${envConfig.HOST}:${envConfig.PORT}/api-docs`
+            : 'disabled in production',
       });
     });
 
     // Graceful shutdown
     setupGracefulShutdown(httpServer);
-
   } catch (error) {
     log.error('Failed to start server', error);
     process.exit(1);
@@ -159,6 +195,9 @@ function setupGracefulShutdown(server: HTTPServer): void {
 
     // WebSocket 서버 종료
     websocketService.shutdown();
+
+    // Redis 연결 종료
+    await cacheService.disconnect();
 
     // MongoDB 연결 종료
     await databaseService.disconnect();

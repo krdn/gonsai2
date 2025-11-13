@@ -33,17 +33,12 @@ const customFormat = winston.format.combine(
 /**
  * 개발 환경용 컬러 포맷
  */
-const developmentFormat = winston.format.combine(
-  winston.format.colorize(),
-  customFormat
-);
+const developmentFormat = winston.format.combine(winston.format.colorize(), customFormat);
 
 /**
  * 프로덕션 환경용 JSON 포맷
  */
-const productionFormat = winston.format.combine(
-  winston.format.json()
-);
+const productionFormat = winston.format.combine(winston.format.json());
 
 /**
  * Winston Logger 인스턴스
@@ -51,25 +46,41 @@ const productionFormat = winston.format.combine(
 export const logger = winston.createLogger({
   level: envConfig.LOG_LEVEL,
   format: envConfig.NODE_ENV === 'production' ? productionFormat : developmentFormat,
+  defaultMeta: {
+    service: 'gonsai2-backend',
+    environment: envConfig.NODE_ENV,
+  },
   transports: [
     // 콘솔 출력
     new winston.transports.Console({
       handleExceptions: true,
+      handleRejections: true,
     }),
 
-    // 에러 로그 파일
+    // 에러 로그 파일 (로테이션)
     new winston.transports.File({
       filename: 'logs/error.log',
       level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
+      maxsize: 10485760, // 10MB
+      maxFiles: 10,
+      tailable: true,
     }),
 
-    // 모든 로그 파일
+    // 모든 로그 파일 (로테이션)
     new winston.transports.File({
       filename: 'logs/combined.log',
+      maxsize: 10485760, // 10MB
+      maxFiles: 10,
+      tailable: true,
+    }),
+
+    // Warning 이상 로그 별도 파일
+    new winston.transports.File({
+      filename: 'logs/warn.log',
+      level: 'warn',
       maxsize: 5242880, // 5MB
       maxFiles: 5,
+      tailable: true,
     }),
   ],
   exitOnError: false,

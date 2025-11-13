@@ -12,16 +12,64 @@ import { log } from '../utils/logger';
 const router = Router();
 
 /**
- * POST /api/auth/signup
- * 사용자 회원가입
+ * @swagger
+ * /api/auth/signup:
+ *   post:
+ *     summary: 사용자 회원가입
+ *     description: 새로운 사용자 계정을 생성합니다
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - name
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *                 example: John Doe
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Must contain uppercase, lowercase, number, and special character
+ *                 example: Password123!
+ *     responses:
+ *       201:
+ *         description: 회원가입 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       409:
+ *         description: 이미 존재하는 이메일
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post(
   '/signup',
   [
-    body('email')
-      .isEmail()
-      .normalizeEmail()
-      .withMessage('Valid email is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('name')
       .trim()
       .isLength({ min: 2, max: 50 })
@@ -32,7 +80,9 @@ router.post(
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+      .withMessage(
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      ),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -86,14 +136,8 @@ router.post(
 router.post(
   '/login',
   [
-    body('email')
-      .isEmail()
-      .normalizeEmail()
-      .withMessage('Valid email is required'),
-    body('password')
-      .exists()
-      .notEmpty()
-      .withMessage('Password is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password').exists().notEmpty().withMessage('Password is required'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
