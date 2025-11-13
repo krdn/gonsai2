@@ -1,10 +1,24 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Activity, Clock, AlertTriangle, Zap } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { Activity, Clock, AlertTriangle, Zap, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getSocketClient, type MetricUpdate } from '@/lib/socket-client';
+import { monitoringApi } from '@/lib/api-client';
 
 interface MetricsChartsProps {
   className?: string;
@@ -14,12 +28,53 @@ interface MetricDataPoint extends MetricUpdate {
   time: string;
 }
 
+interface HourlyMetric {
+  timestamp: string;
+  success: number;
+  error: number;
+  total: number;
+}
+
 export function MetricsCharts({ className = '' }: MetricsChartsProps) {
   const [metrics, setMetrics] = useState<MetricDataPoint[]>([]);
   const [currentMetrics, setCurrentMetrics] = useState<MetricUpdate | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const MAX_DATA_POINTS = 60; // 60분
 
+  // REST API로 초기 시간별 메트릭 로드
+  const loadHourlyMetrics = async () => {
+    try {
+      setIsRefreshing(true);
+      const response = await monitoringApi.hourlyMetrics(24);
+
+      if (response.success && response.data) {
+        const formattedData = response.data.map((metric: HourlyMetric) => ({
+          time: format(new Date(metric.timestamp), 'HH:mm'),
+          timestamp: metric.timestamp,
+          executionsPerMinute: metric.total / 60, // 시간당 → 분당 변환
+          activeExecutions: 0, // WebSocket으로 업데이트
+          queueLength: 0,
+          averageExecutionTime: 0,
+          errorRate: metric.total > 0 ? metric.error / metric.total : 0,
+          aiTokensUsed: 0,
+        }));
+
+        setMetrics(formattedData.slice(-MAX_DATA_POINTS));
+      }
+    } catch (err) {
+      console.error('Failed to load hourly metrics:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
+    // 초기 데이터 로드
+    loadHourlyMetrics();
+
+    // WebSocket으로 실시간 업데이트 수신
     const socket = getSocketClient();
 
     const handleMetricUpdate = (data: MetricUpdate) => {
@@ -38,8 +93,12 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
 
     socket.onMetricUpdate(handleMetricUpdate);
 
+    // 5분마다 자동 새로고침
+    const refreshInterval = setInterval(loadHourlyMetrics, 5 * 60 * 1000);
+
     return () => {
       socket.offMetricUpdate(handleMetricUpdate);
+      clearInterval(refreshInterval);
     };
   }, []);
 
@@ -69,9 +128,7 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
             <div className="text-2xl font-bold text-gray-900">
               {(currentMetrics.averageExecutionTime / 1000).toFixed(2)}s
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              대기: {currentMetrics.queueLength}개
-            </div>
+            <div className="text-xs text-gray-500 mt-1">대기: {currentMetrics.queueLength}개</div>
           </div>
 
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
@@ -82,9 +139,11 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
             <div className="text-2xl font-bold text-gray-900">
               {(currentMetrics.errorRate * 100).toFixed(1)}%
             </div>
-            <div className={`text-xs mt-1 ${
-              currentMetrics.errorRate > 0.1 ? 'text-red-600' : 'text-green-600'
-            }`}>
+            <div
+              className={`text-xs mt-1 ${
+                currentMetrics.errorRate > 0.1 ? 'text-red-600' : 'text-green-600'
+              }`}
+            >
               {currentMetrics.errorRate > 0.1 ? '⚠️ 높음' : '✓ 정상'}
             </div>
           </div>
@@ -97,9 +156,7 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
             <div className="text-2xl font-bold text-gray-900">
               {currentMetrics.aiTokensUsed?.toLocaleString() || 0}
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              누적 사용량
-            </div>
+            <div className="text-xs text-gray-500 mt-1">누적 사용량</div>
           </div>
         </div>
       )}
@@ -111,20 +168,13 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
           <AreaChart data={metrics}>
             <defs>
               <linearGradient id="colorExecutions" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis
-              dataKey="time"
-              stroke="#6b7280"
-              style={{ fontSize: '12px' }}
-            />
-            <YAxis
-              stroke="#6b7280"
-              style={{ fontSize: '12px' }}
-            />
+            <XAxis dataKey="time" stroke="#6b7280" style={{ fontSize: '12px' }} />
+            <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#fff',
@@ -152,15 +202,8 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={metrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="time"
-                stroke="#6b7280"
-                style={{ fontSize: '12px' }}
-              />
-              <YAxis
-                stroke="#6b7280"
-                style={{ fontSize: '12px' }}
-              />
+              <XAxis dataKey="time" stroke="#6b7280" style={{ fontSize: '12px' }} />
+              <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#fff',
@@ -188,20 +231,13 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
             <AreaChart data={metrics}>
               <defs>
                 <linearGradient id="colorError" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="time"
-                stroke="#6b7280"
-                style={{ fontSize: '12px' }}
-              />
-              <YAxis
-                stroke="#6b7280"
-                style={{ fontSize: '12px' }}
-              />
+              <XAxis dataKey="time" stroke="#6b7280" style={{ fontSize: '12px' }} />
+              <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#fff',
@@ -229,15 +265,8 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={metrics}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis
-              dataKey="time"
-              stroke="#6b7280"
-              style={{ fontSize: '12px' }}
-            />
-            <YAxis
-              stroke="#6b7280"
-              style={{ fontSize: '12px' }}
-            />
+            <XAxis dataKey="time" stroke="#6b7280" style={{ fontSize: '12px' }} />
+            <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#fff',
@@ -253,27 +282,20 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
       </div>
 
       {/* AI Token Usage */}
-      {metrics.some(m => m.aiTokensUsed) && (
+      {metrics.some((m) => m.aiTokensUsed) && (
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <h4 className="text-sm font-semibold text-gray-700 mb-4">AI 토큰 사용량</h4>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={metrics}>
               <defs>
                 <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="time"
-                stroke="#6b7280"
-                style={{ fontSize: '12px' }}
-              />
-              <YAxis
-                stroke="#6b7280"
-                style={{ fontSize: '12px' }}
-              />
+              <XAxis dataKey="time" stroke="#6b7280" style={{ fontSize: '12px' }} />
+              <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#fff',

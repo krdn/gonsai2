@@ -20,6 +20,7 @@ import {
   correlationIdMiddleware,
 } from './middleware';
 import { websocketService } from './services/websocket.service';
+import { socketIOService } from './services/socketio.service';
 import { databaseService } from './services/database.service';
 import { cacheService } from './services/cache.service';
 import { swaggerSpec } from './config/swagger.config';
@@ -30,6 +31,8 @@ import webhookRoutes from './routes/webhook.routes';
 import workflowsRoutes from './routes/workflows.routes';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
+import agentsRoutes from './routes/agents.routes';
+import monitoringRoutes from './routes/monitoring.routes';
 
 /**
  * Express 애플리케이션 생성
@@ -56,13 +59,17 @@ function createApp(): Application {
     })
   );
 
-  // Rate Limiting (DDoS 방어)
+  // Rate Limiting (DDoS 방어) - 개발 환경에서는 더 관대한 설정
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15분
-    max: 100, // IP당 최대 100 요청
+    max: envConfig.NODE_ENV === 'production' ? 100 : 1000, // 개발: 1000, 프로덕션: 100
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => {
+      // health check와 일부 엔드포인트는 rate limit에서 제외
+      return req.path === '/health' || req.path === '/' || req.path.startsWith('/api-docs');
+    },
   });
   app.use(limiter);
 
@@ -79,8 +86,11 @@ function createApp(): Application {
       origin:
         envConfig.NODE_ENV === 'production'
           ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
-          : '*',
+          : ['http://localhost:3002', 'http://krdn.iptime.org:3002', 'http://192.168.0.50:3002'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'], // 커스텀 헤더 허용
+      exposedHeaders: ['X-API-Key'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     })
   );
 
@@ -116,6 +126,8 @@ function createApp(): Application {
   app.use('/health', healthRoutes);
   app.use('/webhooks', webhookRoutes);
   app.use('/api/workflows', workflowsRoutes);
+  app.use('/api/monitoring', monitoringRoutes); // 모니터링 라우트
+  app.use('/api/agents', agentsRoutes); // AI 에이전트 라우트
   app.use('/api/auth', authLimiter, authRoutes); // 인증 라우트 (rate limit 적용)
   app.use('/api/users', userRoutes); // 사용자 프로필 라우트
 
@@ -148,8 +160,11 @@ async function startServer(): Promise<void> {
     // HTTP 서버 생성
     const httpServer: HTTPServer = createServer(app);
 
-    // WebSocket 서버 초기화
+    // WebSocket 서버 초기화 (네이티브 WebSocket)
     websocketService.initialize(httpServer);
+
+    // Socket.io 서버 초기화 (프론트엔드와 호환)
+    socketIOService.initialize(httpServer);
 
     // 서버 시작
     httpServer.listen(envConfig.PORT, envConfig.HOST, () => {
@@ -195,6 +210,9 @@ function setupGracefulShutdown(server: HTTPServer): void {
 
     // WebSocket 서버 종료
     websocketService.shutdown();
+
+    // Socket.io 서버 종료
+    socketIOService.shutdown();
 
     // Redis 연결 종료
     await cacheService.disconnect();

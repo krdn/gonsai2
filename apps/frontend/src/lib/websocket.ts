@@ -240,9 +240,7 @@ class WebSocketClient {
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('[WebSocket] Max reconnect attempts reached');
-      useWorkflowStore
-        .getState()
-        .setConnectionError('Failed to reconnect after maximum attempts');
+      useWorkflowStore.getState().setConnectionError('Failed to reconnect after maximum attempts');
       return;
     }
 
@@ -284,7 +282,28 @@ let wsClient: WebSocketClient | null = null;
 
 export function getWebSocketClient(): WebSocketClient {
   if (!wsClient) {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
+    // 브라우저 환경에서 동적으로 URL 결정
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000/ws';
+
+    // 클라이언트 사이드에서만 실행
+    if (typeof globalThis !== 'undefined' && typeof globalThis.window !== 'undefined') {
+      // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
+      const win = globalThis as any;
+      if (win.location) {
+        const hostname = win.location.hostname;
+        if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+          // krdn.iptime.org 도메인은 내부 IP 사용 (NAT hairpin 문제 회피)
+          if (hostname === 'krdn.iptime.org') {
+            wsUrl = 'ws://192.168.0.50:3000/ws';
+          } else {
+            // 그 외 도메인은 같은 호스트의 백엔드 포트(3000)로 연결
+            wsUrl = `ws://${hostname}:3000/ws`;
+          }
+        }
+      }
+    }
+
+    console.log('[WebSocket] Connecting to:', wsUrl);
     wsClient = new WebSocketClient(wsUrl);
   }
   return wsClient;

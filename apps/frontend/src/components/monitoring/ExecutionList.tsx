@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Play, Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Play, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { getSocketClient, type ExecutionUpdate } from '@/lib/socket-client';
 import { formatExecutionTime } from '@/lib/workflow-utils';
+import { monitoringApi } from '@/lib/api-client';
 
 interface ExecutionListProps {
   className?: string;
@@ -20,6 +21,17 @@ interface ExecutionGroup {
   failed: ExecutionUpdate[];
 }
 
+interface RecentExecution {
+  id: string;
+  workflowId: string;
+  workflowName: string;
+  status: string;
+  mode: string;
+  startedAt: string;
+  stoppedAt?: string;
+  duration?: number;
+}
+
 export function ExecutionList({ className = '' }: ExecutionListProps) {
   const [executions, setExecutions] = useState<ExecutionGroup>({
     running: [],
@@ -27,8 +39,67 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
     completed: [],
     failed: [],
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // REST API로 초기 데이터 로드
+  const loadExecutions = async () => {
+    try {
+      setIsRefreshing(true);
+      const response = await monitoringApi.recentExecutions(20);
+
+      if (response.success && response.data) {
+        const grouped: ExecutionGroup = {
+          running: [],
+          waiting: [],
+          completed: [],
+          failed: [],
+        };
+
+        response.data.forEach((exec: RecentExecution) => {
+          const executionData: ExecutionUpdate = {
+            executionId: exec.id,
+            workflowId: exec.workflowId,
+            workflowName: exec.workflowName,
+            status: exec.status as ExecutionStatus,
+            startedAt: exec.startedAt,
+            stoppedAt: exec.stoppedAt,
+          };
+
+          switch (exec.status) {
+            case 'running':
+              grouped.running.push(executionData);
+              break;
+            case 'waiting':
+              grouped.waiting.push(executionData);
+              break;
+            case 'success':
+              grouped.completed.push(executionData);
+              break;
+            case 'error':
+              grouped.failed.push(executionData);
+              break;
+          }
+        });
+
+        setExecutions(grouped);
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Failed to load executions:', err);
+      setError('실행 목록을 불러오는데 실패했습니다');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
+    // 초기 데이터 로드
+    loadExecutions();
+
+    // WebSocket으로 실시간 업데이트 수신
     const socket = getSocketClient();
 
     const handleExecutionUpdate = (data: ExecutionUpdate) => {
@@ -67,11 +138,15 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
     socket.onExecutionFinished(handleExecutionUpdate);
     socket.onExecutionError(handleExecutionUpdate);
 
+    // 30초마다 자동 새로고침
+    const refreshInterval = setInterval(loadExecutions, 30000);
+
     return () => {
       socket.offExecutionUpdate(handleExecutionUpdate);
       socket.offExecutionStarted(handleExecutionUpdate);
       socket.offExecutionFinished(handleExecutionUpdate);
       socket.offExecutionError(handleExecutionUpdate);
+      clearInterval(refreshInterval);
     };
   }, []);
 
@@ -167,9 +242,21 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900">실시간 실행 목록</h3>
-          <div className="flex items-center gap-2 text-sm">
-            <Play className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">총 {totalExecutions}개</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadExecutions}
+              disabled={isRefreshing}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              title="새로고침"
+            >
+              <RefreshCw
+                className={`w-4 h-4 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
+            </button>
+            <div className="flex items-center gap-2 text-sm">
+              <Play className="w-4 h-4 text-gray-400" />
+              <span className="text-gray-600">총 {totalExecutions}개</span>
+            </div>
           </div>
         </div>
 
@@ -196,52 +283,82 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
 
       {/* Execution Groups */}
       <div className="p-4 space-y-4 max-h-[600px] overflow-y-auto">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <Loader2 className="w-8 h-8 mx-auto mb-3 text-blue-500 animate-spin" />
+            <p className="text-sm text-gray-500">데이터를 불러오는 중...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="text-center py-12">
+            <AlertCircle className="w-12 h-12 mx-auto mb-3 text-red-400" />
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              onClick={loadExecutions}
+              className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
+
         {/* Running */}
-        {executions.running.length > 0 && (
+        {!isLoading && !error && executions.running.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-              <h4 className="text-sm font-semibold text-gray-700">실행 중 ({executions.running.length})</h4>
+              <h4 className="text-sm font-semibold text-gray-700">
+                실행 중 ({executions.running.length})
+              </h4>
             </div>
             <div className="space-y-2">{executions.running.map(renderExecutionItem)}</div>
           </div>
         )}
 
         {/* Waiting */}
-        {executions.waiting.length > 0 && (
+        {!isLoading && !error && executions.waiting.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-yellow-500" />
-              <h4 className="text-sm font-semibold text-gray-700">대기 중 ({executions.waiting.length})</h4>
+              <h4 className="text-sm font-semibold text-gray-700">
+                대기 중 ({executions.waiting.length})
+              </h4>
             </div>
             <div className="space-y-2">{executions.waiting.map(renderExecutionItem)}</div>
           </div>
         )}
 
         {/* Failed (Highlighted) */}
-        {executions.failed.length > 0 && (
+        {!isLoading && !error && executions.failed.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
               <XCircle className="w-4 h-4 text-red-500" />
-              <h4 className="text-sm font-semibold text-red-700">실패 ({executions.failed.length})</h4>
+              <h4 className="text-sm font-semibold text-red-700">
+                실패 ({executions.failed.length})
+              </h4>
             </div>
             <div className="space-y-2">{executions.failed.map(renderExecutionItem)}</div>
           </div>
         )}
 
         {/* Completed */}
-        {executions.completed.length > 0 && (
+        {!isLoading && !error && executions.completed.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <h4 className="text-sm font-semibold text-gray-700">최근 완료 ({executions.completed.length})</h4>
+              <h4 className="text-sm font-semibold text-gray-700">
+                최근 완료 ({executions.completed.length})
+              </h4>
             </div>
             <div className="space-y-2">{executions.completed.map(renderExecutionItem)}</div>
           </div>
         )}
 
         {/* Empty State */}
-        {totalExecutions === 0 && (
+        {!isLoading && !error && totalExecutions === 0 && (
           <div className="text-center py-12 text-gray-500">
             <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
             <p className="text-sm">실행 중인 워크플로우가 없습니다</p>

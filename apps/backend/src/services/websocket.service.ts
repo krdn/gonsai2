@@ -46,7 +46,7 @@ export class WebSocketService {
     }, 30000);
 
     log.info('WebSocket server initialized', {
-      port: envConfig.WS_PORT,
+      port: envConfig.PORT,
       path: '/ws',
     });
   }

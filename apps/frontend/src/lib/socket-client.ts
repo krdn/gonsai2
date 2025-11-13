@@ -73,7 +73,7 @@ class SocketIOClient {
       }
 
       this.socket = io(this.url, {
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'], // polling 먼저 시도
         reconnection: true,
         reconnectionDelay: this.reconnectDelay,
         reconnectionDelayMax: 5000,
@@ -204,7 +204,28 @@ let socketClient: SocketIOClient | null = null;
 
 export function getSocketClient(): SocketIOClient {
   if (!socketClient) {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
+    // 브라우저 환경에서 동적으로 URL 결정
+    let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+
+    // 클라이언트 사이드에서만 실행
+    if (typeof globalThis !== 'undefined' && typeof globalThis.window !== 'undefined') {
+      // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
+      const win = globalThis as any;
+      if (win.location) {
+        const hostname = win.location.hostname;
+        if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+          // krdn.iptime.org 도메인은 내부 IP 사용 (NAT hairpin 문제 회피)
+          if (hostname === 'krdn.iptime.org') {
+            socketUrl = 'http://192.168.0.50:3000';
+          } else {
+            // 그 외 도메인은 같은 호스트의 백엔드 포트(3000)로 연결
+            socketUrl = `http://${hostname}:3000`;
+          }
+        }
+      }
+    }
+
+    console.log('[Socket.io] Connecting to:', socketUrl);
     socketClient = new SocketIOClient(socketUrl);
   }
   return socketClient;

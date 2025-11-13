@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Activity, Wifi, WifiOff } from 'lucide-react';
+import { Activity, Wifi, WifiOff, TrendingUp, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import {
   ExecutionList,
   LogStream,
@@ -9,12 +9,46 @@ import {
   NotificationCenter,
 } from '@/components/monitoring';
 import { getWebSocketClient } from '@/lib/websocket';
+import { monitoringApi } from '@/lib/api-client';
+
+interface SystemStats {
+  totalWorkflows: number;
+  activeWorkflows: number;
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  runningExecutions: number;
+  successRate: number;
+  avgExecutionTime: number;
+  period: string;
+  timestamp: string;
+}
 
 export default function MonitoringPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
+  const [stats, setStats] = useState<SystemStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // 통계 데이터 로드
+  const loadStats = async () => {
+    try {
+      const response = await monitoringApi.stats();
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
 
   useEffect(() => {
+    // 초기 통계 로드
+    loadStats();
+
+    // WebSocket 연결
     const socket = getWebSocketClient();
 
     const connectToSocket = async () => {
@@ -36,8 +70,12 @@ export default function MonitoringPage() {
       setIsConnected(socket.isConnected());
     }, 5000);
 
+    // 통계 자동 새로고침 (1분마다)
+    const statsInterval = setInterval(loadStats, 60000);
+
     return () => {
       clearInterval(checkConnection);
+      clearInterval(statsInterval);
     };
   }, []);
 
@@ -95,6 +133,65 @@ export default function MonitoringPage() {
             </div>
             <div className="mt-2 text-sm text-red-700">
               환경 변수 NEXT_PUBLIC_SOCKET_URL을 확인하세요. (기본값: http://localhost:4000)
+            </div>
+          </div>
+        )}
+
+        {/* 시스템 통계 카드 */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Total Executions */}
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">총 실행 (24h)</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalExecutions}</p>
+                  <p className="text-xs text-gray-500 mt-1">활성: {stats.runningExecutions}개</p>
+                </div>
+                <Activity className="w-8 h-8 text-blue-500" />
+              </div>
+            </div>
+
+            {/* Success Rate */}
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">성공률</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">{stats.successRate}%</p>
+                  <p className="text-xs text-gray-500 mt-1">성공: {stats.successfulExecutions}건</p>
+                </div>
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
+              </div>
+            </div>
+
+            {/* Failed Executions */}
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">실패 횟수</p>
+                  <p className="text-2xl font-bold text-red-600 mt-1">{stats.failedExecutions}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.totalExecutions > 0
+                      ? `${((stats.failedExecutions / stats.totalExecutions) * 100).toFixed(1)}%`
+                      : '0%'}
+                  </p>
+                </div>
+                <XCircle className="w-8 h-8 text-red-500" />
+              </div>
+            </div>
+
+            {/* Average Execution Time */}
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">평균 실행 시간</p>
+                  <p className="text-2xl font-bold text-purple-600 mt-1">
+                    {(stats.avgExecutionTime / 1000).toFixed(2)}s
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{stats.period}</p>
+                </div>
+                <Clock className="w-8 h-8 text-purple-500" />
+              </div>
             </div>
           </div>
         )}

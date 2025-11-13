@@ -4,6 +4,7 @@
 
 export interface User {
   id: string;
+  _id?: string; // MongoDB ObjectId (문자열 형태)
   email: string;
   name: string;
   avatar?: string;

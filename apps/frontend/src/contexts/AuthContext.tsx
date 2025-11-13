@@ -2,22 +2,19 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type {
-  AuthContextType,
-  User,
-  LoginResponse,
-  SignupResponse,
-} from '@/types/auth';
+import type { AuthContextType, User, LoginResponse, SignupResponse } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // 초기 로드 시 로컬 스토리지에서 사용자 정보 복원
   useEffect(() => {
+    setMounted(true);
     const storedUser = localStorage.getItem('user');
 
     if (storedUser) {
@@ -28,8 +25,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('user');
       }
     }
-    setIsLoading(false);
   }, []);
+
+  // 서버 렌더링 시 항상 로그아웃 상태로 렌더링 (Hydration 에러 방지)
+  if (!mounted) {
+    return (
+      <AuthContext.Provider
+        value={{
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+          login: async () => {},
+          signup: async () => {},
+          logout: () => {},
+          updateUser: () => {},
+        }}
+      >
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
   const login = async (email: string, password: string) => {
     try {
