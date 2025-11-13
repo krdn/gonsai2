@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Bot,
   Zap,
@@ -63,6 +63,9 @@ export default function AIAgentsPage() {
     new Map()
   );
 
+  // workflows의 최신 값을 참조하기 위한 ref (무한 루프 방지)
+  const workflowsRef = useRef<AgentWorkflow[]>([]);
+
   // 통계 데이터 로드
   const loadStats = async () => {
     try {
@@ -99,6 +102,12 @@ export default function AIAgentsPage() {
     await Promise.all([loadStats(), loadWorkflows()]);
   };
 
+  // workflows가 변경될 때마다 ref 업데이트 (이벤트 핸들러가 최신 값 참조 가능)
+  useEffect(() => {
+    workflowsRef.current = workflows;
+  }, [workflows]);
+
+  // WebSocket 연결 및 이벤트 핸들러 설정 (컴포넌트 마운트 시 한 번만 실행)
   useEffect(() => {
     refreshAll();
 
@@ -119,8 +128,8 @@ export default function AIAgentsPage() {
 
     // 실행 이벤트 핸들러
     const handleExecutionStarted = (data: ExecutionUpdate) => {
-      // AI 워크플로우만 추적
-      const isAgentWorkflow = workflows.some((w) => w.id === data.workflowId);
+      // AI 워크플로우만 추적 (workflowsRef 사용하여 최신 값 참조)
+      const isAgentWorkflow = workflowsRef.current.some((w) => w.id === data.workflowId);
       if (isAgentWorkflow) {
         setRunningExecutions((prev) => {
           const updated = new Map(prev);
@@ -193,7 +202,7 @@ export default function AIAgentsPage() {
       clearInterval(checkConnection);
       clearInterval(refreshInterval);
     };
-  }, [workflows]);
+  }, []); // 빈 의존성 배열: 컴포넌트 마운트 시 한 번만 실행 (무한 루프 방지)
 
   // AI 노드 타입 아이콘 및 색상
   const getNodeTypeInfo = (nodeType: string) => {

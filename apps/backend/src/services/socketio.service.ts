@@ -73,8 +73,12 @@ export class SocketIOService {
         origin: '*', // 개발 환경에서는 모든 origin 허용
         methods: ['GET', 'POST'],
         credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+        exposedHeaders: ['Access-Control-Allow-Private-Network'],
       },
       transports: ['websocket', 'polling'],
+      // Private Network Access 헤더 지원
+      allowEIO3: true,
     });
 
     this.io.on('connection', this.handleConnection.bind(this));

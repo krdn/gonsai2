@@ -49,10 +49,16 @@ function createApp(): Application {
           : ['http://localhost:3002', 'http://krdn.iptime.org:3002', 'http://192.168.0.50:3002'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'], // 커스텀 헤더 허용
-      exposedHeaders: ['X-API-Key'],
+      exposedHeaders: ['X-API-Key', 'Access-Control-Allow-Private-Network'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     })
   );
+
+  // Private Network Access 헤더 추가 (CORS 이후)
+  app.use((_req, res, next) => {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    next();
+  });
 
   // 보안 헤더 (강화 설정) - CORS 이후 적용
   app.use(

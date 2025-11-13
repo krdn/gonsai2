@@ -60,20 +60,27 @@ class SocketIOClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
+  private connectingPromise: Promise<void> | null = null; // 연결 중인 Promise 캐싱
 
   constructor(url: string) {
     this.url = url;
   }
 
   connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.socket?.connected) {
-        resolve();
-        return;
-      }
+    // 이미 연결되어 있으면 즉시 반환
+    if (this.socket?.connected) {
+      return Promise.resolve();
+    }
 
+    // 연결 시도 중이면 기존 Promise 반환 (중복 연결 방지)
+    if (this.connectingPromise) {
+      return this.connectingPromise;
+    }
+
+    // 새로운 연결 시도
+    this.connectingPromise = new Promise((resolve, reject) => {
       this.socket = io(this.url, {
-        transports: ['polling', 'websocket'], // polling 먼저 시도
+        transports: ['polling', 'websocket'], // polling handshake → WebSocket upgrade (권장)
         reconnection: true,
         reconnectionDelay: this.reconnectDelay,
         reconnectionDelayMax: 5000,
@@ -83,6 +90,7 @@ class SocketIOClient {
       this.socket.on('connect', () => {
         console.log('[Socket.io] Connected to server');
         this.reconnectAttempts = 0;
+        this.connectingPromise = null; // 연결 성공 시 Promise 초기화
         resolve();
       });
 
@@ -91,6 +99,7 @@ class SocketIOClient {
         this.reconnectAttempts++;
 
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          this.connectingPromise = null; // 연결 실패 시 Promise 초기화
           reject(new Error('Max reconnection attempts reached'));
         }
       });
@@ -104,6 +113,8 @@ class SocketIOClient {
         console.error('[Socket.io] Error:', error);
       });
     });
+
+    return this.connectingPromise;
   }
 
   disconnect(): void {
@@ -111,6 +122,7 @@ class SocketIOClient {
       this.socket.disconnect();
       this.socket = null;
     }
+    this.connectingPromise = null; // 연결 해제 시 Promise 초기화
   }
 
   isConnected(): boolean {
@@ -214,13 +226,9 @@ export function getSocketClient(): SocketIOClient {
       if (win.location) {
         const hostname = win.location.hostname;
         if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-          // krdn.iptime.org 도메인은 내부 IP 사용 (NAT hairpin 문제 회피)
-          if (hostname === 'krdn.iptime.org') {
-            socketUrl = 'http://192.168.0.50:3000';
-          } else {
-            // 그 외 도메인은 같은 호스트의 백엔드 포트(3000)로 연결
-            socketUrl = `http://${hostname}:3000`;
-          }
+          // 모든 원격 접속은 공개 도메인의 백엔드 포트(3000)로 연결
+          // 내부 IP 사용 시 CORS Private Network Access 정책에 의해 차단됨
+          socketUrl = `http://${hostname}:3000`;
         }
       }
     }
