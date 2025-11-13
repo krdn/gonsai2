@@ -188,7 +188,7 @@ class SocketIOClient {
   }
 
   // Emit events
-  emit(event: string, data?: any): void {
+  emit(event: string, data?: unknown): void {
     this.socket?.emit(event, data);
   }
 
@@ -220,16 +220,13 @@ export function getSocketClient(): SocketIOClient {
     let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
     // 클라이언트 사이드에서만 실행
-    if (typeof globalThis !== 'undefined' && typeof globalThis.window !== 'undefined') {
+    if (typeof window !== 'undefined') {
       // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
-      const win = globalThis as any;
-      if (win.location) {
-        const hostname = win.location.hostname;
-        if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-          // 모든 원격 접속은 공개 도메인의 백엔드 포트(3000)로 연결
-          // 내부 IP 사용 시 CORS Private Network Access 정책에 의해 차단됨
-          socketUrl = `http://${hostname}:3000`;
-        }
+      const hostname = window.location.hostname;
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        // 모든 원격 접속은 공개 도메인의 백엔드 포트(3000)로 연결
+        // 내부 IP 사용 시 CORS Private Network Access 정책에 의해 차단됨
+        socketUrl = `http://${hostname}:3000`;
       }
     }
 
