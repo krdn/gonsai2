@@ -1,8 +1,17 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Play, Square, RefreshCw, Workflow, CheckCircle, XCircle, Clock, HelpCircle, X } from 'lucide-react';
-import { workflowsApi, ApiClientError } from '@/lib/api-client';
+import {
+  Play,
+  RefreshCw,
+  Workflow as WorkflowIcon,
+  CheckCircle,
+  XCircle,
+  Clock,
+  HelpCircle,
+  X,
+} from 'lucide-react';
+import { workflowsApi } from '@/lib/api-client';
 
 interface Workflow {
   id: string;
@@ -44,12 +53,10 @@ export default function WorkflowsPage() {
       const data = await workflowsApi.list();
       setWorkflows(data.data || []);
 
-      // 각 워크플로우의 최근 실행 내역 조회
-      if (data.data && data.data.length > 0) {
-        for (const workflow of data.data) {
-          loadWorkflowExecutions(workflow.id);
-        }
-      }
+      // 🎯 최적화: 페이지 로드 시 모든 워크플로우의 실행 내역을 조회하지 않음
+      // 사용자가 필요할 때만 개별적으로 로드하도록 변경
+      // 이전 방식: 13개 워크플로우 × 각각 API 호출 = 13번의 불필요한 호출
+      // 새 방식: 워크플로우 목록만 조회 (1번의 API 호출)
     } catch (err) {
       setError(err instanceof Error ? err.message : '워크플로우 조회 중 오류 발생');
       console.error('워크플로우 조회 오류:', err);
@@ -61,7 +68,7 @@ export default function WorkflowsPage() {
   const loadWorkflowExecutions = async (workflowId: string) => {
     try {
       const data = await workflowsApi.executions(workflowId, 5);
-      setRecentExecutions(prev => ({
+      setRecentExecutions((prev) => ({
         ...prev,
         [workflowId]: data.data || [],
       }));
@@ -70,9 +77,9 @@ export default function WorkflowsPage() {
     }
   };
 
-  const executeWorkflow = async (workflowId: string, workflowName: string) => {
+  const executeWorkflow = async (workflowId: string, _workflowName: string) => {
     try {
-      setExecuting(prev => ({ ...prev, [workflowId]: true }));
+      setExecuting((prev) => ({ ...prev, [workflowId]: true }));
 
       const data = await workflowsApi.execute(workflowId, {}, { waitForExecution: false });
       console.log('워크플로우 실행 성공:', data);
@@ -83,9 +90,9 @@ export default function WorkflowsPage() {
       }, 1000);
     } catch (err) {
       console.error('워크플로우 실행 오류:', err);
-      alert(`워크플로우 실행 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
+      setError(`워크플로우 실행 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
     } finally {
-      setExecuting(prev => ({ ...prev, [workflowId]: false }));
+      setExecuting((prev) => ({ ...prev, [workflowId]: false }));
     }
   };
 
@@ -133,7 +140,7 @@ export default function WorkflowsPage() {
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Workflow className="w-8 h-8 text-blue-600" />
+              <WorkflowIcon className="w-8 h-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">워크플로우 관리</h1>
                 <p className="text-sm text-gray-500">n8n 워크플로우 목록 및 실행</p>
@@ -185,7 +192,7 @@ export default function WorkflowsPage() {
         ) : workflows.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <Workflow className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <WorkflowIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600 text-lg mb-2">워크플로우가 없습니다</p>
               <p className="text-gray-500 text-sm">n8n에서 워크플로우를 생성하세요</p>
             </div>
@@ -200,9 +207,7 @@ export default function WorkflowsPage() {
                 {/* Workflow Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {workflow.name}
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{workflow.name}</h3>
                     <div className="flex items-center gap-2">
                       <span
                         className={`inline-block px-2 py-1 text-xs font-medium rounded ${
@@ -234,9 +239,7 @@ export default function WorkflowsPage() {
                       {recentExecutions[workflow.id].slice(0, 3).map((execution) => (
                         <div key={execution.id} className="flex items-center gap-2 text-sm">
                           {getStatusIcon(execution.status)}
-                          <span className="text-gray-600">
-                            {getStatusText(execution.status)}
-                          </span>
+                          <span className="text-gray-600">{getStatusText(execution.status)}</span>
                           <span className="text-gray-400 text-xs">
                             {formatDate(execution.startedAt)}
                           </span>
@@ -302,8 +305,8 @@ export default function WorkflowsPage() {
               <section>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">📋 개요</h3>
                 <p className="text-gray-700">
-                  이 페이지에서는 n8n 워크플로우를 조회하고 실행할 수 있습니다.
-                  각 워크플로우의 상태를 확인하고 즉시 실행하거나 n8n UI에서 편집할 수 있습니다.
+                  이 페이지에서는 n8n 워크플로우를 조회하고 실행할 수 있습니다. 각 워크플로우의
+                  상태를 확인하고 즉시 실행하거나 n8n UI에서 편집할 수 있습니다.
                 </p>
               </section>
 
@@ -317,7 +320,9 @@ export default function WorkflowsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">워크플로우 목록 조회</h4>
-                      <p className="text-sm text-gray-600">n8n에 등록된 모든 워크플로우를 카드 형태로 표시합니다.</p>
+                      <p className="text-sm text-gray-600">
+                        n8n에 등록된 모든 워크플로우를 카드 형태로 표시합니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -326,7 +331,9 @@ export default function WorkflowsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">워크플로우 실행</h4>
-                      <p className="text-sm text-gray-600">"실행" 버튼을 클릭하여 워크플로우를 즉시 실행할 수 있습니다.</p>
+                      <p className="text-sm text-gray-600">
+                        "실행" 버튼을 클릭하여 워크플로우를 즉시 실행할 수 있습니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -335,7 +342,9 @@ export default function WorkflowsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">최근 실행 내역</h4>
-                      <p className="text-sm text-gray-600">각 워크플로우의 최근 3개 실행 결과를 확인할 수 있습니다.</p>
+                      <p className="text-sm text-gray-600">
+                        각 워크플로우의 최근 3개 실행 결과를 확인할 수 있습니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -344,7 +353,9 @@ export default function WorkflowsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">n8n에서 열기</h4>
-                      <p className="text-sm text-gray-600">워크플로우를 n8n UI에서 직접 편집할 수 있습니다.</p>
+                      <p className="text-sm text-gray-600">
+                        워크플로우를 n8n UI에서 직접 편집할 수 있습니다.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -383,13 +394,17 @@ export default function WorkflowsPage() {
                     <span className="px-3 py-1 text-sm font-medium rounded bg-green-100 text-green-800">
                       활성화됨
                     </span>
-                    <span className="text-sm text-gray-600">워크플로우가 활성화되어 실행 가능합니다</span>
+                    <span className="text-sm text-gray-600">
+                      워크플로우가 활성화되어 실행 가능합니다
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="px-3 py-1 text-sm font-medium rounded bg-gray-100 text-gray-600">
                       비활성화됨
                     </span>
-                    <span className="text-sm text-gray-600">워크플로우가 비활성화되어 실행할 수 없습니다</span>
+                    <span className="text-sm text-gray-600">
+                      워크플로우가 비활성화되어 실행할 수 없습니다
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
@@ -420,11 +435,16 @@ export default function WorkflowsPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">•</span>
-                    <span>실행 버튼은 워크플로우를 비동기로 실행하므로, 결과는 실행 내역 페이지에서 확인하세요.</span>
+                    <span>
+                      실행 버튼은 워크플로우를 비동기로 실행하므로, 결과는 실행 내역 페이지에서
+                      확인하세요.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">•</span>
-                    <span>n8n에서 워크플로우를 수정한 후에는 새로고침을 눌러 변경사항을 확인하세요.</span>
+                    <span>
+                      n8n에서 워크플로우를 수정한 후에는 새로고침을 눌러 변경사항을 확인하세요.
+                    </span>
                   </li>
                 </ul>
               </section>
@@ -445,7 +465,8 @@ export default function WorkflowsPage() {
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                     <h4 className="font-medium text-yellow-900 mb-1">워크플로우 실행 실패</h4>
                     <p className="text-sm text-yellow-700">
-                      워크플로우가 활성화되어 있는지 확인하고, n8n 서버가 정상 작동 중인지 확인하세요.
+                      워크플로우가 활성화되어 있는지 확인하고, n8n 서버가 정상 작동 중인지
+                      확인하세요.
                     </p>
                   </div>
                 </div>

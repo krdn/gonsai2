@@ -74,25 +74,27 @@ function createApp(): Application {
     })
   );
 
-  // Rate Limiting (DDoS 방어) - 개발 환경에서는 더 관대한 설정
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15분
-    max: envConfig.NODE_ENV === 'production' ? 100 : 1000, // 개발: 1000, 프로덕션: 100
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => {
-      // health check와 일부 엔드포인트는 rate limit에서 제외
-      // OPTIONS 요청(preflight)도 제외
-      return (
-        req.method === 'OPTIONS' ||
-        req.path === '/health' ||
-        req.path === '/' ||
-        req.path.startsWith('/api-docs')
-      );
-    },
-  });
-  app.use(limiter);
+  // Rate Limiting (DDoS 방어) - 개발 환경에서는 비활성화
+  if (envConfig.NODE_ENV === 'production') {
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15분
+      max: 100,
+      message: 'Too many requests from this IP, please try again later.',
+      standardHeaders: true,
+      legacyHeaders: false,
+      skip: (req) => {
+        // health check와 일부 엔드포인트는 rate limit에서 제외
+        // OPTIONS 요청(preflight)도 제외
+        return (
+          req.method === 'OPTIONS' ||
+          req.path === '/health' ||
+          req.path === '/' ||
+          req.path.startsWith('/api-docs')
+        );
+      },
+    });
+    app.use(limiter);
+  }
 
   // 인증 엔드포인트에 더 엄격한 rate limit
   const authLimiter = rateLimit({

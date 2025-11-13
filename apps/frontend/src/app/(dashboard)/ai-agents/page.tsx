@@ -182,8 +182,9 @@ export default function AIAgentsPage() {
       setIsConnected(socket.isConnected());
     }, 5000);
 
-    // 30초마다 자동 새로고침
-    const refreshInterval = setInterval(refreshAll, 30000);
+    // 🎯 최적화: 60초마다 자동 새로고침 (30초에서 증가)
+    // WebSocket이 실행 이벤트를 실시간으로 전달하므로, 통계/목록은 1분마다 업데이트로 충분
+    const refreshInterval = setInterval(refreshAll, 60000);
 
     return () => {
       socket.offExecutionStarted(handleExecutionStarted);
