@@ -40,9 +40,24 @@ import monitoringRoutes from './routes/monitoring.routes';
 function createApp(): Application {
   const app = express();
 
-  // 보안 헤더 (강화 설정)
+  // CORS 설정 (가장 먼저 적용)
+  app.use(
+    cors({
+      origin:
+        envConfig.NODE_ENV === 'production'
+          ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
+          : ['http://localhost:3002', 'http://krdn.iptime.org:3002', 'http://192.168.0.50:3002'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'], // 커스텀 헤더 허용
+      exposedHeaders: ['X-API-Key'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    })
+  );
+
+  // 보안 헤더 (강화 설정) - CORS 이후 적용
   app.use(
     helmet({
+      crossOriginResourcePolicy: false, // CORS와 충돌 방지
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
@@ -68,7 +83,13 @@ function createApp(): Application {
     legacyHeaders: false,
     skip: (req) => {
       // health check와 일부 엔드포인트는 rate limit에서 제외
-      return req.path === '/health' || req.path === '/' || req.path.startsWith('/api-docs');
+      // OPTIONS 요청(preflight)도 제외
+      return (
+        req.method === 'OPTIONS' ||
+        req.path === '/health' ||
+        req.path === '/' ||
+        req.path.startsWith('/api-docs')
+      );
     },
   });
   app.use(limiter);
@@ -79,20 +100,6 @@ function createApp(): Application {
     max: 5, // 15분에 5번만 허용
     message: 'Too many authentication attempts, please try again later.',
   });
-
-  // CORS 설정
-  app.use(
-    cors({
-      origin:
-        envConfig.NODE_ENV === 'production'
-          ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
-          : ['http://localhost:3002', 'http://krdn.iptime.org:3002', 'http://192.168.0.50:3002'],
-      credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'], // 커스텀 헤더 허용
-      exposedHeaders: ['X-API-Key'],
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    })
-  );
 
   // Body 파싱 (크기 제한)
   app.use(express.json({ limit: '10mb' }));
