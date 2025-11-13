@@ -7,8 +7,9 @@
 import { config } from 'dotenv';
 import path from 'path';
 
-// .env 파일 로드
-config({ path: path.resolve(process.cwd(), '.env') });
+// .env 파일 로드 (백엔드 디렉토리 기준)
+// override: true 옵션으로 이미 존재하는 환경 변수도 덮어씀
+config({ path: path.resolve(__dirname, '../../.env'), override: true });
 
 export interface AppConfig {
   // Server Configuration
@@ -24,6 +25,9 @@ export interface AppConfig {
   // MongoDB Configuration
   MONGODB_URI: string;
 
+  // Redis Configuration (optional)
+  REDIS_URI?: string;
+
   // WebSocket Configuration
   WS_PORT: number;
 
@@ -35,11 +39,7 @@ export interface AppConfig {
  * 필수 환경 변수 검증
  */
 function validateEnvVariables(): AppConfig {
-  const requiredVars = [
-    'N8N_BASE_URL',
-    'N8N_API_KEY',
-    'MONGODB_URI',
-  ];
+  const requiredVars = ['N8N_BASE_URL', 'N8N_API_KEY', 'MONGODB_URI'];
 
   const missing = requiredVars.filter((varName) => !process.env[varName]);
 
@@ -61,6 +61,8 @@ function validateEnvVariables(): AppConfig {
 
     MONGODB_URI: process.env.MONGODB_URI!,
 
+    REDIS_URI: process.env.REDIS_URI,
+
     WS_PORT: parseInt(process.env.WS_PORT || '3001', 10),
 
     LOG_LEVEL: (process.env.LOG_LEVEL as AppConfig['LOG_LEVEL']) || 'info',
@@ -74,7 +76,10 @@ function validateEnvVariables(): AppConfig {
   }
 
   // MongoDB URI 검증
-  if (!config.MONGODB_URI.startsWith('mongodb://') && !config.MONGODB_URI.startsWith('mongodb+srv://')) {
+  if (
+    !config.MONGODB_URI.startsWith('mongodb://') &&
+    !config.MONGODB_URI.startsWith('mongodb+srv://')
+  ) {
     throw new Error('MONGODB_URI must start with mongodb:// or mongodb+srv://');
   }
 

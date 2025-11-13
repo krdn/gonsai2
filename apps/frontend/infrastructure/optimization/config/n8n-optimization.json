@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "n8n Optimization Configuration",
+  "description": "Optimized settings for n8n performance improvement",
+
+  "environment": {
+    "description": "Add these to your .env file or docker-compose.yml",
+
+    "execution": {
+      "EXECUTIONS_MODE": "queue",
+      "EXECUTIONS_PROCESS": "main",
+      "EXECUTIONS_TIMEOUT": "300",
+      "EXECUTIONS_TIMEOUT_MAX": "600",
+      "EXECUTIONS_DATA_SAVE_ON_ERROR": "all",
+      "EXECUTIONS_DATA_SAVE_ON_SUCCESS": "none",
+      "EXECUTIONS_DATA_SAVE_ON_PROGRESS": "false",
+      "EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS": "true"
+    },
+
+    "queue": {
+      "QUEUE_BULL_REDIS_HOST": "redis",
+      "QUEUE_BULL_REDIS_PORT": "6379",
+      "QUEUE_BULL_REDIS_DB": "0",
+      "QUEUE_RECOVERY_INTERVAL": "60",
+      "QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD": "10000",
+      "QUEUE_HEALTH_CHECK_ACTIVE": "true",
+      "QUEUE_HEALTH_CHECK_PORT": "5678"
+    },
+
+    "workers": {
+      "N8N_CONCURRENCY_PRODUCTION_LIMIT": "10",
+      "GENERIC_TIMEZONE": "UTC",
+      "NODE_FUNCTION_ALLOW_BUILTIN": "*",
+      "NODE_FUNCTION_ALLOW_EXTERNAL": ""
+    },
+
+    "performance": {
+      "N8N_PAYLOAD_SIZE_MAX": "16",
+      "N8N_METRICS": "true",
+      "N8N_METRICS_PREFIX": "n8n_",
+      "N8N_METRICS_INCLUDE_DEFAULT_METRICS": "true",
+      "N8N_METRICS_INCLUDE_CACHE_METRICS": "true",
+      "N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS": "true",
+      "N8N_DIAGNOSTICS_ENABLED": "false",
+      "N8N_HIRING_BANNER_ENABLED": "false",
+      "N8N_PERSONALIZATION_ENABLED": "false"
+    },
+
+    "database": {
+      "DB_TYPE": "postgresdb",
+      "DB_POSTGRESDB_DATABASE": "n8n",
+      "DB_POSTGRESDB_HOST": "postgres",
+      "DB_POSTGRESDB_PORT": "5432",
+      "DB_POSTGRESDB_POOL_SIZE": "20",
+      "DB_TABLE_PREFIX": ""
+    },
+
+    "logging": {
+      "N8N_LOG_LEVEL": "info",
+      "N8N_LOG_OUTPUT": "console,file",
+      "N8N_LOG_FILE_COUNT_MAX": "10",
+      "N8N_LOG_FILE_SIZE_MAX": "16",
+      "N8N_LOG_FILE_LOCATION": "/home/node/.n8n/logs/"
+    }
+  },
+
+  "dockerCompose": {
+    "description": "Optimized docker-compose.yml configuration",
+
+    "services": {
+      "n8n": {
+        "deploy": {
+          "resources": {
+            "limits": {
+              "cpus": "2.0",
+              "memory": "2G"
+            },
+            "reservations": {
+              "cpus": "0.5",
+              "memory": "512M"
+            }
+          }
+        },
+        "healthcheck": {
+          "test": "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1",
+          "interval": "30s",
+          "timeout": "10s",
+          "retries": "3",
+          "start_period": "40s"
+        }
+      },
+
+      "n8n-worker": {
+        "command": "worker --concurrency=5",
+        "deploy": {
+          "replicas": 3,
+          "resources": {
+            "limits": {
+              "cpus": "1.5",
+              "memory": "1.5G"
+            },
+            "reservations": {
+              "cpus": "0.25",
+              "memory": "256M"
+            }
+          }
+        }
+      },
+
+      "postgres": {
+        "command": [
+          "postgres",
+          "-c", "max_connections=200",
+          "-c", "shared_buffers=256MB",
+          "-c", "effective_cache_size=1GB",
+          "-c", "maintenance_work_mem=64MB",
+          "-c", "checkpoint_completion_target=0.9",
+          "-c", "wal_buffers=16MB",
+          "-c", "default_statistics_target=100",
+          "-c", "random_page_cost=1.1",
+          "-c", "effective_io_concurrency=200",
+          "-c", "work_mem=2621kB",
+          "-c", "min_wal_size=1GB",
+          "-c", "max_wal_size=4GB",
+          "-c", "max_worker_processes=4",
+          "-c", "max_parallel_workers_per_gather=2",
+          "-c", "max_parallel_workers=4",
+          "-c", "max_parallel_maintenance_workers=2"
+        ]
+      },
+
+      "redis": {
+        "command": [
+          "redis-server",
+          "--maxmemory", "2gb",
+          "--maxmemory-policy", "allkeys-lru",
+          "--appendonly", "yes",
+          "--appendfsync", "everysec",
+          "--tcp-backlog", "511",
+          "--timeout", "300",
+          "--tcp-keepalive", "300",
+          "--save", "900 1",
+          "--save", "300 10",
+          "--save", "60 10000"
+        ]
+      }
+    }
+  },
+
+  "nodeTimeouts": {
+    "description": "Recommended timeout values for different node types (milliseconds)",
+
+    "http": 60000,
+    "webhook": 120000,
+    "database": 30000,
+    "api": 45000,
+    "file": 90000,
+    "transform": 15000,
+    "email": 30000,
+    "default": 30000
+  },
+
+  "workflowOptimization": {
+    "description": "Best practices for workflow performance",
+
+    "recommendations": [
+      "Split large workflows into smaller sub-workflows using Execute Workflow node",
+      "Use Set node to minimize data passed between nodes",
+      "Enable 'Continue On Fail' for non-critical nodes",
+      "Use Item Lists mode instead of Each Item when possible",
+      "Implement error workflows for better debugging",
+      "Cache frequently accessed data using Redis",
+      "Use pagination for large datasets",
+      "Implement rate limiting for API calls",
+      "Use batch operations instead of loops",
+      "Optimize database queries with proper indexes"
+    ]
+  },
+
+  "monitoringEndpoints": {
+    "description": "Available monitoring endpoints",
+
+    "health": "/healthz",
+    "metrics": "/metrics",
+    "version": "/version"
+  }
+}

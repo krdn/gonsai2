@@ -40,6 +40,14 @@ connection-test.log
 coverage/
 .nyc_output/
 *.test.js.snap
+.jest-cache/
+tests/e2e/screenshots/
+tests/e2e/videos/
+tests/e2e/downloads/
+cypress/screenshots/
+cypress/videos/
+__snapshots__/
+*.lcov
 
 # Temporary files
 tmp/

@@ -174,7 +174,7 @@ async function handleNodeExecuteEnd(db: any, payload: N8nWebhookPayload): Promis
 /**
  * 실행 시간 계산 (헬퍼)
  */
-function calculateExecutionTime(payload: N8nWebhookPayload): number | undefined {
+function calculateExecutionTime(_payload: N8nWebhookPayload): number | undefined {
   // 실제로는 startedAt과 finishedAt을 비교해야 함
   // 현재는 간단히 payload에서 계산
   return undefined;

@@ -1,0 +1,179 @@
+# =============================================================================
+# Prometheus 설정
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'gonsai2-production'
+    environment: 'production'
+
+# Alertmanager 설정
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
+
+# Alert 규칙 파일
+rule_files:
+  - '/etc/prometheus/rules/*.yml'
+
+# 스크래핑 대상 설정
+scrape_configs:
+  # ==========================================================================
+  # Prometheus 자체 모니터링
+  # ==========================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - localhost:9090
+        labels:
+          service: 'prometheus'
+
+  # ==========================================================================
+  # n8n 메트릭
+  # ==========================================================================
+  - job_name: 'n8n'
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - n8n:5678
+        labels:
+          service: 'n8n'
+          component: 'main'
+
+  # n8n Worker 메트릭
+  - job_name: 'n8n-worker'
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - n8n-worker:5678
+        labels:
+          service: 'n8n'
+          component: 'worker'
+
+  # ==========================================================================
+  # Frontend Application 메트릭
+  # ==========================================================================
+  - job_name: 'gonsai2-app'
+    scrape_interval: 15s
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets:
+          - gonsai2-app:3000
+        labels:
+          service: 'frontend'
+          component: 'nextjs'
+
+  # ==========================================================================
+  # PostgreSQL Exporter (선택사항)
+  # ==========================================================================
+  - job_name: 'postgres'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - postgres-exporter:9187
+        labels:
+          service: 'database'
+          component: 'postgres'
+
+  # ==========================================================================
+  # MongoDB Exporter (선택사항)
+  # ==========================================================================
+  - job_name: 'mongodb'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - mongodb-exporter:9216
+        labels:
+          service: 'database'
+          component: 'mongodb'
+
+  # ==========================================================================
+  # Redis Exporter (선택사항)
+  # ==========================================================================
+  - job_name: 'redis'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - redis-exporter:9121
+        labels:
+          service: 'cache'
+          component: 'redis'
+
+  # ==========================================================================
+  # Nginx Exporter (선택사항)
+  # ==========================================================================
+  - job_name: 'nginx'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - nginx-exporter:9113
+        labels:
+          service: 'proxy'
+          component: 'nginx'
+
+  # ==========================================================================
+  # Node Exporter (호스트 메트릭 - 선택사항)
+  # ==========================================================================
+  - job_name: 'node'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          service: 'infrastructure'
+          component: 'host'
+
+  # ==========================================================================
+  # cAdvisor (컨테이너 메트릭 - 선택사항)
+  # ==========================================================================
+  - job_name: 'cadvisor'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - cadvisor:8080
+        labels:
+          service: 'infrastructure'
+          component: 'containers'
+
+  # ==========================================================================
+  # Grafana 메트릭
+  # ==========================================================================
+  - job_name: 'grafana'
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - grafana:3000
+        labels:
+          service: 'monitoring'
+          component: 'grafana'
+
+  # ==========================================================================
+  # Loki 메트릭
+  # ==========================================================================
+  - job_name: 'loki'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - loki:3100
+        labels:
+          service: 'logging'
+          component: 'loki'
+
+  # ==========================================================================
+  # Alertmanager 메트릭
+  # ==========================================================================
+  - job_name: 'alertmanager'
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - alertmanager:9093
+        labels:
+          service: 'monitoring'
+          component: 'alertmanager'

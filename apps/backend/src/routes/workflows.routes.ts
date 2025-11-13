@@ -5,70 +5,75 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { MongoClient } from 'mongodb';
 import { envConfig } from '../utils/env-validator';
 import { log } from '../utils/logger';
+import { getCorrelationId } from '../middleware/correlation-id.middleware';
+import { workflowRepository, executionRepository } from '../repositories/workflow.repository';
 import { ApiResponse, ExecuteWorkflowRequest, ExecuteWorkflowResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
-import { COLLECTIONS } from '../../../../infrastructure/mongodb/schemas/types';
+import { N8nApiError, NotFoundError } from '../utils/errors';
 
 const router = Router();
+
+// n8n API 응답 타입
+interface N8nExecutionResponse {
+  data: {
+    executionId: string;
+    [key: string]: any;
+  };
+}
 
 // 모든 워크플로우 라우트는 인증 필요
 router.use(authenticateN8nApiKey);
 
 /**
  * GET /api/workflows
- * 모든 워크플로우 조회
+ * 모든 워크플로우 조회 (n8n API 프록시)
  */
-router.get('/', asyncHandler(async (_req: Request, res: Response): Promise<void> => {
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
+router.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const correlationId = getCorrelationId(req);
 
-  try {
-    const workflows = await client
-      .db()
-      .collection(COLLECTIONS.WORKFLOWS)
-      .find()
-      .sort({ updatedAt: -1 })
-      .toArray();
+    // n8n API에서 직접 워크플로우 조회
+    const n8nResponse = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows`, {
+      headers: {
+        'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+      },
+    });
+
+    if (!n8nResponse.ok) {
+      throw new N8nApiError(`Failed to fetch workflows from n8n: ${n8nResponse.status}`, {
+        correlationId,
+        status: n8nResponse.status,
+      });
+    }
+
+    const n8nData = (await n8nResponse.json()) as { data?: any[] };
 
     const response: ApiResponse = {
       success: true,
-      data: workflows,
+      data: n8nData.data || [],
       timestamp: new Date().toISOString(),
     };
 
     res.json(response);
-  } finally {
-    await client.close();
-  }
-}));
+  })
+);
 
 /**
  * GET /api/workflows/:id
  * 특정 워크플로우 조회
  */
-router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+router.get(
+  '/:id',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
 
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
-
-  try {
-    const workflow = await client
-      .db()
-      .collection(COLLECTIONS.WORKFLOWS)
-      .findOne({ n8nWorkflowId: id });
+    const workflow = await workflowRepository.findByN8nId(id);
 
     if (!workflow) {
-      res.status(404).json({
-        success: false,
-        error: 'Workflow not found',
-        message: `Workflow with ID ${id} does not exist`,
-        timestamp: new Date().toISOString(),
-      });
-      return;
+      throw new NotFoundError('Workflow', id);
     }
 
     const response: ApiResponse = {
@@ -78,74 +83,62 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<voi
     };
 
     res.json(response);
-  } finally {
-    await client.close();
-  }
-}));
+  })
+);
 
 /**
  * POST /api/workflows/:id/execute
  * 워크플로우 실행
  */
-router.post('/:id/execute', asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const body = req.body as ExecuteWorkflowRequest;
+router.post(
+  '/:id/execute',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const body = req.body as ExecuteWorkflowRequest;
+    const correlationId = getCorrelationId(req);
 
-  log.info('Executing workflow', { workflowId: id, waitForExecution: body.options?.waitForExecution });
-
-  // n8n API를 통해 워크플로우 실행
-  const response = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows/${id}/execute`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-N8N-API-KEY': envConfig.N8N_API_KEY,
-    },
-    body: JSON.stringify({
-      data: body.inputData || {},
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    log.error('Workflow execution failed', undefined, {
+    log.info('Executing workflow', {
+      correlationId,
       workflowId: id,
-      status: response.status,
-      error: errorText,
+      waitForExecution: body.options?.waitForExecution,
     });
 
-    res.status(response.status).json({
-      success: false,
-      error: 'Workflow execution failed',
-      message: errorText,
-      timestamp: new Date().toISOString(),
+    // n8n API를 통해 워크플로우 실행
+    const response = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows/${id}/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+      },
+      body: JSON.stringify({
+        data: body.inputData || {},
+      }),
     });
-    return;
-  }
 
-  const n8nResponse = await response.json();
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new N8nApiError(`Workflow execution failed: ${errorText}`, {
+        correlationId,
+        workflowId: id,
+        status: response.status,
+      });
+    }
 
-  // MongoDB에 실행 기록 저장
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
+    const n8nResponse = (await response.json()) as N8nExecutionResponse;
 
-  try {
-    const executionRecord = {
+    // MongoDB에 실행 기록 저장
+    const execution = await executionRepository.createExecution({
       n8nExecutionId: n8nResponse.data.executionId,
       workflowId: id,
       n8nWorkflowId: id,
-      status: 'running' as const,
-      mode: 'manual' as const,
+      status: 'running',
+      mode: 'manual',
       startedAt: new Date(),
       inputData: body.inputData,
-      createdAt: new Date(),
-    };
-
-    await client
-      .db()
-      .collection(COLLECTIONS.EXECUTIONS)
-      .insertOne(executionRecord);
+    });
 
     log.info('Workflow execution started', {
+      correlationId,
       executionId: n8nResponse.data.executionId,
       workflowId: id,
     });
@@ -156,60 +149,59 @@ router.post('/:id/execute', asyncHandler(async (req: Request, res: Response): Pr
         executionId: n8nResponse.data.executionId,
         workflowId: id,
         status: 'running',
-        startedAt: executionRecord.startedAt.toISOString(),
+        startedAt: execution.startedAt.toISOString(),
       },
       timestamp: new Date().toISOString(),
     };
 
     res.status(202).json(apiResponse);
-  } finally {
-    await client.close();
-  }
-}));
+  })
+);
 
 /**
  * GET /api/workflows/:id/executions
- * 워크플로우 실행 기록 조회
+ * 워크플로우 실행 기록 조회 (n8n API 프록시)
  */
-router.get('/:id/executions', asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const { limit = 10, skip = 0 } = req.query;
+router.get(
+  '/:id/executions',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { limit = 10 } = req.query;
 
-  const client = new MongoClient(envConfig.MONGODB_URI);
-  await client.connect();
+    try {
+      // n8n API에서 실행 기록 조회
+      const n8nResponse = await fetch(
+        `${envConfig.N8N_BASE_URL}/api/v1/executions?workflowId=${id}&limit=${limit}`,
+        {
+          headers: {
+            'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+          },
+        }
+      );
 
-  try {
-    const executions = await client
-      .db()
-      .collection(COLLECTIONS.EXECUTIONS)
-      .find({ n8nWorkflowId: id })
-      .sort({ startedAt: -1 })
-      .skip(Number(skip))
-      .limit(Number(limit))
-      .toArray();
+      if (!n8nResponse.ok) {
+        throw new Error(`n8n API request failed: ${n8nResponse.status}`);
+      }
 
-    const total = await client
-      .db()
-      .collection(COLLECTIONS.EXECUTIONS)
-      .countDocuments({ n8nWorkflowId: id });
+      const n8nData = (await n8nResponse.json()) as { data?: any[] };
 
-    const response: ApiResponse = {
-      success: true,
-      data: {
-        executions,
-        pagination: {
-          total,
-          limit: Number(limit),
-          skip: Number(skip),
-        },
-      },
-      timestamp: new Date().toISOString(),
-    };
+      const response: ApiResponse = {
+        success: true,
+        data: n8nData.data || [],
+        timestamp: new Date().toISOString(),
+      };
 
-    res.json(response);
-  } finally {
-    await client.close();
-  }
-}));
+      res.json(response);
+    } catch (error) {
+      log.error('Failed to fetch executions from n8n', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch executions',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  })
+);
 
 export default router;

@@ -1,0 +1,319 @@
+# =============================================================================
+# Prometheus Alert 규칙
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # 인스턴스 가용성 알림
+  # ===========================================================================
+  - name: instance_availability
+    interval: 30s
+    rules:
+      # 서비스 다운
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "서비스 다운: {{ $labels.job }}"
+          description: "{{ $labels.job }} 서비스가 1분 이상 응답하지 않습니다."
+
+      # 서비스 재시작 빈번
+      - alert: FrequentRestarts
+        expr: changes(process_start_time_seconds[15m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: availability
+        annotations:
+          summary: "빈번한 재시작: {{ $labels.job }}"
+          description: "{{ $labels.job }}가 15분 동안 2회 이상 재시작되었습니다."
+
+  # ===========================================================================
+  # n8n 워크플로우 알림
+  # ===========================================================================
+  - name: n8n_workflows
+    interval: 30s
+    rules:
+      # 워크플로우 실행 실패율 높음
+      - alert: HighWorkflowFailureRate
+        expr: |
+          (
+            sum(rate(n8n_workflow_failed_total[5m])) by (job)
+            /
+            sum(rate(n8n_workflow_executions_total[5m])) by (job)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: workflow
+        annotations:
+          summary: "워크플로우 실패율 높음"
+          description: "n8n 워크플로우 실패율이 10%를 초과했습니다. 현재: {{ $value | humanizePercentage }}"
+
+      # 워크플로우 실행 큐 적체
+      - alert: WorkflowQueueBacklog
+        expr: n8n_workflow_queue_length > 100
+        for: 10m
+        labels:
+          severity: warning
+          category: workflow
+        annotations:
+          summary: "워크플로우 큐 적체"
+          description: "대기 중인 워크플로우가 100개 이상입니다. 현재: {{ $value }}"
+
+      # 워크플로우 실행 시간 증가
+      - alert: SlowWorkflowExecution
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(n8n_workflow_execution_duration_seconds_bucket[5m])) by (le)
+          ) > 60
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "워크플로우 실행 시간 증가"
+          description: "워크플로우 실행 시간 95 퍼센타일이 60초를 초과했습니다."
+
+  # ===========================================================================
+  # 데이터베이스 알림
+  # ===========================================================================
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # PostgreSQL 연결 수 높음
+      - alert: HighDatabaseConnections
+        expr: |
+          (
+            pg_stat_activity_count
+            /
+            pg_settings_max_connections
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL 연결 수 높음"
+          description: "PostgreSQL 연결 수가 최대 연결 수의 80%를 초과했습니다."
+
+      # 데이터베이스 응답 시간 증가
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(pg_stat_statements_total_time_bucket[5m])
+          ) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "데이터베이스 쿼리 느림"
+          description: "데이터베이스 쿼리 95 퍼센타일이 1초를 초과했습니다."
+
+  # ===========================================================================
+  # Redis 알림
+  # ===========================================================================
+  - name: redis_alerts
+    interval: 30s
+    rules:
+      # Redis 메모리 사용률 높음
+      - alert: HighRedisMemoryUsage
+        expr: |
+          (
+            redis_memory_used_bytes
+            /
+            redis_memory_max_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Redis 메모리 사용률 높음"
+          description: "Redis 메모리 사용률이 90%를 초과했습니다. 현재: {{ $value | humanizePercentage }}"
+
+      # Redis 연결 실패
+      - alert: RedisConnectionFailures
+        expr: redis_rejected_connections_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: cache
+        annotations:
+          summary: "Redis 연결 거부 발생"
+          description: "Redis가 최대 클라이언트 수 제한으로 연결을 거부하고 있습니다."
+
+  # ===========================================================================
+  # 시스템 리소스 알림
+  # ===========================================================================
+  - name: system_resources
+    interval: 30s
+    rules:
+      # CPU 사용률 높음
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "CPU 사용률 높음: {{ $labels.instance }}"
+          description: "CPU 사용률이 80%를 초과했습니다. 현재: {{ $value | humanize }}%"
+
+      # 메모리 사용률 높음
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes
+          ) / node_memory_MemTotal_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "메모리 사용률 높음: {{ $labels.instance }}"
+          description: "메모리 사용률이 90%를 초과했습니다. 현재: {{ $value | humanizePercentage }}"
+
+      # 디스크 공간 부족
+      - alert: LowDiskSpace
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!="tmpfs"}
+            /
+            node_filesystem_size_bytes{fstype!="tmpfs"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: resources
+        annotations:
+          summary: "디스크 공간 부족: {{ $labels.instance }}"
+          description: "디스크 여유 공간이 10% 미만입니다. 현재: {{ $value | humanizePercentage }}"
+
+      # 디스크 I/O 높음
+      - alert: HighDiskIO
+        expr: |
+          rate(node_disk_io_time_seconds_total[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "디스크 I/O 높음: {{ $labels.instance }}"
+          description: "디스크 I/O 대기 시간이 높습니다."
+
+  # ===========================================================================
+  # 애플리케이션 성능 알림
+  # ===========================================================================
+  - name: application_performance
+    interval: 30s
+    rules:
+      # HTTP 응답 시간 증가
+      - alert: SlowHTTPResponse
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "HTTP 응답 시간 증가: {{ $labels.job }}"
+          description: "HTTP 응답 시간 95 퍼센타일이 2초를 초과했습니다."
+
+      # HTTP 에러율 높음
+      - alert: HighHTTPErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+            /
+            sum(rate(http_requests_total[5m])) by (job)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "HTTP 5xx 에러율 높음: {{ $labels.job }}"
+          description: "HTTP 5xx 에러율이 5%를 초과했습니다. 현재: {{ $value | humanizePercentage }}"
+
+      # API Rate Limit 근접
+      - alert: ApproachingRateLimit
+        expr: |
+          (
+            sum(rate(http_requests_total[5m])) by (job)
+          ) > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "Rate Limit 근접: {{ $labels.job }}"
+          description: "API 요청률이 제한에 근접하고 있습니다."
+
+  # ===========================================================================
+  # 컨테이너 알림
+  # ===========================================================================
+  - name: container_alerts
+    interval: 30s
+    rules:
+      # 컨테이너 재시작
+      - alert: ContainerRestarted
+        expr: |
+          time() - container_start_time_seconds < 60
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "컨테이너 재시작: {{ $labels.name }}"
+          description: "컨테이너가 최근 60초 이내에 재시작되었습니다."
+
+      # 컨테이너 메모리 제한 근접
+      - alert: ContainerMemoryNearLimit
+        expr: |
+          (
+            container_memory_usage_bytes
+            /
+            container_spec_memory_limit_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "컨테이너 메모리 제한 근접: {{ $labels.name }}"
+          description: "컨테이너 메모리 사용률이 90%를 초과했습니다."
+
+  # ===========================================================================
+  # 백업 알림
+  # ===========================================================================
+  - name: backup_alerts
+    interval: 1h
+    rules:
+      # 백업 실패
+      - alert: BackupFailed
+        expr: backup_success == 0
+        for: 1h
+        labels:
+          severity: critical
+          category: backup
+        annotations:
+          summary: "백업 실패"
+          description: "최근 백업이 실패했습니다. 즉시 확인이 필요합니다."
+
+      # 백업 오래됨
+      - alert: BackupTooOld
+        expr: time() - backup_last_success_timestamp > 86400 * 2
+        for: 1h
+        labels:
+          severity: warning
+          category: backup
+        annotations:
+          summary: "백업이 오래됨"
+          description: "마지막 성공 백업이 2일 이상 경과했습니다."

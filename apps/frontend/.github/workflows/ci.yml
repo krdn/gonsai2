@@ -1,0 +1,342 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/frontend
+
+jobs:
+  # 1. 코드 품질 검사
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test
+        if: always()
+
+  # 2. n8n 컨테이너 연결 테스트
+  n8n-connection-test:
+    name: n8n Container Connection Test
+    runs-on: ubuntu-latest
+    services:
+      n8n:
+        image: docker.n8n.io/n8nio/n8n:latest
+        ports:
+          - 5678:5678
+        env:
+          N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
+          DB_TYPE: sqlite
+          N8N_PROTOCOL: http
+          N8N_HOST: localhost
+          N8N_PORT: 5678
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: n8n
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: n8n
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for n8n to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:5678/healthz; do sleep 2; done'
+
+      - name: Test n8n API connection
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5678/api/v1/workflows)
+          if [ $response -eq 200 ] || [ $response -eq 401 ]; then
+            echo "✅ n8n API connection successful"
+          else
+            echo "❌ n8n API connection failed with status: $response"
+            exit 1
+          fi
+
+      - name: Test PostgreSQL connection
+        run: |
+          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} psql -h localhost -U n8n -d n8n -c "SELECT 1"
+          echo "✅ PostgreSQL connection successful"
+
+      - name: Test Redis connection
+        run: |
+          redis-cli -h localhost ping
+          echo "✅ Redis connection successful"
+
+  # 3. API 통합 테스트
+  api-integration-test:
+    name: API Integration Test
+    runs-on: ubuntu-latest
+    needs: [code-quality]
+    services:
+      n8n:
+        image: docker.n8n.io/n8nio/n8n:latest
+        ports:
+          - 5678:5678
+        env:
+          N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
+          DB_TYPE: sqlite
+          N8N_PROTOCOL: http
+          N8N_HOST: localhost
+          N8N_PORT: 5678
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for n8n to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:5678/healthz; do sleep 2; done'
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_PUBLIC_N8N_URL: http://localhost:5678
+          NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+          NEXT_PUBLIC_WS_URL: ws://localhost:4000
+
+      - name: Run API integration tests
+        run: npm run test:integration
+        if: always()
+        env:
+          NEXT_PUBLIC_N8N_URL: http://localhost:5678
+
+  # 4. 워크플로우 실행 테스트
+  workflow-execution-test:
+    name: Workflow Execution Test
+    runs-on: ubuntu-latest
+    needs: [n8n-connection-test]
+    services:
+      n8n:
+        image: docker.n8n.io/n8nio/n8n:latest
+        ports:
+          - 5678:5678
+        env:
+          N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
+          DB_TYPE: sqlite
+          N8N_PROTOCOL: http
+          N8N_HOST: localhost
+          N8N_PORT: 5678
+          EXECUTIONS_MODE: regular
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for n8n to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:5678/healthz; do sleep 2; done'
+
+      - name: Create test workflow
+        run: |
+          # Create a simple test workflow
+          cat > test-workflow.json <<EOF
+          {
+            "name": "CI Test Workflow",
+            "nodes": [
+              {
+                "parameters": {},
+                "name": "Start",
+                "type": "n8n-nodes-base.start",
+                "typeVersion": 1,
+                "position": [250, 300]
+              },
+              {
+                "parameters": {
+                  "values": {
+                    "string": [
+                      {
+                        "name": "message",
+                        "value": "CI Test Success"
+                      }
+                    ]
+                  }
+                },
+                "name": "Set",
+                "type": "n8n-nodes-base.set",
+                "typeVersion": 1,
+                "position": [450, 300]
+              }
+            ],
+            "connections": {
+              "Start": {
+                "main": [
+                  [
+                    {
+                      "node": "Set",
+                      "type": "main",
+                      "index": 0
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+          EOF
+
+      - name: Import and execute test workflow
+        run: |
+          # Import workflow
+          workflow_id=$(curl -X POST http://localhost:5678/api/v1/workflows \
+            -H "Content-Type: application/json" \
+            -d @test-workflow.json \
+            | jq -r '.id')
+
+          echo "Created workflow with ID: $workflow_id"
+
+          # Execute workflow
+          execution_id=$(curl -X POST http://localhost:5678/api/v1/workflows/$workflow_id/executions \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            | jq -r '.id')
+
+          echo "Started execution with ID: $execution_id"
+
+          # Wait for execution to complete
+          sleep 5
+
+          # Check execution status
+          status=$(curl -s http://localhost:5678/api/v1/executions/$execution_id \
+            | jq -r '.finished')
+
+          if [ "$status" = "true" ]; then
+            echo "✅ Workflow execution successful"
+          else
+            echo "❌ Workflow execution failed"
+            exit 1
+          fi
+
+  # 5. 빌드 테스트
+  build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+    needs: [code-quality]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_PUBLIC_N8N_URL: http://localhost:5678
+          NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+          NEXT_PUBLIC_WS_URL: ws://localhost:4000
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: |
+            .next
+            public
+          retention-days: 1
+
+  # 6. 전체 통합 성공 확인
+  ci-success:
+    name: CI Pipeline Success
+    runs-on: ubuntu-latest
+    needs:
+      - code-quality
+      - n8n-connection-test
+      - api-integration-test
+      - workflow-execution-test
+      - build-test
+    steps:
+      - name: CI Pipeline completed successfully
+        run: |
+          echo "✅ All CI checks passed successfully!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✓ Code Quality Check"
+          echo "✓ n8n Connection Test"
+          echo "✓ API Integration Test"
+          echo "✓ Workflow Execution Test"
+          echo "✓ Build Test"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
