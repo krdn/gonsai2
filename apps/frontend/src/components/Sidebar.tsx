@@ -15,7 +15,10 @@ import {
   Home,
   LucideIcon,
   X,
+  Tags,
+  Tag,
 } from 'lucide-react';
+import { useTagList } from '@/hooks/useTags';
 
 interface NavigationItem {
   name: string;
@@ -33,7 +36,8 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navigation: NavigationItem[] = [
+// 정적 네비게이션 항목 (Tags는 동적으로 추가)
+const staticNavigation: NavigationItem[] = [
   {
     name: 'Dashboard',
     href: '/',
@@ -59,6 +63,24 @@ const navigation: NavigationItem[] = [
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>(['Admin']);
+
+  // n8n 태그 목록 가져오기 (30초마다 자동 갱신)
+  const tags = useTagList(30000);
+
+  // 동적 네비게이션 생성 (Tags 폴더 포함)
+  const navigation: NavigationItem[] = React.useMemo(() => {
+    const tagsNavItem: NavigationItem = {
+      name: 'Tags',
+      icon: Tags,
+      children: tags.map((tag) => ({
+        name: tag.name,
+        href: `/tags/${encodeURIComponent(tag.name)}`,
+        icon: Tag,
+      })),
+    };
+
+    return [...staticNavigation, tagsNavItem];
+  }, [tags]);
 
   // ESC 키로 사이드바 닫기
   useEffect(() => {

@@ -210,7 +210,7 @@ class AuthService {
   async requestPasswordReset(email: string): Promise<void> {
     try {
       const usersCollection = databaseService.getUsersCollection();
-      const db = databaseService.getDatabase();
+      const db = databaseService.getDb();
       const resetTokensCollection = db.collection<IPasswordResetToken>(
         PASSWORD_RESET_TOKEN_COLLECTION
       );
@@ -270,7 +270,7 @@ class AuthService {
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
       const usersCollection = databaseService.getUsersCollection();
-      const db = databaseService.getDatabase();
+      const db = databaseService.getDb();
       const resetTokensCollection = db.collection<IPasswordResetToken>(
         PASSWORD_RESET_TOKEN_COLLECTION
       );

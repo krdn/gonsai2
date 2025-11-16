@@ -225,6 +225,38 @@ export const agentsApi = {
 };
 
 /**
+ * Tags API
+ */
+export const tagsApi = {
+  /**
+   * 모든 태그 조회
+   */
+  list: () => fetchWithErrorHandling(`${getApiUrl()}/api/tags`),
+
+  /**
+   * 특정 태그 조회
+   */
+  get: (id: string) => fetchWithErrorHandling(`${getApiUrl()}/api/tags/${id}`),
+
+  /**
+   * 새로운 태그 생성
+   */
+  create: (tagData: { name: string }) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/tags`, {
+      method: 'POST',
+      body: JSON.stringify(tagData),
+    }),
+
+  /**
+   * 태그 삭제
+   */
+  delete: (id: string) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/tags/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+/**
  * 전체 API 클라이언트 export
  */
 export const apiClient = {
@@ -233,6 +265,7 @@ export const apiClient = {
   monitoring: monitoringApi,
   system: systemApi,
   agents: agentsApi,
+  tags: tagsApi,
 };
 
 export default apiClient;
