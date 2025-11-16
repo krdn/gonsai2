@@ -197,4 +197,96 @@ router.post('/logout', (_req: Request, res: Response): void => {
   });
 });
 
+/**
+ * POST /api/auth/forgot-password
+ * 비밀번호 재설정 요청
+ */
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().normalizeEmail().withMessage('Valid email is required')],
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      // 유효성 검사 결과 확인
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: errors.array(),
+        });
+        return;
+      }
+
+      const { email } = req.body;
+
+      // 비밀번호 재설정 요청 처리
+      await authService.requestPasswordReset(email);
+
+      // 보안상 이유로 항상 성공 응답 (이메일 존재 여부 노출 방지)
+      res.status(200).json({
+        success: true,
+        message: 'If the email exists, a password reset link has been sent',
+      });
+    } catch (error) {
+      log.error('Forgot password error', error);
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to process password reset request',
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/auth/reset-password
+ * 비밀번호 재설정
+ */
+router.post(
+  '/reset-password',
+  [
+    body('token').exists().notEmpty().withMessage('Reset token is required'),
+    body('password')
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+      .withMessage(
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      ),
+  ],
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      // 유효성 검사 결과 확인
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: errors.array(),
+        });
+        return;
+      }
+
+      const { token, password } = req.body;
+
+      // 비밀번호 재설정 처리
+      await authService.resetPassword(token, password);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset successfully',
+      });
+    } catch (error) {
+      log.error('Reset password error', error);
+
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reset password';
+
+      res.status(400).json({
+        success: false,
+        error: errorMessage,
+      });
+    }
+  }
+);
+
 export default router;

@@ -12,9 +12,35 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return '비밀번호는 최소 8자 이상이어야 합니다.';
+    }
+    if (!/(?=.*[a-z])/.test(password)) {
+      return '비밀번호는 최소 1개의 소문자를 포함해야 합니다.';
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      return '비밀번호는 최소 1개의 대문자를 포함해야 합니다.';
+    }
+    if (!/(?=.*\d)/.test(password)) {
+      return '비밀번호는 최소 1개의 숫자를 포함해야 합니다.';
+    }
+    if (!/(?=.*[@$!%*?&])/.test(password)) {
+      return '비밀번호는 최소 1개의 특수문자(@$!%*?&)를 포함해야 합니다.';
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // 클라이언트 측 비밀번호 검증
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
 
     try {
       await signup(email, password, name);
@@ -84,15 +110,21 @@ export default function SignupPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="최소 8자 이상"
+                placeholder="대문자, 소문자, 숫자, 특수문자 포함 8자 이상"
                 required
                 minLength={8}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               />
-              <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                비밀번호는 8자 이상이어야 합니다
-              </p>
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  최소 8자 이상
+                </p>
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  대문자, 소문자, 숫자, 특수문자(@$!%*?&) 각 1개 이상 포함
+                </p>
+              </div>
             </div>
 
             {/* 에러 메시지 */}
@@ -126,7 +158,10 @@ export default function SignupPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               이미 계정이 있으신가요?{' '}
-              <Link href="/login" className="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
+              <Link
+                href="/login"
+                className="text-purple-600 font-semibold hover:text-purple-700 transition-colors"
+              >
                 로그인
               </Link>
             </p>

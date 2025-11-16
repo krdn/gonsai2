@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChevronDown, LogOut, User as UserIcon } from 'lucide-react';
+import { ChevronDown, LogOut, User as UserIcon, Shield, Settings } from 'lucide-react';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -41,11 +41,7 @@ export function UserMenu() {
         {/* 사용자 아바타 */}
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
           {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-8 h-8 rounded-full"
-            />
+            <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
           ) : (
             <span className="text-white text-sm font-medium">
               {user.name.charAt(0).toUpperCase()}
@@ -55,7 +51,15 @@ export function UserMenu() {
 
         {/* 사용자 정보 */}
         <div className="hidden md:block text-left">
-          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+          <div className="text-sm font-medium text-gray-900">
+            {user.name}
+            {user.role === 'admin' && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                <Shield className="w-3 h-3 mr-1" />
+                관리자
+              </span>
+            )}
+          </div>
           <div className="text-xs text-gray-500">{user.email}</div>
         </div>
 
@@ -87,6 +91,34 @@ export function UserMenu() {
             <UserIcon className="w-4 h-4 mr-3 text-gray-400" />
             프로필
           </button>
+
+          {/* 관리자 전용 메뉴 */}
+          {user.role === 'admin' && (
+            <>
+              <div className="border-t border-gray-100 my-1" />
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  router.push('/admin');
+                }}
+                className="w-full flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
+              >
+                <Shield className="w-4 h-4 mr-3" />
+                관리자 대시보드
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  router.push('/admin/users');
+                }}
+                className="w-full flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
+              >
+                <Settings className="w-4 h-4 mr-3" />
+                사용자 관리
+              </button>
+              <div className="border-t border-gray-100 my-1" />
+            </>
+          )}
 
           {/* 로그아웃 */}
           <button

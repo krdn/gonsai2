@@ -7,6 +7,11 @@
 import { ObjectId } from 'mongodb';
 
 /**
+ * 사용자 역할 타입
+ */
+export type UserRole = 'admin' | 'user';
+
+/**
  * 사용자 인터페이스
  */
 export interface IUser {
@@ -14,6 +19,7 @@ export interface IUser {
   email: string;
   name: string;
   password: string; // 해시된 비밀번호
+  role: UserRole; // 사용자 역할
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -26,6 +32,7 @@ export interface IUserResponse {
   id: string;
   email: string;
   name: string;
+  role: UserRole;
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +46,7 @@ export function toUserResponse(user: IUser): IUserResponse {
     id: user._id?.toString() || '',
     email: user.email,
     name: user.name,
+    role: user.role,
     avatar: user.avatar,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

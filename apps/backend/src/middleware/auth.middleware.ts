@@ -17,6 +17,7 @@ declare global {
     interface Request {
       userId?: string;
       userEmail?: string;
+      userRole?: 'admin' | 'user';
     }
   }
 }
@@ -53,8 +54,9 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
     // Request에 사용자 정보 추가
     req.userId = payload.userId;
     req.userEmail = payload.email;
+    req.userRole = payload.role;
 
-    log.debug('JWT authenticated', { userId: payload.userId, path: req.path });
+    log.debug('JWT authenticated', { userId: payload.userId, role: payload.role, path: req.path });
     next();
   } catch (error) {
     log.warn('JWT authentication failed', { error, path: req.path });

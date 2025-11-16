@@ -9,13 +9,9 @@ import type { NextRequest } from 'next/server';
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  // 개발 환경에서는 인증 체크 비활성화
-  if (process.env.NODE_ENV === 'development') {
-    return NextResponse.next();
-  }
 
   // 공개 경로 (인증 불필요)
-  const publicPaths = ['/login', '/signup', '/api'];
+  const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/api'];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
   // 정적 파일 및 Next.js 내부 경로는 무시
