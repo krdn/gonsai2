@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Workflow,
@@ -64,6 +64,7 @@ const staticNavigation: NavigationItem[] = [
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [expandedItems, setExpandedItems] = useState<string[]>(['Admin']);
   const [workflows, setWorkflows] = useState<any[]>([]);
 
@@ -241,7 +242,26 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {isExpanded && item.children && (
                   <div className="ml-6 mt-1 space-y-1">
                     {item.children.map((child) => {
-                      const isActive = pathname.startsWith(child.href);
+                      // Tags 자식 메뉴인 경우 쿼리 파라미터까지 비교
+                      let isActive = false;
+
+                      if (child.href.includes('?tag=')) {
+                        // Tags 자식 메뉴: pathname과 tag 파라미터 모두 확인
+                        const [childPath, childQuery] = child.href.split('?');
+                        const childTagParam = new URLSearchParams(childQuery).get('tag');
+                        const currentTag = searchParams.get('tag');
+
+                        isActive = pathname === childPath && currentTag === childTagParam;
+                      } else {
+                        // 일반 자식 메뉴: pathname으로 비교
+                        // /workflows 경로인 경우, tag 파라미터가 없을 때만 활성화
+                        if (child.href === '/workflows') {
+                          isActive = pathname === '/workflows' && !searchParams.get('tag');
+                        } else {
+                          isActive = pathname.startsWith(child.href);
+                        }
+                      }
+
                       const ChildIcon = child.icon;
 
                       return (
