@@ -72,6 +72,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // 사이드바 열렸을 때 배경 스크롤 방지
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    // 클린업: 컴포넌트 언마운트 시 원래 상태로 복원
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const toggleExpanded = (name: string) => {
     setExpandedItems((prev) =>
       prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]

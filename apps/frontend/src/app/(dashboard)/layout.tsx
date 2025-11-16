@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+      <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} isOpen={sidebarOpen} />
 
       {/* 사이드바와 메인 콘텐츠 */}
       <div className="flex">

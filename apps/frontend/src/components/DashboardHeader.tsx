@@ -2,14 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Workflow, Menu } from 'lucide-react';
+import { Workflow } from 'lucide-react';
 import { UserMenu } from './UserMenu';
+import HamburgerIcon from './HamburgerIcon';
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
+  isOpen?: boolean;
 }
 
-export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
+export function DashboardHeader({ onMenuClick, isOpen = false }: DashboardHeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -19,9 +21,10 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             <button
               onClick={onMenuClick}
               className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-              aria-label="메뉴 열기"
+              aria-label="메뉴"
+              aria-expanded={isOpen}
             >
-              <Menu className="w-6 h-6" />
+              <HamburgerIcon isOpen={isOpen} />
             </button>
 
             {/* 로고 */}
