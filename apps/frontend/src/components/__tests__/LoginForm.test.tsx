@@ -4,6 +4,7 @@
  * @description 로그인 폼 컴포넌트 테스트 (React Testing Library)
  */
 
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
