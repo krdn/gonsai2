@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { createServer, Server as HTTPServer } from 'http';
-import * as swaggerUi from 'swagger-ui-express';
+import swaggerUi from 'swagger-ui-express';
 import { envConfig, printConfig } from './utils/env-validator';
 import { log } from './utils/logger';
 import {
