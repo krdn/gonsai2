@@ -24,12 +24,17 @@
     "server": "ts-node apps/backend/src/server.ts",
     "server:dev": "nodemon --watch apps/backend/src --exec ts-node apps/backend/src/server.ts",
     "dev": "ts-node index.ts",
-    "build": "tsc",
+    "build": "tsc -b",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky install",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "start:prod": "npm run build && pm2 start apps/backend/ecosystem.config.js --env production",
+    "stop:prod": "pm2 stop gonsai2-backend",
+    "restart:prod": "npm run build && pm2 restart gonsai2-backend --env production",
+    "logs:prod": "pm2 logs gonsai2-backend",
+    "delete:prod": "pm2 delete gonsai2-backend"
   },
   "keywords": [
     "n8n",

@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "@infrastructure/*": ["../infrastructure/*"],
+      "@features/*": ["../features/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "../features/**/*.ts", "../infrastructure/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

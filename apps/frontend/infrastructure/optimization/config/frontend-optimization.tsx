@@ -109,12 +109,7 @@ export function getOptimizedImageProps(
   alt: string,
   options: ImageOptimizationOptions = {}
 ): any {
-  const {
-    quality = 75,
-    format = 'auto',
-    sizes = '100vw',
-    priority = false
-  } = options;
+  const { quality = 75, format = 'auto', sizes = '100vw', priority = false } = options;
 
   return {
     src,
@@ -172,7 +167,7 @@ export class CachedStorage {
   }
 
   static clear(): void {
-    Object.keys(localStorage).forEach(key => {
+    Object.keys(localStorage).forEach((key) => {
       if (key.startsWith(this.prefix)) {
         localStorage.removeItem(key);
       }
@@ -193,10 +188,9 @@ class RequestDeduplicator {
     }
 
     // Start new request
-    const promise = fetcher()
-      .finally(() => {
-        this.pending.delete(key);
-      });
+    const promise = fetcher().finally(() => {
+      this.pending.delete(key);
+    });
 
     this.pending.set(key, promise);
 

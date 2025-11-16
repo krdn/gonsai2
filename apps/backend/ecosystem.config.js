@@ -9,8 +9,7 @@ module.exports = {
     {
       // Application Configuration
       name: 'gonsai2-backend',
-      script: './dist/server.js',
-      cwd: '/home/gon/projects/gonsai2/apps/backend',
+      script: 'dist/apps/backend/src/server.js',
 
       // Cluster Mode
       instances: 'max', // CPU 코어 수만큼 인스턴스 실행
@@ -21,8 +20,8 @@ module.exports = {
 
       // Log Configuration
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      error_file: './logs/pm2-error.log',
-      out_file: './logs/pm2-out.log',
+      error_file: './apps/backend/logs/pm2-error.log',
+      out_file: './apps/backend/logs/pm2-out.log',
       merge_logs: true,
 
       // Watch & Restart
