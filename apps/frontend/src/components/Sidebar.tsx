@@ -19,6 +19,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useTagList } from '@/hooks/useTags';
+import { workflowsApi } from '@/lib/api-client';
 
 interface NavigationItem {
   name: string;
@@ -28,6 +29,7 @@ interface NavigationItem {
     name: string;
     href: string;
     icon: LucideIcon;
+    count?: number;
   }[];
 }
 
@@ -63,24 +65,50 @@ const staticNavigation: NavigationItem[] = [
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>(['Admin']);
+  const [workflows, setWorkflows] = useState<any[]>([]);
 
   // n8n 태그 목록 가져오기 (30초마다 자동 갱신)
   const tags = useTagList(30000);
+
+  // 워크플로우 목록 가져오기
+  useEffect(() => {
+    const loadWorkflows = async () => {
+      try {
+        const data = await workflowsApi.list();
+        setWorkflows(data.data || []);
+      } catch (error) {
+        console.error('워크플로우 조회 오류:', error);
+      }
+    };
+
+    loadWorkflows();
+    // 30초마다 자동 갱신
+    const interval = setInterval(loadWorkflows, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 각 태그별 워크플로우 개수 계산
+  const getTagWorkflowCount = (tagId: string): number => {
+    return workflows.filter((workflow) => workflow.tags?.some((tag: any) => tag.id === tagId))
+      .length;
+  };
 
   // 동적 네비게이션 생성 (Tags 폴더 포함)
   const navigation: NavigationItem[] = React.useMemo(() => {
     const tagsNavItem: NavigationItem = {
       name: 'Tags',
       icon: Tags,
+      href: '/workflows', // Tags 클릭 시 워크플로우 페이지로 이동
       children: tags.map((tag) => ({
         name: tag.name,
-        href: `/tags/${encodeURIComponent(tag.name)}`,
+        href: `/workflows?tag=${encodeURIComponent(tag.id)}`, // 태그별 필터링
         icon: Tag,
+        count: getTagWorkflowCount(tag.id),
       })),
     };
 
     return [...staticNavigation, tagsNavItem];
-  }, [tags]);
+  }, [tags, workflows]);
 
   // ESC 키로 사이드바 닫기
   useEffect(() => {
@@ -171,24 +199,43 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             // 자식 메뉴가 있는 부모 메뉴 항목
             const isExpanded = expandedItems.includes(item.name);
+            const hasHref = !!item.href;
 
             return (
               <div key={item.name}>
                 {/* 부모 메뉴 */}
-                <button
-                  onClick={() => toggleExpanded(item.name)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Icon className="w-5 h-5 text-gray-500" />
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  )}
-                </button>
+                {hasHref ? (
+                  <Link
+                    href={item.href!}
+                    onClick={() => toggleExpanded(item.name)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Icon className="w-5 h-5 text-gray-500" />
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => toggleExpanded(item.name)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Icon className="w-5 h-5 text-gray-500" />
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+                )}
 
                 {/* 자식 메뉴 */}
                 {isExpanded && item.children && (
@@ -201,14 +248,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
                             isActive
                               ? 'bg-blue-50 text-blue-700 font-medium'
                               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                           }`}
                         >
-                          <ChildIcon className="w-4 h-4" />
-                          <span>{child.name}</span>
+                          <div className="flex items-center space-x-3">
+                            <ChildIcon className="w-4 h-4" />
+                            <span>{child.name}</span>
+                          </div>
+                          {child.count !== undefined && (
+                            <span className="text-xs text-gray-400">{child.count}</span>
+                          )}
                         </Link>
                       );
                     })}
