@@ -103,50 +103,129 @@ router.post(
       waitForExecution: body.options?.waitForExecution,
     });
 
-    // n8n API를 통해 워크플로우 실행
-    const response = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows/${id}/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-N8N-API-KEY': envConfig.N8N_API_KEY,
-      },
-      body: JSON.stringify({
-        data: body.inputData || {},
-      }),
-    });
+    // 1. 워크플로우 상세 정보 조회하여 트리거 타입 확인
+    const workflowDetailsResponse = await fetch(
+      `${envConfig.N8N_BASE_URL}/api/v1/workflows/${id}`,
+      {
+        method: 'GET',
+        headers: {
+          'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+        },
+      }
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new N8nApiError(`Workflow execution failed: ${errorText}`, {
+    if (!workflowDetailsResponse.ok) {
+      const errorText = await workflowDetailsResponse.text();
+      throw new N8nApiError(`Failed to fetch workflow details: ${errorText}`, {
         correlationId,
         workflowId: id,
-        status: response.status,
+        status: workflowDetailsResponse.status,
       });
     }
 
-    const n8nResponse = (await response.json()) as N8nExecutionResponse;
+    const workflowDetails = (await workflowDetailsResponse.json()) as any;
+    const nodes = workflowDetails.nodes || [];
 
-    // MongoDB에 실행 기록 저장
+    // Webhook 트리거 노드 찾기
+    const webhookNode = nodes.find(
+      (node: any) =>
+        node.type === 'n8n-nodes-base.webhook' || node.type === 'n8n-nodes-base.webhookTrigger'
+    );
+
+    let response: globalThis.Response;
+    let executionId: string;
+
+    if (webhookNode) {
+      // 2-A. Webhook 워크플로우인 경우 - Webhook URL로 직접 호출
+      const webhookPath = webhookNode.parameters?.path || 'webhook';
+      const webhookUrl = `${envConfig.N8N_BASE_URL}/webhook/${webhookPath}`;
+
+      log.info('Detected webhook workflow, calling webhook URL', {
+        correlationId,
+        workflowId: id,
+        webhookPath,
+        webhookUrl,
+      });
+
+      response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body.inputData || {}),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new N8nApiError(`Webhook execution failed: ${errorText}`, {
+          correlationId,
+          workflowId: id,
+          webhookUrl,
+          status: response.status,
+        });
+      }
+
+      // Webhook 응답에서 execution ID 추출 (없을 수 있음)
+      executionId = `webhook-${Date.now()}`;
+
+      log.info('Webhook workflow triggered successfully', {
+        correlationId,
+        workflowId: id,
+        webhookUrl,
+      });
+    } else {
+      // 2-B. Manual 트리거 워크플로우인 경우 - 기존 API 엔드포인트 사용
+      log.info('Detected manual workflow, using execute API', {
+        correlationId,
+        workflowId: id,
+      });
+
+      response = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows/${id}/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+        },
+        body: JSON.stringify({
+          data: body.inputData || {},
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new N8nApiError(`Workflow execution failed: ${errorText}`, {
+          correlationId,
+          workflowId: id,
+          status: response.status,
+        });
+      }
+
+      const n8nResponse = (await response.json()) as N8nExecutionResponse;
+      executionId = n8nResponse.data.executionId;
+    }
+
+    // 3. MongoDB에 실행 기록 저장
     const execution = await executionRepository.createExecution({
-      n8nExecutionId: n8nResponse.data.executionId,
+      n8nExecutionId: executionId,
       workflowId: id,
       n8nWorkflowId: id,
       status: 'running',
-      mode: 'manual',
+      mode: webhookNode ? 'webhook' : 'manual',
       startedAt: new Date(),
       inputData: body.inputData,
     });
 
     log.info('Workflow execution started', {
       correlationId,
-      executionId: n8nResponse.data.executionId,
+      executionId,
       workflowId: id,
+      mode: webhookNode ? 'webhook' : 'manual',
     });
 
     const apiResponse: ApiResponse<ExecuteWorkflowResponse> = {
       success: true,
       data: {
-        executionId: n8nResponse.data.executionId,
+        executionId,
         workflowId: id,
         status: 'running',
         startedAt: execution.startedAt.toISOString(),

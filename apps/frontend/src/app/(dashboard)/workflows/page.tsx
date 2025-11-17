@@ -6,14 +6,16 @@ import {
   Play,
   RefreshCw,
   Workflow as WorkflowIcon,
-  CheckCircle,
   XCircle,
-  Clock,
   HelpCircle,
   X,
   Tag as TagIcon,
+  Brain,
 } from 'lucide-react';
 import { workflowsApi, tagsApi } from '@/lib/api-client';
+import WorkflowExecutionModal from '@/components/workflow/WorkflowExecutionModal';
+import KnowledgeLearningModal from '@/components/workflow/KnowledgeLearningModal';
+import { WORKFLOW_IDS } from '@/config/workflows.config';
 
 interface Tag {
   id: string;
@@ -34,15 +36,6 @@ interface Workflow {
   updatedAt: string;
 }
 
-interface WorkflowExecution {
-  id: string;
-  workflowId: string;
-  mode: string;
-  status: 'running' | 'success' | 'error';
-  startedAt: string;
-  stoppedAt?: string;
-}
-
 export default function WorkflowsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,9 +45,17 @@ export default function WorkflowsPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [executing, setExecuting] = useState<Record<string, boolean>>({});
-  const [recentExecutions, setRecentExecutions] = useState<Record<string, WorkflowExecution[]>>({});
   const [showHelp, setShowHelp] = useState(false);
+  const [executionModal, setExecutionModal] = useState<{
+    isOpen: boolean;
+    workflowId: string;
+    workflowName: string;
+  }>({
+    isOpen: false,
+    workflowId: '',
+    workflowName: '',
+  });
+  const [learningModal, setLearningModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -81,35 +82,21 @@ export default function WorkflowsPage() {
     }
   };
 
-  const loadWorkflowExecutions = async (workflowId: string) => {
-    try {
-      const data = await workflowsApi.executions(workflowId, 5);
-      setRecentExecutions((prev) => ({
-        ...prev,
-        [workflowId]: data.data || [],
-      }));
-    } catch (err) {
-      console.error(`워크플로우 ${workflowId} 실행 내역 조회 오류:`, err);
-    }
+  const executeWorkflow = (workflowId: string, workflowName: string) => {
+    // 모달 열기
+    setExecutionModal({
+      isOpen: true,
+      workflowId,
+      workflowName,
+    });
   };
 
-  const executeWorkflow = async (workflowId: string, _workflowName: string) => {
-    try {
-      setExecuting((prev) => ({ ...prev, [workflowId]: true }));
-
-      const data = await workflowsApi.execute(workflowId, {}, { waitForExecution: false });
-      console.log('워크플로우 실행 성공:', data);
-
-      // 실행 내역 새로고침
-      setTimeout(() => {
-        loadWorkflowExecutions(workflowId);
-      }, 1000);
-    } catch (err) {
-      console.error('워크플로우 실행 오류:', err);
-      setError(`워크플로우 실행 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
-    } finally {
-      setExecuting((prev) => ({ ...prev, [workflowId]: false }));
-    }
+  const closeExecutionModal = () => {
+    setExecutionModal({
+      isOpen: false,
+      workflowId: '',
+      workflowName: '',
+    });
   };
 
   // 태그별 워크플로우 필터링
@@ -120,32 +107,6 @@ export default function WorkflowsPage() {
   // 태그 선택 핸들러
   const handleTagSelect = (tagId: string) => {
     router.push(`/workflows?tag=${tagId}`);
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'running':
-        return <Clock className="w-5 h-5 text-blue-500 animate-spin" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'success':
-        return '성공';
-      case 'error':
-        return '실패';
-      case 'running':
-        return '실행 중';
-      default:
-        return '대기';
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -179,6 +140,13 @@ export default function WorkflowsPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLearningModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Brain className="w-5 h-5" />
+                <span>지식 습득 프로세스</span>
+              </button>
               <button
                 onClick={() => setShowHelp(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -287,42 +255,15 @@ export default function WorkflowsPage() {
                     <div>수정일: {formatDate(workflow.updatedAt)}</div>
                   </div>
 
-                  {/* Recent Executions */}
-                  {recentExecutions[workflow.id] && recentExecutions[workflow.id].length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">최근 실행</h4>
-                      <div className="space-y-1">
-                        {recentExecutions[workflow.id].slice(0, 3).map((execution) => (
-                          <div key={execution.id} className="flex items-center gap-2 text-sm">
-                            {getStatusIcon(execution.status)}
-                            <span className="text-gray-600">{getStatusText(execution.status)}</span>
-                            <span className="text-gray-400 text-xs">
-                              {formatDate(execution.startedAt)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Actions */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => executeWorkflow(workflow.id, workflow.name)}
-                      disabled={executing[workflow.id] || !workflow.active}
+                      disabled={!workflow.active}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {executing[workflow.id] ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>실행 중...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4" />
-                          <span>실행</span>
-                        </>
-                      )}
+                      <Play className="w-4 h-4" />
+                      <span>실행</span>
                     </button>
                     <a
                       href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/workflow/${workflow.id}`}
@@ -339,6 +280,21 @@ export default function WorkflowsPage() {
           )}
         </div>
       </div>
+
+      {/* Workflow Execution Modal */}
+      <WorkflowExecutionModal
+        isOpen={executionModal.isOpen}
+        onClose={closeExecutionModal}
+        workflowId={executionModal.workflowId}
+        workflowName={executionModal.workflowName}
+      />
+
+      {/* Knowledge Learning Modal */}
+      <KnowledgeLearningModal
+        isOpen={learningModal}
+        onClose={() => setLearningModal(false)}
+        workflowId={WORKFLOW_IDS.LEARNING_PROCESS}
+      />
 
       {/* Help Modal */}
       {showHelp && (
