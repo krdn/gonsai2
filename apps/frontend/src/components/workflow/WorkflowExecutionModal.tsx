@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { ExternalLink, Loader2, CheckCircle, XCircle, Play } from 'lucide-react';
 import { workflowsApi } from '@/lib/api-client';
+import { getWorkflowForm } from './forms';
 
 interface WorkflowExecutionModalProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ interface WorkflowExecutionModalProps {
   workflowName: string;
 }
 
-type ExecutionStatus = 'idle' | 'executing' | 'success' | 'error';
+type ExecutionStatus = 'idle' | 'loading' | 'form' | 'executing' | 'success' | 'error';
 
 interface ExecutionResult {
   executionId?: string;
@@ -30,23 +31,33 @@ export default function WorkflowExecutionModal({
   const [result, setResult] = useState<ExecutionResult>({});
   const n8nUrl = process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678';
 
-  // 모달이 열릴 때 워크플로우 실행
+  // 워크플로우별 동적 폼 컴포넌트
+  const WorkflowForm = getWorkflowForm(workflowId, workflowName);
+
+  // 모달이 열릴 때 폼 상태로 전환
   useEffect(() => {
     if (isOpen && workflowId) {
-      executeWorkflow();
+      setStatus('form');
     } else {
       // 모달이 닫히면 상태 초기화
-      setStatus('idle');
-      setResult({});
+      resetModal();
     }
   }, [isOpen, workflowId]);
 
-  const executeWorkflow = async () => {
+  const resetModal = () => {
+    setStatus('idle');
+    setResult({});
+  };
+
+  /**
+   * 워크플로우 실행 함수
+   */
+  const executeWorkflow = async (inputData: any = {}) => {
     try {
       setStatus('executing');
       setResult({});
 
-      const data = await workflowsApi.execute(workflowId, {}, { waitForExecution: false });
+      const data = await workflowsApi.execute(workflowId, inputData, { waitForExecution: false });
 
       setStatus('success');
       setResult({
@@ -75,8 +86,34 @@ export default function WorkflowExecutionModal({
     }
   };
 
+  /**
+   * 폼 제출 핸들러
+   */
+  const handleFormSubmit = (data: Record<string, any>) => {
+    executeWorkflow(data);
+  };
+
+  /**
+   * 폼 취소 핸들러
+   */
+  const handleFormCancel = () => {
+    onClose();
+  };
+
+  /**
+   * 데이터 없이 바로 실행 핸들러
+   */
+  const handleExecuteWithoutData = () => {
+    executeWorkflow({});
+  };
+
+  /**
+   * 상태별 아이콘
+   */
   const getStatusIcon = () => {
     switch (status) {
+      case 'loading':
+        return <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />;
       case 'executing':
         return <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />;
       case 'success':
@@ -88,8 +125,13 @@ export default function WorkflowExecutionModal({
     }
   };
 
+  /**
+   * 상태별 제목
+   */
   const getStatusTitle = () => {
     switch (status) {
+      case 'loading':
+        return '워크플로우 정보 조회 중...';
       case 'executing':
         return '워크플로우 실행 중...';
       case 'success':
@@ -101,8 +143,13 @@ export default function WorkflowExecutionModal({
     }
   };
 
+  /**
+   * 상태별 메시지
+   */
   const getStatusMessage = () => {
     switch (status) {
+      case 'loading':
+        return '워크플로우 정보를 불러오고 있습니다. 잠시만 기다려주세요.';
       case 'executing':
         return '워크플로우를 실행하고 있습니다. 잠시만 기다려주세요.';
       case 'success':
@@ -114,6 +161,33 @@ export default function WorkflowExecutionModal({
     }
   };
 
+  // 폼 상태일 때 워크플로우별 동적 폼 표시 (form 또는 executing)
+  if (status === 'form' || status === 'executing') {
+    const isSubmitting = status === 'executing';
+
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={`워크플로우 실행: ${workflowName}`}
+        size="lg"
+        showCloseButton={!isSubmitting}
+        closeOnOverlayClick={!isSubmitting}
+        closeOnEscape={!isSubmitting}
+      >
+        <WorkflowForm
+          workflowId={workflowId}
+          workflowName={workflowName}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          onExecuteWithoutData={handleExecuteWithoutData}
+          isSubmitting={isSubmitting}
+        />
+      </Modal>
+    );
+  }
+
+  // 로딩, 완료, 에러 상태일 때 결과 화면 표시
   return (
     <Modal
       isOpen={isOpen}
@@ -121,8 +195,8 @@ export default function WorkflowExecutionModal({
       title={`워크플로우 실행: ${workflowName}`}
       size="md"
       showCloseButton={true}
-      closeOnOverlayClick={status !== 'executing'}
-      closeOnEscape={status !== 'executing'}
+      closeOnOverlayClick={true}
+      closeOnEscape={true}
     >
       <div className="p-8">
         {/* 상태 아이콘 */}
@@ -165,7 +239,7 @@ export default function WorkflowExecutionModal({
 
           {status === 'error' && (
             <button
-              onClick={executeWorkflow}
+              onClick={() => setStatus('form')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Play className="w-4 h-4" />
@@ -173,14 +247,12 @@ export default function WorkflowExecutionModal({
             </button>
           )}
 
-          {status !== 'executing' && (
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              닫기
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            닫기
+          </button>
         </div>
 
         {/* n8n에서 열기 버튼 (항상 표시) */}

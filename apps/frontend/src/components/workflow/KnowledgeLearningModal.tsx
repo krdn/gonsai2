@@ -1,5 +1,29 @@
 'use client';
 
+/**
+ * @deprecated 이 컴포넌트는 deprecated되었습니다.
+ * 대신 WorkflowExecutionModal을 사용하세요.
+ * WorkflowExecutionModal은 워크플로우별로 자동으로 적절한 폼을 선택합니다.
+ *
+ * Migration:
+ * ```tsx
+ * // Before
+ * <KnowledgeLearningModal
+ *   isOpen={isOpen}
+ *   onClose={onClose}
+ *   workflowId={workflowId}
+ * />
+ *
+ * // After
+ * <WorkflowExecutionModal
+ *   isOpen={isOpen}
+ *   onClose={onClose}
+ *   workflowId={workflowId}
+ *   workflowName={workflowName}
+ * />
+ * ```
+ */
+
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { CheckCircle, XCircle, Loader2, Send, ExternalLink } from 'lucide-react';
