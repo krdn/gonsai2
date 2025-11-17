@@ -6,21 +6,17 @@
 import { WorkflowFormComponent } from './WorkflowFormProps';
 import KnowledgeLearningForm from './KnowledgeLearningForm';
 import DefaultWorkflowForm from './DefaultWorkflowForm';
+import DynamicWorkflowForm from './DynamicWorkflowForm';
 
 /**
- * 워크플로우별 폼 매핑
- * 워크플로우 이름 또는 ID의 일부를 키로 사용
+ * 워크플로우별 폼 매핑 (특수한 워크플로우만 등록)
+ * 주의: 일반적인 키워드는 사용하지 말 것 (예: "지식", "학습" 등)
+ * DynamicWorkflowForm이 우선 사용되므로, 정말 특별한 경우만 여기에 등록
  */
 const WORKFLOW_FORM_MAP: Record<string, WorkflowFormComponent> = {
-  // 지식 습득 워크플로우
-  knowledge: KnowledgeLearningForm,
-  learning: KnowledgeLearningForm,
-  지식: KnowledgeLearningForm,
-  학습: KnowledgeLearningForm,
-
-  // 추가 워크플로우는 여기에 등록
-  // 예: 'error-healing': ErrorHealingForm,
-  //     'monitoring': MonitoringForm,
+  // 특수 워크플로우만 등록 (정확한 워크플로우 이름 사용)
+  // 예: 'my-special-workflow-exact-name': CustomForm,
+  // 일반적인 키워드는 제거됨 - DynamicWorkflowForm이 대신 처리
 };
 
 /**
@@ -28,29 +24,33 @@ const WORKFLOW_FORM_MAP: Record<string, WorkflowFormComponent> = {
  *
  * @param workflowId - 워크플로우 ID
  * @param workflowName - 워크플로우 이름
- * @returns 해당하는 폼 컴포넌트 또는 기본 폼
+ * @returns 해당하는 폼 컴포넌트 (기본: DynamicWorkflowForm)
+ *
+ * 우선순위:
+ * 1. DynamicWorkflowForm (기본) - formFields가 있으면 동적 폼 생성
+ * 2. formFields가 없으면 DefaultWorkflowForm으로 자동 폴백
+ * 3. 특수 케이스만 WORKFLOW_FORM_MAP에 등록하여 커스텀 폼 사용
  */
 export function getWorkflowForm(workflowId: string, workflowName: string): WorkflowFormComponent {
-  // 워크플로우 이름에서 키워드 검색
+  // 특수 워크플로우 확인 (정확한 이름 매칭만)
   const normalizedName = workflowName.toLowerCase();
-
-  for (const [keyword, FormComponent] of Object.entries(WORKFLOW_FORM_MAP)) {
-    if (normalizedName.includes(keyword.toLowerCase())) {
-      return FormComponent;
-    }
-  }
-
-  // 워크플로우 ID에서 키워드 검색
   const normalizedId = workflowId.toLowerCase();
 
   for (const [keyword, FormComponent] of Object.entries(WORKFLOW_FORM_MAP)) {
-    if (normalizedId.includes(keyword.toLowerCase())) {
+    const normalizedKeyword = keyword.toLowerCase();
+    // 정확한 매칭 또는 전체 이름 매칭
+    if (normalizedName === normalizedKeyword || normalizedId === normalizedKeyword) {
+      console.log(`[getWorkflowForm] Using custom form for: ${workflowName}`);
       return FormComponent;
     }
   }
 
-  // 매칭되는 폼이 없으면 기본 폼 반환
-  return DefaultWorkflowForm;
+  // 기본적으로 DynamicWorkflowForm 반환
+  // DynamicWorkflowForm은 내부에서:
+  // 1. formFields가 있으면 → 동적 폼 생성
+  // 2. formFields가 없으면 → DefaultWorkflowForm으로 폴백
+  console.log(`[getWorkflowForm] Using DynamicWorkflowForm for: ${workflowName}`);
+  return DynamicWorkflowForm;
 }
 
 /**
@@ -67,3 +67,5 @@ export function registerWorkflowForm(keyword: string, FormComponent: WorkflowFor
 export type { WorkflowFormComponent, WorkflowFormProps } from './WorkflowFormProps';
 export { default as KnowledgeLearningForm } from './KnowledgeLearningForm';
 export { default as DefaultWorkflowForm } from './DefaultWorkflowForm';
+export { default as DynamicWorkflowForm } from './DynamicWorkflowForm';
+export { default as DynamicFormField } from './DynamicFormField';
