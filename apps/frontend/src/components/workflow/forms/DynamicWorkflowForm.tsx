@@ -17,6 +17,7 @@ export default function DynamicWorkflowForm({
   workflowName,
   onSubmit,
   onCancel,
+  onExecuteWithoutData,
   isSubmitting = false,
 }: WorkflowFormProps) {
   // 폼 스키마 상태
@@ -188,6 +189,7 @@ export default function DynamicWorkflowForm({
         workflowName={workflowName}
         onSubmit={onSubmit}
         onCancel={onCancel}
+        onExecuteWithoutData={onExecuteWithoutData}
         isSubmitting={isSubmitting}
       />
     );

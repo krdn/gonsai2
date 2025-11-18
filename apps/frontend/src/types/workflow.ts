@@ -137,3 +137,35 @@ export interface WorkflowStatistics {
   lastExecutionAt?: string;
   aiNodesUsed?: number;
 }
+
+/**
+ * Webhook 노드 파라미터 타입
+ */
+export interface WebhookNodeParameters {
+  path?: string;
+  httpMethod?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+  responseMode?: 'onReceived' | 'lastNode' | 'responseNode';
+  responseData?: string;
+  responseBinaryPropertyName?: string;
+  responseContentType?: string;
+  responsePropertyName?: string;
+  options?: Record<string, any>;
+}
+
+/**
+ * Webhook 테스트 결과 타입
+ */
+export interface WebhookTestResult {
+  success: boolean;
+  status: number;
+  statusText: string;
+  data?: any;
+  error?: string;
+  timestamp: string;
+  duration?: number; // 응답 시간 (ms)
+}
+
+/**
+ * Webhook URL 타입 (테스트/프로덕션)
+ */
+export type WebhookEnvironment = 'test' | 'production';

@@ -11,6 +11,8 @@ import {
   TextFieldConfig,
   TextareaFieldConfig,
   NumberFieldConfig,
+  SelectFieldConfig,
+  RadioFieldConfig,
 } from '@/types/form-field.types';
 
 /**
@@ -363,4 +365,68 @@ export function getDefaultFormData(formSchema: FormSchema): Record<string, any> 
   });
 
   return defaultData;
+}
+
+/**
+ * FormSchema 기반 샘플 JSON 데이터 생성
+ *
+ * @param formSchema - 폼 스키마
+ * @returns 샘플 데이터 객체
+ *
+ * @example
+ * const sampleData = generateSampleData(schema);
+ * // { topic: "샘플 주제", learningHours: 8, llmModel: "gpt-4" }
+ */
+export function generateSampleData(formSchema: FormSchema): Record<string, any> {
+  const sampleData: Record<string, any> = {};
+
+  formSchema.formFields.forEach((field) => {
+    // 기본값이 있으면 사용
+    if (field.default !== undefined) {
+      sampleData[field.name] = field.default;
+      return;
+    }
+
+    // 타입별 샘플 데이터 생성
+    switch (field.type) {
+      case 'text':
+        sampleData[field.name] = `샘플 ${field.label}`;
+        break;
+
+      case 'email':
+        sampleData[field.name] = 'test@example.com';
+        break;
+
+      case 'textarea':
+        sampleData[field.name] = `샘플 ${field.label}\n여러 줄 텍스트 예시입니다.`;
+        break;
+
+      case 'number': {
+        const numberField = field as NumberFieldConfig;
+        // min 값이 있으면 사용, 없으면 0
+        sampleData[field.name] = numberField.min !== undefined ? numberField.min : 0;
+        break;
+      }
+
+      case 'select': {
+        const selectField = field as SelectFieldConfig;
+        // 첫 번째 옵션 값 사용
+        sampleData[field.name] = selectField.options?.[0]?.value || '';
+        break;
+      }
+
+      case 'checkbox':
+        sampleData[field.name] = false;
+        break;
+
+      case 'radio': {
+        const radioField = field as RadioFieldConfig;
+        // 첫 번째 옵션 값 사용
+        sampleData[field.name] = radioField.options?.[0]?.value || '';
+        break;
+      }
+    }
+  });
+
+  return sampleData;
 }

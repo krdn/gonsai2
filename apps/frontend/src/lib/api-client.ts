@@ -28,7 +28,12 @@ function getApiUrl(): string {
   return `http://${hostname}:3000`;
 }
 
-const API_KEY = process.env.NEXT_PUBLIC_N8N_API_KEY || '';
+/**
+ * Backend API Key (백엔드 인증용 - 백엔드의 N8N_API_KEY와 동일해야 함)
+ * NEXT_PUBLIC_BACKEND_API_KEY를 우선 사용하고, 없으면 NEXT_PUBLIC_N8N_API_KEY를 폴백으로 사용
+ */
+const API_KEY =
+  process.env.NEXT_PUBLIC_BACKEND_API_KEY || process.env.NEXT_PUBLIC_N8N_API_KEY || '';
 
 /**
  * API 클라이언트 에러 클래스

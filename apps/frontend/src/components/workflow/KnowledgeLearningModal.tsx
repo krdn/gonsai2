@@ -277,7 +277,7 @@ export default function KnowledgeLearningModal({
           {/* n8n에서 열기 버튼 (항상 표시) */}
           <div className="mt-4 pt-4 border-t border-gray-200 flex justify-center">
             <a
-              href={`${n8nUrl}/workflow/${workflowId}`}
+              href={`${n8nUrl}/workflows`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"

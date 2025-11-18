@@ -5,6 +5,10 @@ import Modal from '@/components/ui/Modal';
 import { ExternalLink, Loader2, CheckCircle, XCircle, Play } from 'lucide-react';
 import { workflowsApi } from '@/lib/api-client';
 import { getWorkflowForm } from './forms';
+import WebhookInfoPanel from './WebhookInfoPanel';
+import { extractFormSchema } from '@/lib/form-field-parser';
+import type { FormSchema } from '@/types/form-field.types';
+import type { N8nWorkflow, WebhookNodeParameters } from '@/types/workflow';
 
 interface WorkflowExecutionModalProps {
   isOpen: boolean;
@@ -19,6 +23,7 @@ interface ExecutionResult {
   executionId?: string;
   message?: string;
   error?: string;
+  data?: any;
 }
 
 export default function WorkflowExecutionModal({
@@ -29,24 +34,91 @@ export default function WorkflowExecutionModal({
 }: WorkflowExecutionModalProps) {
   const [status, setStatus] = useState<ExecutionStatus>('idle');
   const [result, setResult] = useState<ExecutionResult>({});
+  const [workflowInfo, setWorkflowInfo] = useState<N8nWorkflow | null>(null);
+  const [webhookPath, setWebhookPath] = useState<string | null>(null);
+  const [webhookMethod, setWebhookMethod] = useState<string>('POST');
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [loadingWorkflow, setLoadingWorkflow] = useState(false);
+  const [webhookEnvironment, setWebhookEnvironment] = useState<'test' | 'production'>('test');
+  const [formSchema, setFormSchema] = useState<FormSchema | null>(null);
+
   const n8nUrl = process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678';
+  const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678';
 
   // 워크플로우별 동적 폼 컴포넌트
   const WorkflowForm = getWorkflowForm(workflowId, workflowName);
 
-  // 모달이 열릴 때 폼 상태로 전환
+  // 모달이 열릴 때 워크플로우 정보 로드
   useEffect(() => {
     if (isOpen && workflowId) {
-      setStatus('form');
+      loadWorkflowInfo();
     } else {
       // 모달이 닫히면 상태 초기화
       resetModal();
     }
   }, [isOpen, workflowId]);
 
+  /**
+   * 워크플로우 정보 로드 및 Webhook 노드 탐지
+   */
+  const loadWorkflowInfo = async () => {
+    try {
+      setLoadingWorkflow(true);
+      setStatus('loading');
+
+      // n8n API로 워크플로우 정보 가져오기 (백엔드 프록시 사용)
+      const response = await fetch(`/api/workflows/${workflowId}`);
+      if (!response.ok) {
+        throw new Error('워크플로우 정보를 불러올 수 없습니다.');
+      }
+
+      const responseData = await response.json();
+
+      const workflow: N8nWorkflow = responseData.data || responseData;
+      setWorkflowInfo(workflow);
+
+      // FormSchema 추출
+      const schema = extractFormSchema(workflow);
+      setFormSchema(schema);
+
+      // Webhook 노드 찾기
+      const webhookNode = workflow.nodes?.find(
+        (node) =>
+          node.type === 'n8n-nodes-base.webhook' || node.type === 'n8n-nodes-base.webhookTrigger'
+      );
+
+      if (webhookNode) {
+        const params = webhookNode.parameters as WebhookNodeParameters;
+        setWebhookPath(params.path || 'webhook');
+        setWebhookMethod(params.httpMethod || 'POST');
+      }
+
+      setStatus('form');
+    } catch (error) {
+      console.error('워크플로우 정보 로드 오류:', error);
+      setStatus('form'); // 에러가 나도 폼은 표시
+    } finally {
+      setLoadingWorkflow(false);
+    }
+  };
+
   const resetModal = () => {
     setStatus('idle');
     setResult({});
+    setWorkflowInfo(null);
+    setWebhookPath(null);
+    setWebhookMethod('POST');
+    setFormData({});
+    setFormSchema(null);
+  };
+
+  /**
+   * Webhook URL 생성 (WebhookInfoPanel과 동일한 로직)
+   */
+  const getWebhookUrl = (path: string, env: 'test' | 'production'): string => {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const prefix = env === 'test' ? '/webhook-test' : '/webhook';
+    return `${n8nBaseUrl}${prefix}${normalizedPath}`;
   };
 
   /**
@@ -57,13 +129,39 @@ export default function WorkflowExecutionModal({
       setStatus('executing');
       setResult({});
 
-      const data = await workflowsApi.execute(workflowId, inputData, { waitForExecution: false });
+      // Webhook 노드가 있는 경우 webhook URL로 직접 호출
+      if (webhookPath) {
+        const webhookUrl = getWebhookUrl(webhookPath, webhookEnvironment);
+        const response = await fetch(webhookUrl, {
+          method: webhookMethod,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(inputData),
+        });
 
-      setStatus('success');
-      setResult({
-        executionId: data.data?.executionId || data.data?.id,
-        message: '워크플로우가 성공적으로 실행되었습니다.',
-      });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+
+        setStatus('success');
+        setResult({
+          executionId: responseData.executionId || responseData.id,
+          message: '워크플로우가 성공적으로 실행되었습니다.',
+          data: responseData,
+        });
+      } else {
+        // Webhook 노드가 없는 경우 기존 API 사용
+        const data = await workflowsApi.execute(workflowId, inputData, { waitForExecution: false });
+
+        setStatus('success');
+        setResult({
+          executionId: data.data?.executionId || data.data?.id,
+          message: '워크플로우가 성공적으로 실행되었습니다.',
+        });
+      }
     } catch (err) {
       console.error('워크플로우 실행 오류:', err);
       setStatus('error');
@@ -90,6 +188,7 @@ export default function WorkflowExecutionModal({
    * 폼 제출 핸들러
    */
   const handleFormSubmit = (data: Record<string, any>) => {
+    setFormData(data); // 폼 데이터 저장 (WebhookInfoPanel에서 사용)
     executeWorkflow(data);
   };
 
@@ -175,6 +274,19 @@ export default function WorkflowExecutionModal({
         closeOnOverlayClick={!isSubmitting}
         closeOnEscape={!isSubmitting}
       >
+        {/* Webhook 정보 패널 (Webhook 노드가 있는 경우에만 표시) */}
+        {webhookPath && (
+          <WebhookInfoPanel
+            webhookPath={webhookPath}
+            baseUrl={n8nBaseUrl}
+            httpMethod={webhookMethod}
+            formData={formData}
+            formSchema={formSchema}
+            onEnvironmentChange={setWebhookEnvironment}
+          />
+        )}
+
+        {/* 워크플로우 폼 */}
         <WorkflowForm
           workflowId={workflowId}
           workflowName={workflowName}
@@ -258,7 +370,7 @@ export default function WorkflowExecutionModal({
         {/* n8n에서 열기 버튼 (항상 표시) */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex justify-center">
           <a
-            href={`${n8nUrl}/workflow/${workflowId}`}
+            href={`${n8nUrl}/workflows`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"

@@ -63,18 +63,34 @@ router.get(
 
 /**
  * GET /api/workflows/:id
- * 특정 워크플로우 조회
+ * 특정 워크플로우 조회 (n8n API 프록시)
  */
 router.get(
   '/:id',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+    const correlationId = getCorrelationId(req);
 
-    const workflow = await workflowRepository.findByN8nId(id);
+    // n8n API에서 워크플로우 상세 정보 조회
+    const n8nResponse = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows/${id}`, {
+      method: 'GET',
+      headers: {
+        'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+      },
+    });
 
-    if (!workflow) {
-      throw new NotFoundError('Workflow', id);
+    if (!n8nResponse.ok) {
+      if (n8nResponse.status === 404) {
+        throw new NotFoundError('Workflow', id);
+      }
+      throw new N8nApiError(`Failed to fetch workflow from n8n: ${n8nResponse.status}`, {
+        correlationId,
+        workflowId: id,
+        status: n8nResponse.status,
+      });
     }
+
+    const workflow = await n8nResponse.json();
 
     const response: ApiResponse = {
       success: true,
