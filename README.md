@@ -67,12 +67,14 @@ gonsai2/
 ## 🔧 기술 스택
 
 ### 핵심 인프라
+
 - **n8n**: 워크플로우 자동화 플랫폼 (큐 기반 아키텍처)
 - **MongoDB 7.0**: 데이터 영속성
 - **PostgreSQL 16**: n8n 내부 데이터베이스
 - **Redis 7**: Bull Queue (워크플로우 작업 큐)
 
 ### 개발 환경
+
 - **Node.js**: 런타임
 - **TypeScript**: 타입 안정성
 - **Docker**: 컨테이너화
@@ -91,6 +93,7 @@ nano .env
 ```
 
 **필수 환경 변수:**
+
 - `N8N_BASE_URL`: n8n 서버 주소 (기본값: http://localhost:5678)
 - `N8N_API_KEY`: n8n UI에서 생성 (Settings > API)
 - `MONGODB_URI`: MongoDB 연결 문자열
@@ -122,6 +125,7 @@ docker ps | grep -E 'n8n|mongodb|redis'
 ```
 
 **실행 중이어야 하는 컨테이너:**
+
 - ✅ `n8n` - 메인 서비스 (localhost:5678)
 - ✅ `n8n-worker` - 워크플로우 실행 워커
 - ✅ `my-mongodb-container` - MongoDB (localhost:27017)
@@ -168,18 +172,20 @@ npm run test:agent
 gonsai2는 기존 n8n Docker 컨테이너와 연동됩니다:
 
 **n8n 설정 위치:**
+
 - Docker Compose: `/home/gon/docker-n8n/docker-compose.yml`
 - 환경 변수: `/home/gon/docker-n8n/.env`
 - 데이터 볼륨: `/home/gon/docker-n8n/data/`
 
 **API 접근:**
+
 ```typescript
 // n8n API 클라이언트 사용 예시
 import { N8nClient } from '@gonsai2/n8n-client';
 
 const client = new N8nClient({
   baseUrl: process.env.N8N_API_URL,
-  apiKey: process.env.N8N_API_KEY
+  apiKey: process.env.N8N_API_KEY,
 });
 
 // 워크플로우 목록 조회
@@ -189,10 +195,12 @@ const workflows = await client.workflows.getAll();
 ### MongoDB 연동
 
 **MongoDB 설정 위치:**
+
 - Docker Compose: `/home/gon/docker-mongo-ubuntu/docker-compose.yml`
 - 환경 변수: `/home/gon/docker-mongo-ubuntu/.env`
 
 **연결 문자열:**
+
 ```bash
 # 로컬 개발
 mongodb://superadmin:password@localhost:27017/gonsai2
@@ -219,9 +227,12 @@ services:
 Kent Beck의 Augmented Coding 원칙에 따른 AI 최적화:
 
 ### 1. 명확한 의도 (Clear Intent)
+
 ```typescript
 // ❌ Bad: AI가 이해하기 어려움
-function proc(d: any) { /* ... */ }
+function proc(d: any) {
+  /* ... */
+}
 
 // ✅ Good: 명확한 의도 표현
 function processWorkflowExecution(execution: WorkflowExecution) {
@@ -230,11 +241,13 @@ function processWorkflowExecution(execution: WorkflowExecution) {
 ```
 
 ### 2. 작은 단계 (Small Steps)
+
 - 각 함수는 하나의 명확한 작업만 수행
 - 복잡한 로직은 작은 함수로 분해
 - AI가 각 단계를 독립적으로 이해 가능
 
 ### 3. 풍부한 컨텍스트 (Rich Context)
+
 ```typescript
 /**
  * n8n 워크플로우를 실행하고 결과를 반환합니다.
@@ -254,6 +267,7 @@ function processWorkflowExecution(execution: WorkflowExecution) {
 ```
 
 ### 4. AI 세션 지속성
+
 - `ai-sessions/` 디렉토리에 AI 협업 기록 저장
 - 이전 결정사항과 컨텍스트 참조 가능
 - `.gitignore`에서 제외하여 민감정보 보호
@@ -261,11 +275,14 @@ function processWorkflowExecution(execution: WorkflowExecution) {
 ## 📚 문서화
 
 ### 프로젝트 문서
+
 - [아키텍처 개요](docs/architecture/README.md)
 - [API 명세](docs/api/README.md)
 - [개발 가이드](docs/development/README.md)
+- **[프론트엔드 사용자 메뉴얼](docs/Frontend-User-Manual.md)** 📖
 
 ### Docker 관련 문서
+
 - [n8n 설정 가이드](/home/gon/docker-n8n/README.md)
 - [MongoDB 설정 가이드](/home/gon/docker-mongo-ubuntu/CLAUDE.md)
 - [연결 테스트 결과](connection-test.log)
@@ -273,16 +290,19 @@ function processWorkflowExecution(execution: WorkflowExecution) {
 ## 🔐 보안
 
 ### 환경 변수 관리
+
 - ⚠️ **절대 커밋하지 말 것**: `.env` 파일
 - ✅ 템플릿만 커밋: `.env.example`
 - GitHub Secrets 사용: CI/CD 파이프라인
 
 ### API 키 관리
+
 - n8n API Key는 n8n UI에서만 생성
 - 로컬 개발: `.env` 파일
 - 프로덕션: GitHub Secrets 또는 환경 변수
 
 ### MongoDB 인증
+
 - superadmin 계정: 전체 권한
 - 애플리케이션별 계정: 최소 권한 원칙
 
@@ -310,6 +330,7 @@ npm run test:agent
 ### 테스트 시나리오
 
 **Agent Manager 테스트** (`npm run test:agent`):
+
 1. 워크플로우 로딩 및 캐싱
 2. AI 노드 자동 식별
 3. 파라미터 검증
@@ -323,6 +344,7 @@ npm run test:agent
 ## 📈 개발 워크플로우
 
 ### 브랜치 전략
+
 ```bash
 main          # 프로덕션 (보호됨)
 ├── develop   # 개발 통합
@@ -332,6 +354,7 @@ main          # 프로덕션 (보호됨)
 ```
 
 ### 커밋 컨벤션
+
 ```bash
 feat: 새로운 기능 추가
 fix: 버그 수정
