@@ -135,56 +135,39 @@ export default function WorkflowExecutionModal({
       setStatus('executing');
       setResult({});
 
-      // Webhook 노드가 있는 경우 webhook URL로 직접 호출
-      if (webhookPath) {
-        const webhookUrl = getWebhookUrl(webhookPath, webhookEnvironment);
-        const response = await fetch(webhookUrl, {
-          method: webhookMethod,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(inputData),
-        });
+      console.log('[Workflow Execution] Calling backend API:', {
+        workflowId,
+        hasWebhook: !!webhookPath,
+        webhookEnvironment,
+        inputData,
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+      // 백엔드 API를 통해 워크플로우 실행 (webhook 여부와 관계없이 백엔드가 처리)
+      const data = await workflowsApi.execute(workflowId, inputData, { waitForExecution: false });
 
-        // Content-Type 확인하여 HTML 또는 JSON 처리
-        const contentType = response.headers.get('content-type');
-        let responseData: any;
-        let isHtmlResponse = false;
+      console.log('[Workflow Execution] Backend response:', data);
 
-        if (contentType && contentType.includes('text/html')) {
-          // HTML 응답인 경우
-          const htmlText = await response.text();
-          responseData = { htmlContent: htmlText };
-          isHtmlResponse = true;
-        } else if (contentType && contentType.includes('application/json')) {
-          // JSON 응답인 경우
-          responseData = await response.json();
-        } else {
-          // 기타 응답 형식
-          const textContent = await response.text();
-          responseData = { textContent, contentType: contentType || 'unknown' };
-        }
+      // 백엔드 응답 처리
+      const executionId = data.data?.executionId || data.data?.id;
+      const webhookResponse = data.data?.webhookResponse;
 
+      // Webhook 응답이 있는 경우 (HTML/JSON/텍스트)
+      if (webhookResponse) {
         setStatus('success');
         setResult({
-          executionId: responseData.executionId || responseData.id,
-          message: isHtmlResponse
-            ? 'HTML 응답을 받았습니다.'
-            : '워크플로우가 성공적으로 실행되었습니다.',
-          data: responseData,
+          executionId,
+          message:
+            data.data?.message || webhookResponse.htmlContent
+              ? 'HTML 응답을 받았습니다.'
+              : '워크플로우가 성공적으로 실행되었습니다.',
+          data: webhookResponse,
         });
       } else {
-        // Webhook 노드가 없는 경우 기존 API 사용
-        const data = await workflowsApi.execute(workflowId, inputData, { waitForExecution: false });
-
+        // Manual 트리거 워크플로우 응답
         setStatus('success');
         setResult({
-          executionId: data.data?.executionId || data.data?.id,
-          message: '워크플로우가 성공적으로 실행되었습니다.',
+          executionId,
+          message: data.data?.message || '워크플로우가 성공적으로 실행되었습니다.',
         });
       }
     } catch (err) {
