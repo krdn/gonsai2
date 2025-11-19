@@ -26,7 +26,7 @@ export default function WebhookInfoPanel({
   formSchema,
   onEnvironmentChange,
 }: WebhookInfoPanelProps) {
-  const [environment, setEnvironment] = useState<WebhookEnvironment>('test');
+  const [environment, setEnvironment] = useState<WebhookEnvironment>('production');
 
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
