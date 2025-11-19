@@ -72,6 +72,12 @@ export default function WorkflowExecutionModal({
         throw new Error('워크플로우 정보를 불러올 수 없습니다.');
       }
 
+      // Content-Type 검증
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`예상치 못한 응답 형식입니다 (Content-Type: ${contentType || 'unknown'})`);
+      }
+
       const responseData = await response.json();
 
       const workflow: N8nWorkflow = responseData.data || responseData;
@@ -144,12 +150,31 @@ export default function WorkflowExecutionModal({
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const responseData = await response.json();
+        // Content-Type 확인하여 HTML 또는 JSON 처리
+        const contentType = response.headers.get('content-type');
+        let responseData: any;
+        let isHtmlResponse = false;
+
+        if (contentType && contentType.includes('text/html')) {
+          // HTML 응답인 경우
+          const htmlText = await response.text();
+          responseData = { htmlContent: htmlText };
+          isHtmlResponse = true;
+        } else if (contentType && contentType.includes('application/json')) {
+          // JSON 응답인 경우
+          responseData = await response.json();
+        } else {
+          // 기타 응답 형식
+          const textContent = await response.text();
+          responseData = { textContent, contentType: contentType || 'unknown' };
+        }
 
         setStatus('success');
         setResult({
           executionId: responseData.executionId || responseData.id,
-          message: '워크플로우가 성공적으로 실행되었습니다.',
+          message: isHtmlResponse
+            ? 'HTML 응답을 받았습니다.'
+            : '워크플로우가 성공적으로 실행되었습니다.',
           data: responseData,
         });
       } else {
@@ -327,6 +352,34 @@ export default function WorkflowExecutionModal({
             </div>
           </div>
         )}
+
+        {/* HTML 응답 렌더링 (성공 시 HTML 응답인 경우) */}
+        {status === 'success' && result.data?.htmlContent && (
+          <div className="mb-6">
+            <div className="mb-2 text-sm font-semibold text-gray-700">응답 내용:</div>
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <iframe
+                srcDoc={result.data.htmlContent}
+                className="w-full h-96 bg-white"
+                sandbox="allow-same-origin"
+                title="워크플로우 응답"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* JSON 응답 표시 (성공 시 JSON 응답인 경우) */}
+        {status === 'success' &&
+          result.data &&
+          !result.data.htmlContent &&
+          result.data.textContent && (
+            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="mb-2 text-sm font-semibold text-gray-700">응답 내용:</div>
+              <pre className="text-xs text-gray-800 overflow-auto max-h-64 whitespace-pre-wrap">
+                {result.data.textContent}
+              </pre>
+            </div>
+          )}
 
         {/* 에러 메시지 (실패 시) */}
         {status === 'error' && (

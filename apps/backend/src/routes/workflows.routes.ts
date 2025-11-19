@@ -12,6 +12,7 @@ import { workflowRepository, executionRepository } from '../repositories/workflo
 import { ApiResponse, ExecuteWorkflowRequest, ExecuteWorkflowResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError, NotFoundError } from '../utils/errors';
+import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
 
 const router = Router();
 
@@ -207,16 +208,19 @@ router.post(
         }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new N8nApiError(`Workflow execution failed: ${errorText}`, {
-          correlationId,
-          workflowId: id,
-          status: response.status,
-        });
-      }
+      // 응답 상태 확인
+      await checkN8nResponse(response, {
+        correlationId,
+        workflowId: id,
+        operation: 'execute workflow',
+      });
 
-      const n8nResponse = (await response.json()) as N8nExecutionResponse;
+      // JSON 응답 파싱
+      const n8nResponse = await parseN8nResponse<N8nExecutionResponse>(response, {
+        correlationId,
+        workflowId: id,
+        operation: 'execute workflow',
+      });
       executionId = n8nResponse.data.executionId;
     }
 

@@ -11,6 +11,7 @@ import { getCorrelationId } from '../middleware/correlation-id.middleware';
 import { ApiResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError } from '../utils/errors';
+import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
 
 const router = Router();
 
@@ -261,14 +262,19 @@ router.post(
         }
       );
 
-      if (!executeResponse.ok) {
-        throw new N8nApiError('Failed to execute workflow', {
-          correlationId,
-          status: executeResponse.ok,
-        });
-      }
+      // 응답 상태 확인
+      await checkN8nResponse(executeResponse, {
+        correlationId,
+        workflowId,
+        operation: 'execute agent workflow',
+      });
 
-      const executionResult = (await executeResponse.json()) as any;
+      // JSON 응답 파싱
+      const executionResult = await parseN8nResponse<any>(executeResponse, {
+        correlationId,
+        workflowId,
+        operation: 'execute agent workflow',
+      });
 
       log.info('Agent workflow executed', {
         correlationId,
