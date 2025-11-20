@@ -5,6 +5,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { authService } from '../services/auth.service';
 import { envConfig } from '../utils/env-validator';
 import { log } from '../utils/logger';
@@ -99,7 +100,29 @@ export function authenticateN8nApiKey(req: Request, res: Response, next: NextFun
 }
 
 /**
+ * HMAC-SHA256 시그니처 생성
+ */
+function generateHmacSignature(payload: string, secret: string): string {
+  return crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
+}
+
+/**
+ * 타이밍-안전 문자열 비교 (타이밍 공격 방지)
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * n8n 웹훅 시그니처 검증 미들웨어
+ * HMAC-SHA256 기반 검증으로 요청 무결성과 인증을 보장
  */
 export function verifyWebhookSignature(req: Request, res: Response, next: NextFunction): void {
   // n8n 웹훅 시크릿이 설정되지 않은 경우 스킵
@@ -121,10 +144,23 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
     return;
   }
 
-  // 실제 시그니처 검증은 n8n 문서에 따라 구현
-  // 현재는 단순 비교 (프로덕션에서는 HMAC 검증 필요)
-  if (signature !== envConfig.N8N_WEBHOOK_SECRET) {
-    log.warn('Invalid webhook signature', { path: req.path, ip: req.ip });
+  // 요청 본문을 문자열로 변환
+  const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+
+  // HMAC-SHA256 시그니처 생성
+  const expectedSignature = generateHmacSignature(payload, envConfig.N8N_WEBHOOK_SECRET);
+
+  // 시그니처 형식 처리 (sha256=... 또는 순수 해시)
+  const receivedSignature = signature.startsWith('sha256=') ? signature.slice(7) : signature;
+
+  // 타이밍-안전 비교로 시그니처 검증
+  if (!timingSafeCompare(receivedSignature, expectedSignature)) {
+    log.warn('Invalid webhook signature', {
+      path: req.path,
+      ip: req.ip,
+      receivedLength: receivedSignature.length,
+      expectedLength: expectedSignature.length,
+    });
     res.status(403).json({
       success: false,
       error: 'Invalid webhook signature',
@@ -133,7 +169,7 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
     return;
   }
 
-  log.debug('Webhook signature verified', { path: req.path });
+  log.debug('Webhook signature verified (HMAC-SHA256)', { path: req.path });
   next();
 }
 

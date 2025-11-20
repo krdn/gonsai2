@@ -8,6 +8,7 @@ import { BaseRepository } from './base.repository';
 import { IUser, USER_COLLECTION } from '../models/user.model';
 import { WithId } from 'mongodb';
 import { Cacheable, CacheEvict } from '../decorators/cache.decorator';
+import { AggregateStatsResult } from '../types/n8n.types';
 
 export class UserRepository extends BaseRepository<IUser> {
   protected collectionName = USER_COLLECTION;
@@ -87,12 +88,12 @@ export class UserRepository extends BaseRepository<IUser> {
       },
     ];
 
-    const result = await this.aggregate<any>(pipeline);
+    const result = await this.aggregate<AggregateStatsResult>(pipeline);
 
     return {
       total: result[0]?.total[0]?.count || 0,
-      active: result[0]?.active[0]?.count || 0,
-      inactive: result[0]?.inactive[0]?.count || 0,
+      active: result[0]?.active?.[0]?.count || 0,
+      inactive: result[0]?.inactive?.[0]?.count || 0,
     };
   }
 }

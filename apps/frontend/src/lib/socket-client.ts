@@ -54,6 +54,16 @@ export interface Notification {
 
 type SocketEventHandler<T = any> = (data: T) => void;
 
+// 이벤트 타입 정의
+type SocketEventType =
+  | 'execution:update'
+  | 'execution:started'
+  | 'execution:finished'
+  | 'execution:error'
+  | 'log:message'
+  | 'metric:update'
+  | 'notification';
+
 class SocketIOClient {
   private socket: Socket | null = null;
   private url: string;
@@ -62,8 +72,15 @@ class SocketIOClient {
   private reconnectDelay = 1000;
   private connectingPromise: Promise<void> | null = null; // 연결 중인 Promise 캐싱
 
+  // 🔧 메모리 누수 방지: 등록된 핸들러 추적
+  private handlerRegistry = new Map<SocketEventType, Set<SocketEventHandler>>();
+
+  // 🔧 인스턴스 ID로 디버깅 지원
+  private readonly instanceId = Math.random().toString(36).substring(7);
+
   constructor(url: string) {
     this.url = url;
+    console.log(`[Socket.io] Client instance created: ${this.instanceId}`);
   }
 
   connect(): Promise<void> {
@@ -119,72 +136,127 @@ class SocketIOClient {
 
   disconnect(): void {
     if (this.socket) {
+      // 🔧 모든 이벤트 핸들러 정리
+      this.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
     }
     this.connectingPromise = null; // 연결 해제 시 Promise 초기화
+    console.log(`[Socket.io] Client disconnected: ${this.instanceId}`);
   }
 
   isConnected(): boolean {
     return this.socket?.connected ?? false;
   }
 
-  // Event subscription methods
+  /**
+   * 모든 이벤트 리스너 제거 (메모리 누수 방지)
+   */
+  removeAllListeners(): void {
+    this.handlerRegistry.forEach((handlers, eventType) => {
+      handlers.forEach((handler) => {
+        this.socket?.off(eventType, handler);
+      });
+      handlers.clear();
+    });
+    this.handlerRegistry.clear();
+    console.log(`[Socket.io] All listeners removed: ${this.instanceId}`);
+  }
+
+  /**
+   * 등록된 핸들러 수 조회 (디버깅용)
+   */
+  getHandlerCount(): number {
+    let count = 0;
+    this.handlerRegistry.forEach((handlers) => {
+      count += handlers.size;
+    });
+    return count;
+  }
+
+  // 🔧 핸들러 등록 헬퍼 (중복 방지)
+  private registerHandler(event: SocketEventType, handler: SocketEventHandler): void {
+    if (!this.handlerRegistry.has(event)) {
+      this.handlerRegistry.set(event, new Set());
+    }
+
+    const handlers = this.handlerRegistry.get(event)!;
+
+    // 🔧 중복 핸들러 체크 (같은 함수 참조 방지)
+    if (handlers.has(handler)) {
+      console.warn(`[Socket.io] Duplicate handler detected for ${event}, skipping`);
+      return;
+    }
+
+    handlers.add(handler);
+    this.socket?.on(event, handler);
+  }
+
+  // 🔧 핸들러 해제 헬퍼
+  private unregisterHandler(event: SocketEventType, handler: SocketEventHandler): void {
+    const handlers = this.handlerRegistry.get(event);
+    if (handlers) {
+      handlers.delete(handler);
+      this.socket?.off(event, handler);
+    }
+  }
+
+  // Event subscription methods (핸들러 레지스트리 사용)
   onExecutionUpdate(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.on('execution:update', handler);
+    this.registerHandler('execution:update', handler);
   }
 
   onExecutionStarted(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.on('execution:started', handler);
+    this.registerHandler('execution:started', handler);
   }
 
   onExecutionFinished(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.on('execution:finished', handler);
+    this.registerHandler('execution:finished', handler);
   }
 
   onExecutionError(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.on('execution:error', handler);
+    this.registerHandler('execution:error', handler);
   }
 
   onLogMessage(handler: SocketEventHandler<LogMessage>): void {
-    this.socket?.on('log:message', handler);
+    this.registerHandler('log:message', handler);
   }
 
   onMetricUpdate(handler: SocketEventHandler<MetricUpdate>): void {
-    this.socket?.on('metric:update', handler);
+    this.registerHandler('metric:update', handler);
   }
 
   onNotification(handler: SocketEventHandler<Notification>): void {
-    this.socket?.on('notification', handler);
+    this.registerHandler('notification', handler);
   }
 
-  // Remove event listeners
+  // Remove event listeners (핸들러 레지스트리 사용)
   offExecutionUpdate(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.off('execution:update', handler);
+    this.unregisterHandler('execution:update', handler);
   }
 
   offExecutionStarted(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.off('execution:started', handler);
+    this.unregisterHandler('execution:started', handler);
   }
 
   offExecutionFinished(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.off('execution:finished', handler);
+    this.unregisterHandler('execution:finished', handler);
   }
 
   offExecutionError(handler: SocketEventHandler<ExecutionUpdate>): void {
-    this.socket?.off('execution:error', handler);
+    this.unregisterHandler('execution:error', handler);
   }
 
   offLogMessage(handler: SocketEventHandler<LogMessage>): void {
-    this.socket?.off('log:message', handler);
+    this.unregisterHandler('log:message', handler);
   }
 
   offMetricUpdate(handler: SocketEventHandler<MetricUpdate>): void {
-    this.socket?.off('metric:update', handler);
+    this.unregisterHandler('metric:update', handler);
   }
 
   offNotification(handler: SocketEventHandler<Notification>): void {
-    this.socket?.off('notification', handler);
+    this.unregisterHandler('notification', handler);
   }
 
   // Emit events
@@ -211,27 +283,55 @@ class SocketIOClient {
   }
 }
 
-// Singleton instance
+// 🔧 강화된 싱글톤 패턴
 let socketClient: SocketIOClient | null = null;
 
+// 🔧 SSR 안전성을 위한 환경 체크
+const isBrowser = typeof window !== 'undefined';
+
 export function getSocketClient(): SocketIOClient {
+  // 🔧 SSR 환경에서는 경고 후 더미 인스턴스 반환
+  if (!isBrowser) {
+    console.warn('[Socket.io] getSocketClient called in SSR context');
+    // SSR에서는 빈 URL로 인스턴스 생성 (실제 연결은 클라이언트에서만)
+    if (!socketClient) {
+      socketClient = new SocketIOClient('');
+    }
+    return socketClient;
+  }
+
   if (!socketClient) {
     // 브라우저 환경에서 동적으로 URL 결정
     let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
-    // 클라이언트 사이드에서만 실행
-    if (typeof window !== 'undefined') {
-      // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
-      const hostname = window.location.hostname;
-      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        // 모든 원격 접속은 공개 도메인의 백엔드 포트(3000)로 연결
-        // 내부 IP 사용 시 CORS Private Network Access 정책에 의해 차단됨
-        socketUrl = `http://${hostname}:3000`;
-      }
+    // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      // 모든 원격 접속은 공개 도메인의 백엔드 포트(3000)로 연결
+      // 내부 IP 사용 시 CORS Private Network Access 정책에 의해 차단됨
+      socketUrl = `http://${hostname}:3000`;
     }
 
-    console.log('[Socket.io] Connecting to:', socketUrl);
+    console.log('[Socket.io] Creating singleton client for:', socketUrl);
     socketClient = new SocketIOClient(socketUrl);
   }
   return socketClient;
+}
+
+/**
+ * 소켓 클라이언트 완전 정리 (앱 종료 시)
+ */
+export function destroySocketClient(): void {
+  if (socketClient) {
+    socketClient.disconnect();
+    socketClient = null;
+    console.log('[Socket.io] Singleton instance destroyed');
+  }
+}
+
+/**
+ * 현재 등록된 핸들러 수 조회 (디버깅용)
+ */
+export function getSocketHandlerCount(): number {
+  return socketClient?.getHandlerCount() ?? 0;
 }
