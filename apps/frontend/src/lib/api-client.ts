@@ -16,6 +16,7 @@ function getApiUrl(): string {
   }
 
   // 클라이언트 사이드: 현재 hostname 기반으로 결정
+  // eslint-disable-next-line no-undef
   const hostname = window.location.hostname;
 
   // localhost 접속: 기본 URL 사용
@@ -62,31 +63,30 @@ function getHeaders(customHeaders: HeadersInit = {}): HeadersInit {
 }
 
 /**
+ * 개발 환경에서만 로깅
+ */
+const isDev = process.env.NODE_ENV === 'development';
+
+/**
  * Fetch 래퍼 함수 - 공통 에러 처리
  */
 async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   try {
-    const apiUrl = getApiUrl(); // 매 요청마다 동적으로 URL 결정
-    console.log('[API Client] Using API URL:', apiUrl);
-    console.log('[API Client] Fetching:', url);
-    console.log('[API Client] Options:', options);
-    console.log('[API Client] Headers:', getHeaders(options.headers));
-
     const response = await fetch(url, {
       ...options,
       headers: getHeaders(options.headers),
     }).catch((fetchError) => {
-      console.error('[API Client] Fetch failed with error:', fetchError);
-      console.error('[API Client] Error type:', fetchError.constructor.name);
-      console.error('[API Client] Error message:', fetchError.message);
+      if (isDev) {
+        console.error('[API Client] Fetch failed:', fetchError.message);
+      }
       throw fetchError;
     });
 
-    console.log('[API Client] Response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[API Client] Error response:', errorText);
+      if (isDev) {
+        console.error('[API Client] Error response:', response.status, errorText);
+      }
       throw new ApiClientError(
         response.status,
         response.statusText,
@@ -98,11 +98,13 @@ async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       const responseText = await response.text();
-      console.error('[API Client] Non-JSON response:', {
-        url,
-        contentType,
-        responsePreview: responseText.substring(0, 200),
-      });
+      if (isDev) {
+        console.error('[API Client] Non-JSON response:', {
+          url,
+          contentType,
+          responsePreview: responseText.substring(0, 200),
+        });
+      }
       throw new ApiClientError(
         response.status,
         'Invalid Content-Type',
@@ -112,11 +114,11 @@ async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit
       );
     }
 
-    const data = await response.json();
-    console.log('[API Client] Success:', url);
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error('[API Client] Fetch error:', error);
+    if (isDev && !(error instanceof ApiClientError)) {
+      console.error('[API Client] Fetch error:', error);
+    }
     if (error instanceof ApiClientError) {
       throw error;
     }

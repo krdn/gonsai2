@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Play, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -43,8 +43,8 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // REST API로 초기 데이터 로드
-  const loadExecutions = async () => {
+  // REST API로 초기 데이터 로드 (메모이제이션)
+  const loadExecutions = useCallback(async () => {
     try {
       setIsRefreshing(true);
       const response = await monitoringApi.recentExecutions(20);
@@ -93,7 +93,39 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
+
+  // WebSocket 이벤트 핸들러 (메모이제이션)
+  const handleExecutionUpdate = useCallback((data: ExecutionUpdate) => {
+    setExecutions((prev) => {
+      const newState = { ...prev };
+
+      // Remove from all groups first
+      Object.keys(newState).forEach((key) => {
+        newState[key as keyof ExecutionGroup] = newState[key as keyof ExecutionGroup].filter(
+          (exec) => exec.executionId !== data.executionId
+        );
+      });
+
+      // Add to appropriate group
+      switch (data.status) {
+        case 'running':
+          newState.running = [data, ...newState.running].slice(0, 10);
+          break;
+        case 'waiting':
+          newState.waiting = [data, ...newState.waiting].slice(0, 10);
+          break;
+        case 'success':
+          newState.completed = [data, ...newState.completed].slice(0, 10);
+          break;
+        case 'error':
+          newState.failed = [data, ...newState.failed].slice(0, 10);
+          break;
+      }
+
+      return newState;
+    });
+  }, []);
 
   useEffect(() => {
     // 초기 데이터 로드
@@ -101,37 +133,6 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
 
     // WebSocket으로 실시간 업데이트 수신
     const socket = getSocketClient();
-
-    const handleExecutionUpdate = (data: ExecutionUpdate) => {
-      setExecutions((prev) => {
-        const newState = { ...prev };
-
-        // Remove from all groups first
-        Object.keys(newState).forEach((key) => {
-          newState[key as keyof ExecutionGroup] = newState[key as keyof ExecutionGroup].filter(
-            (exec) => exec.executionId !== data.executionId
-          );
-        });
-
-        // Add to appropriate group
-        switch (data.status) {
-          case 'running':
-            newState.running = [data, ...newState.running].slice(0, 10);
-            break;
-          case 'waiting':
-            newState.waiting = [data, ...newState.waiting].slice(0, 10);
-            break;
-          case 'success':
-            newState.completed = [data, ...newState.completed].slice(0, 10);
-            break;
-          case 'error':
-            newState.failed = [data, ...newState.failed].slice(0, 10);
-            break;
-        }
-
-        return newState;
-      });
-    };
 
     socket.onExecutionUpdate(handleExecutionUpdate);
     socket.onExecutionStarted(handleExecutionUpdate);
@@ -148,7 +149,7 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
       socket.offExecutionError(handleExecutionUpdate);
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [loadExecutions, handleExecutionUpdate]);
 
   const getStatusIcon = (status: ExecutionStatus) => {
     switch (status) {
@@ -163,7 +164,7 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
     }
   };
 
-  const getStatusLabel = (status: ExecutionStatus) => {
+  const _getStatusLabel = (status: ExecutionStatus) => {
     switch (status) {
       case 'running':
         return '실행 중';
@@ -230,11 +231,15 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
     );
   };
 
-  const totalExecutions =
-    executions.running.length +
-    executions.waiting.length +
-    executions.completed.length +
-    executions.failed.length;
+  // 총 실행 수 계산 (메모이제이션)
+  const totalExecutions = useMemo(
+    () =>
+      executions.running.length +
+      executions.waiting.length +
+      executions.completed.length +
+      executions.failed.length,
+    [executions]
+  );
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}>

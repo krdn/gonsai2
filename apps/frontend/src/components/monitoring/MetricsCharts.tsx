@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -15,7 +15,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Activity, Clock, AlertTriangle, Zap, RefreshCw, Loader2 } from 'lucide-react';
+import { Activity, Clock, AlertTriangle, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { getSocketClient, type MetricUpdate } from '@/lib/socket-client';
 import { monitoringApi } from '@/lib/api-client';
@@ -38,12 +38,12 @@ interface HourlyMetric {
 export function MetricsCharts({ className = '' }: MetricsChartsProps) {
   const [metrics, setMetrics] = useState<MetricDataPoint[]>([]);
   const [currentMetrics, setCurrentMetrics] = useState<MetricUpdate | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [_isLoading, setIsLoading] = useState(true);
+  const [_isRefreshing, setIsRefreshing] = useState(false);
   const MAX_DATA_POINTS = 60; // 60분
 
-  // REST API로 초기 시간별 메트릭 로드
-  const loadHourlyMetrics = async () => {
+  // REST API로 초기 시간별 메트릭 로드 (메모이제이션)
+  const loadHourlyMetrics = useCallback(async () => {
     try {
       setIsRefreshing(true);
       const response = await monitoringApi.hourlyMetrics(24);
@@ -68,7 +68,25 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
+
+  // WebSocket 이벤트 핸들러 (메모이제이션)
+  const handleMetricUpdate = useCallback((data: MetricUpdate) => {
+    const dataPoint: MetricDataPoint = {
+      ...data,
+      time: format(new Date(data.timestamp), 'HH:mm'),
+    };
+
+    setMetrics((prev) => {
+      const newMetrics = [...prev, dataPoint].slice(-MAX_DATA_POINTS);
+      return newMetrics;
+    });
+
+    setCurrentMetrics(data);
+  }, []);
+
+  // AI 토큰 데이터 존재 여부 체크 (메모이제이션)
+  const hasAiTokenData = useMemo(() => metrics.some((m) => m.aiTokensUsed), [metrics]);
 
   useEffect(() => {
     // 초기 데이터 로드
@@ -76,20 +94,6 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
 
     // WebSocket으로 실시간 업데이트 수신
     const socket = getSocketClient();
-
-    const handleMetricUpdate = (data: MetricUpdate) => {
-      const dataPoint: MetricDataPoint = {
-        ...data,
-        time: format(new Date(data.timestamp), 'HH:mm'),
-      };
-
-      setMetrics((prev) => {
-        const newMetrics = [...prev, dataPoint].slice(-MAX_DATA_POINTS);
-        return newMetrics;
-      });
-
-      setCurrentMetrics(data);
-    };
 
     socket.onMetricUpdate(handleMetricUpdate);
 
@@ -100,7 +104,7 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
       socket.offMetricUpdate(handleMetricUpdate);
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [loadHourlyMetrics, handleMetricUpdate]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -282,7 +286,7 @@ export function MetricsCharts({ className = '' }: MetricsChartsProps) {
       </div>
 
       {/* AI Token Usage */}
-      {metrics.some((m) => m.aiTokensUsed) && (
+      {hasAiTokenData && (
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <h4 className="text-sm font-semibold text-gray-700 mb-4">AI 토큰 사용량</h4>
           <ResponsiveContainer width="100%" height={200}>
