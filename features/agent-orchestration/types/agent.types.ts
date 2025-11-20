@@ -207,6 +207,11 @@ export interface AgentStats {
   averageDuration: number;
   totalTokensUsed?: number;
   totalCost?: number;
+  nodeTypeDistribution?: Record<string, number>;
+  queueStats?: QueueStats;
+  totalWorkflows?: number;
+  activeWorkflows?: number;
+  totalAINodes?: number;
 }
 
 /**

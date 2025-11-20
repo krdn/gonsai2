@@ -13,7 +13,16 @@ import { envConfig } from '../utils/env-validator';
  * WebSocket 메시지 타입
  */
 export interface WSMessage {
-  type: 'execution.update' | 'workflow.update' | 'error' | 'ping' | 'pong';
+  type:
+    | 'execution.update'
+    | 'workflow.update'
+    | 'error'
+    | 'ping'
+    | 'pong'
+    | 'healing.success'
+    | 'healing.failure'
+    | 'healing.max_retries'
+    | 'alert.triggered';
   data?: unknown;
   timestamp: string;
 }

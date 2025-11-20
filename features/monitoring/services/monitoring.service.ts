@@ -22,10 +22,18 @@ import {
  * Monitoring Service 클래스
  */
 export class MonitoringService {
+  private static instance: MonitoringService;
   private initialized: boolean = false;
 
   constructor() {
     log.info('Monitoring Service initialized');
+  }
+
+  public static getInstance(): MonitoringService {
+    if (!MonitoringService.instance) {
+      MonitoringService.instance = new MonitoringService();
+    }
+    return MonitoringService.instance;
   }
 
   /**
@@ -192,13 +200,7 @@ export class MonitoringService {
   /**
    * 로그 조회
    */
-  async getLogs(
-    source?: string,
-    level?: string,
-    startDate?: Date,
-    endDate?: Date,
-    limit?: number
-  ) {
+  async getLogs(source?: string, level?: string, startDate?: Date, endDate?: Date, limit?: number) {
     try {
       return await logAggregator.getLogs(source, level, startDate, endDate, limit);
     } catch (error) {
@@ -271,4 +273,4 @@ export class MonitoringService {
 /**
  * 싱글톤 인스턴스
  */
-export const monitoringService = new MonitoringService();
+export const monitoringService = MonitoringService.getInstance();
