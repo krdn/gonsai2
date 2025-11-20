@@ -12,6 +12,21 @@ import { ApiResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError } from '../utils/errors';
 import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
+import { AI_NODE_TYPES } from '../utils/n8n-constants';
+import {
+  N8nWorkflow,
+  N8nNode,
+  N8nExecution,
+  N8nListResponse,
+  AgentInfo,
+  AgentDetailInfo,
+  AgentWorkflowSummary,
+  AgentWorkflowDetail,
+  ExecutionStats,
+  FormattedExecution,
+  NodeTypeDistribution,
+  AgentOverviewStats,
+} from '../types/n8n.types';
 
 const router = Router();
 
@@ -40,24 +55,14 @@ router.get(
         });
       }
 
-      const workflowsData = (await workflowsResponse.json()) as { data?: any[] };
+      const workflowsData = (await workflowsResponse.json()) as N8nListResponse<N8nWorkflow>;
       const workflows = workflowsData.data || [];
 
-      // AI 노드 타입 정의
-      const AI_NODE_TYPES = [
-        'n8n-nodes-base.openAi',
-        'n8n-nodes-base.openAiChat',
-        '@n8n/n8n-nodes-langchain.chatOpenAi',
-        '@n8n/n8n-nodes-langchain.chatAnthropic',
-        '@n8n/n8n-nodes-langchain.agent',
-        'n8n-nodes-base.httpRequest', // AI API 호출용
-      ];
-
       // AI 노드가 포함된 워크플로우 필터링 및 정보 추출
-      const agentWorkflows = workflows
-        .map((workflow: any) => {
-          const aiNodes = (workflow.nodes || []).filter((node: any) =>
-            AI_NODE_TYPES.includes(node.type)
+      const agentWorkflows: AgentWorkflowSummary[] = workflows
+        .map((workflow: N8nWorkflow) => {
+          const aiNodes = (workflow.nodes || []).filter((node: N8nNode) =>
+            AI_NODE_TYPES.includes(node.type as (typeof AI_NODE_TYPES)[number])
           );
 
           if (aiNodes.length === 0) {
@@ -65,7 +70,7 @@ router.get(
           }
 
           // AI 노드 정보 추출
-          const agents = aiNodes.map((node: any) => ({
+          const agents: AgentInfo[] = aiNodes.map((node: N8nNode) => ({
             nodeId: node.id,
             nodeName: node.name,
             nodeType: node.type,
@@ -84,7 +89,7 @@ router.get(
             agents,
           };
         })
-        .filter((workflow: any) => workflow !== null);
+        .filter((workflow): workflow is AgentWorkflowSummary => workflow !== null);
 
       log.info('Agent workflows retrieved', {
         correlationId,
@@ -132,24 +137,14 @@ router.get(
         });
       }
 
-      const workflow = (await workflowResponse.json()) as any;
-
-      // AI 노드 타입 정의
-      const AI_NODE_TYPES = [
-        'n8n-nodes-base.openAi',
-        'n8n-nodes-base.openAiChat',
-        '@n8n/n8n-nodes-langchain.chatOpenAi',
-        '@n8n/n8n-nodes-langchain.chatAnthropic',
-        '@n8n/n8n-nodes-langchain.agent',
-        'n8n-nodes-base.httpRequest',
-      ];
+      const workflow = (await workflowResponse.json()) as N8nWorkflow;
 
       // AI 노드 추출 및 상세 정보
-      const aiNodes = (workflow.nodes || []).filter((node: any) =>
-        AI_NODE_TYPES.includes(node.type)
+      const aiNodes = (workflow.nodes || []).filter((node: N8nNode) =>
+        AI_NODE_TYPES.includes(node.type as (typeof AI_NODE_TYPES)[number])
       );
 
-      const agents = aiNodes.map((node: any) => ({
+      const agents: AgentDetailInfo[] = aiNodes.map((node: N8nNode) => ({
         nodeId: node.id,
         nodeName: node.name,
         nodeType: node.type,
@@ -169,26 +164,26 @@ router.get(
         }
       );
 
-      let executionStats = {
+      let executionStats: ExecutionStats = {
         totalExecutions: 0,
         successCount: 0,
         failedCount: 0,
         successRate: 0,
-        lastExecutedAt: null as string | null,
+        lastExecutedAt: null,
       };
 
       if (executionsResponse.ok) {
-        const executionsData = (await executionsResponse.json()) as { data?: any[] };
+        const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
         const executions = executionsData.data || [];
 
         executionStats = {
           totalExecutions: executions.length,
-          successCount: executions.filter((e: any) => e.status === 'success').length,
-          failedCount: executions.filter((e: any) => e.status === 'error').length,
+          successCount: executions.filter((e: N8nExecution) => e.status === 'success').length,
+          failedCount: executions.filter((e: N8nExecution) => e.status === 'error').length,
           successRate:
             executions.length > 0
               ? Math.round(
-                  (executions.filter((e: any) => e.status === 'success').length /
+                  (executions.filter((e: N8nExecution) => e.status === 'success').length /
                     executions.length) *
                     100
                 )
@@ -197,7 +192,7 @@ router.get(
         };
       }
 
-      const detailedWorkflow = {
+      const detailedWorkflow: AgentWorkflowDetail = {
         id: workflow.id,
         name: workflow.name,
         active: workflow.active,
@@ -270,7 +265,7 @@ router.post(
       });
 
       // JSON 응답 파싱
-      const executionResult = await parseN8nResponse<any>(executeResponse, {
+      const executionResult = await parseN8nResponse<N8nExecution>(executeResponse, {
         correlationId,
         workflowId,
         operation: 'execute agent workflow',
@@ -328,11 +323,11 @@ router.get(
         });
       }
 
-      const executionsData = (await executionsResponse.json()) as { data?: any[] };
+      const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
       const executions = executionsData.data || [];
 
       // 실행 기록 포맷팅
-      const formattedExecutions = executions.map((exec: any) => ({
+      const formattedExecutions: FormattedExecution[] = executions.map((exec: N8nExecution) => ({
         id: exec.id,
         workflowId: exec.workflowId,
         status: exec.status,
@@ -381,34 +376,24 @@ router.get(
         });
       }
 
-      const workflowsData = (await workflowsResponse.json()) as { data?: any[] };
+      const workflowsData = (await workflowsResponse.json()) as N8nListResponse<N8nWorkflow>;
       const workflows = workflowsData.data || [];
-
-      // AI 노드 타입 정의
-      const AI_NODE_TYPES = [
-        'n8n-nodes-base.openAi',
-        'n8n-nodes-base.openAiChat',
-        '@n8n/n8n-nodes-langchain.chatOpenAi',
-        '@n8n/n8n-nodes-langchain.chatAnthropic',
-        '@n8n/n8n-nodes-langchain.agent',
-        'n8n-nodes-base.httpRequest',
-      ];
 
       // AI 노드 통계
       let totalAINodes = 0;
       let agentWorkflowCount = 0;
-      const nodeTypeCount: Record<string, number> = {};
+      const nodeTypeCount: NodeTypeDistribution = {};
 
-      workflows.forEach((workflow: any) => {
-        const aiNodes = (workflow.nodes || []).filter((node: any) =>
-          AI_NODE_TYPES.includes(node.type)
+      workflows.forEach((workflow: N8nWorkflow) => {
+        const aiNodes = (workflow.nodes || []).filter((node: N8nNode) =>
+          AI_NODE_TYPES.includes(node.type as (typeof AI_NODE_TYPES)[number])
         );
 
         if (aiNodes.length > 0) {
           agentWorkflowCount++;
           totalAINodes += aiNodes.length;
 
-          aiNodes.forEach((node: any) => {
+          aiNodes.forEach((node: N8nNode) => {
             nodeTypeCount[node.type] = (nodeTypeCount[node.type] || 0) + 1;
           });
         }
@@ -423,7 +408,7 @@ router.get(
         }
       );
 
-      let executionStats = {
+      let executionStats: ExecutionStats = {
         totalExecutions: 0,
         successCount: 0,
         failedCount: 0,
@@ -432,26 +417,32 @@ router.get(
       };
 
       if (executionsResponse.ok) {
-        const executionsData = (await executionsResponse.json()) as { data?: any[] };
+        const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
         const allExecutions = executionsData.data || [];
 
         // 24시간 내 실행만 필터링
-        const recentExecutions = allExecutions.filter((exec: any) => {
+        const recentExecutions = allExecutions.filter((exec: N8nExecution) => {
           const startDate = new Date(exec.startedAt);
           return startDate >= last24Hours;
         });
 
-        const successCount = recentExecutions.filter((e: any) => e.status === 'success').length;
-        const failedCount = recentExecutions.filter((e: any) => e.status === 'error').length;
+        const successCount = recentExecutions.filter(
+          (e: N8nExecution) => e.status === 'success'
+        ).length;
+        const failedCount = recentExecutions.filter(
+          (e: N8nExecution) => e.status === 'error'
+        ).length;
 
         // 평균 실행 시간 계산
-        const completedExecutions = recentExecutions.filter((e: any) => e.stoppedAt && e.startedAt);
+        const completedExecutions = recentExecutions.filter(
+          (e: N8nExecution) => e.stoppedAt && e.startedAt
+        );
 
         let avgDuration = 0;
         if (completedExecutions.length > 0) {
-          const totalDuration = completedExecutions.reduce((sum: number, exec: any) => {
+          const totalDuration = completedExecutions.reduce((sum: number, exec: N8nExecution) => {
             const duration =
-              new Date(exec.stoppedAt).getTime() - new Date(exec.startedAt).getTime();
+              new Date(exec.stoppedAt!).getTime() - new Date(exec.startedAt).getTime();
             return sum + duration;
           }, 0);
           avgDuration = Math.round(totalDuration / completedExecutions.length);
@@ -469,10 +460,10 @@ router.get(
         };
       }
 
-      const stats = {
+      const stats: AgentOverviewStats = {
         totalWorkflows: workflows.length,
         agentWorkflows: agentWorkflowCount,
-        activeWorkflows: workflows.filter((w: any) => w.active).length,
+        activeWorkflows: workflows.filter((w: N8nWorkflow) => w.active).length,
         totalAINodes,
         nodeTypeDistribution: nodeTypeCount,
         executionStats,

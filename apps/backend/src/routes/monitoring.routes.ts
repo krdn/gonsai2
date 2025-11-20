@@ -11,6 +11,15 @@ import { getCorrelationId } from '../middleware/correlation-id.middleware';
 import { ApiResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError } from '../utils/errors';
+import {
+  N8nWorkflow,
+  N8nExecution,
+  N8nListResponse,
+  MonitoringStats,
+  FormattedExecution,
+  HourlyMetric,
+  SystemHealthData,
+} from '../types/n8n.types';
 
 const router = Router();
 
@@ -41,7 +50,7 @@ router.get(
         });
       }
 
-      const workflowsData = (await workflowsResponse.json()) as { data?: any[] };
+      const workflowsData = (await workflowsResponse.json()) as N8nListResponse<N8nWorkflow>;
       const workflows = workflowsData.data || [];
 
       // 최근 24시간 실행 통계 조회
@@ -57,11 +66,11 @@ router.get(
         }
       );
 
-      const executionsData = (await executionsResponse.json()) as { data?: any[] };
+      const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
       const allExecutions = executionsData.data || [];
 
       // 최근 24시간 내 실행만 필터링
-      const recentExecutions = allExecutions.filter((exec: any) => {
+      const recentExecutions = allExecutions.filter((exec: N8nExecution) => {
         const startDate = new Date(exec.startedAt);
         return startDate >= last24Hours;
       });
@@ -69,29 +78,35 @@ router.get(
       // 통계 계산
       const totalExecutions = recentExecutions.length;
       const successfulExecutions = recentExecutions.filter(
-        (e: any) => e.status === 'success'
+        (e: N8nExecution) => e.status === 'success'
       ).length;
-      const failedExecutions = recentExecutions.filter((e: any) => e.status === 'error').length;
-      const runningExecutions = recentExecutions.filter((e: any) => e.status === 'running').length;
+      const failedExecutions = recentExecutions.filter(
+        (e: N8nExecution) => e.status === 'error'
+      ).length;
+      const runningExecutions = recentExecutions.filter(
+        (e: N8nExecution) => e.status === 'running'
+      ).length;
 
       const successRate =
         totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0;
 
       // 평균 실행 시간 계산 (완료된 실행만)
-      const completedExecutions = recentExecutions.filter((e: any) => e.stoppedAt && e.startedAt);
+      const completedExecutions = recentExecutions.filter(
+        (e: N8nExecution) => e.stoppedAt && e.startedAt
+      );
 
       let avgExecutionTime = 0;
       if (completedExecutions.length > 0) {
-        const totalTime = completedExecutions.reduce((sum: number, exec: any) => {
-          const duration = new Date(exec.stoppedAt).getTime() - new Date(exec.startedAt).getTime();
+        const totalTime = completedExecutions.reduce((sum: number, exec: N8nExecution) => {
+          const duration = new Date(exec.stoppedAt!).getTime() - new Date(exec.startedAt).getTime();
           return sum + duration;
         }, 0);
         avgExecutionTime = Math.round(totalTime / completedExecutions.length);
       }
 
-      const stats = {
+      const stats: MonitoringStats = {
         totalWorkflows: workflows.length,
-        activeWorkflows: workflows.filter((w: any) => w.active).length,
+        activeWorkflows: workflows.filter((w: N8nWorkflow) => w.active).length,
         totalExecutions,
         successfulExecutions,
         failedExecutions,
@@ -150,7 +165,7 @@ router.get(
         });
       }
 
-      const executionsData = (await executionsResponse.json()) as { data?: any[] };
+      const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
       const executions = executionsData.data || [];
 
       // 워크플로우 정보도 함께 조회
@@ -160,14 +175,14 @@ router.get(
         },
       });
 
-      const workflowsData = (await workflowsResponse.json()) as { data?: any[] };
+      const workflowsData = (await workflowsResponse.json()) as N8nListResponse<N8nWorkflow>;
       const workflows = workflowsData.data || [];
 
       // 워크플로우 정보 매핑
-      const workflowMap = new Map(workflows.map((w: any) => [w.id, w]));
+      const workflowMap = new Map(workflows.map((w: N8nWorkflow) => [w.id, w]));
 
       // 실행 정보에 워크플로우 이름 추가
-      const enrichedExecutions = executions.map((exec: any) => {
+      const enrichedExecutions: FormattedExecution[] = executions.map((exec: N8nExecution) => {
         const workflow = workflowMap.get(exec.workflowId);
         return {
           id: exec.id,
@@ -226,13 +241,13 @@ router.get(
         });
       }
 
-      const executionsData = (await executionsResponse.json()) as { data?: any[] };
+      const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
       const allExecutions = executionsData.data || [];
 
       // 지정된 시간 범위 내 실행만 필터링
       const hoursNum = Number(hours);
       const startTime = new Date(Date.now() - hoursNum * 60 * 60 * 1000);
-      const recentExecutions = allExecutions.filter((exec: any) => {
+      const recentExecutions = allExecutions.filter((exec: N8nExecution) => {
         const execTime = new Date(exec.startedAt);
         return execTime >= startTime;
       });
@@ -249,7 +264,7 @@ router.get(
       }
 
       // 실행 기록을 시간별로 분류
-      recentExecutions.forEach((exec: any) => {
+      recentExecutions.forEach((exec: N8nExecution) => {
         const execTime = new Date(exec.startedAt);
         execTime.setMinutes(0, 0, 0);
         const hourKey = execTime.toISOString();
@@ -265,7 +280,7 @@ router.get(
       });
 
       // 배열로 변환
-      const metrics = Object.entries(hourlyMetrics)
+      const metrics: HourlyMetric[] = Object.entries(hourlyMetrics)
         .map(([timestamp, counts]) => ({
           timestamp,
           ...counts,
@@ -306,7 +321,7 @@ router.get(
       // 전체 시스템 상태
       const systemHealthy = n8nHealthy && mongoHealthy;
 
-      const healthData = {
+      const healthData: SystemHealthData = {
         status: systemHealthy ? 'healthy' : 'degraded',
         services: {
           n8n: {

@@ -8,6 +8,7 @@ import { BaseRepository } from './base.repository';
 import { WithId } from 'mongodb';
 import { Cacheable, CacheEvict } from '../decorators/cache.decorator';
 import { COLLECTIONS } from '../../../../infrastructure/mongodb/schemas/types';
+import { AggregateStatsResult } from '../types/n8n.types';
 
 /**
  * n8n 노드 파라미터
@@ -225,7 +226,7 @@ export class ExecutionRepository extends BaseRepository<IExecution> {
   /**
    * 실행 기록 생성 (캐시 무효화)
    */
-  @CacheEvict((_result: any, execution: IExecution) => [
+  @CacheEvict((_result: WithId<IExecution>, execution: Omit<IExecution, 'createdAt'>) => [
     `execution:workflow:${execution.workflowId}:*`,
   ])
   async createExecution(execution: Omit<IExecution, 'createdAt'>): Promise<WithId<IExecution>> {
@@ -238,11 +239,11 @@ export class ExecutionRepository extends BaseRepository<IExecution> {
   /**
    * 실행 상태 업데이트 (캐시 무효화)
    */
-  @CacheEvict((_result: any, _executionId: string) => [`execution:*`])
+  @CacheEvict((_result: void, _executionId: string) => [`execution:*`])
   async updateExecutionStatus(
     executionId: string,
     status: IExecution['status'],
-    data?: { outputData?: any; error?: string }
+    data?: { outputData?: ExecutionData; error?: string }
   ): Promise<void> {
     await this.update(
       { n8nExecutionId: executionId },
@@ -284,13 +285,13 @@ export class ExecutionRepository extends BaseRepository<IExecution> {
       },
     ];
 
-    const result = await this.aggregate<any>(pipeline);
+    const result = await this.aggregate<AggregateStatsResult>(pipeline);
 
     return {
       total: result[0]?.total[0]?.count || 0,
-      success: result[0]?.success[0]?.count || 0,
-      error: result[0]?.error[0]?.count || 0,
-      running: result[0]?.running[0]?.count || 0,
+      success: result[0]?.success?.[0]?.count || 0,
+      error: result[0]?.error?.[0]?.count || 0,
+      running: result[0]?.running?.[0]?.count || 0,
     };
   }
 }
