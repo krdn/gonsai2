@@ -10,6 +10,7 @@ import {
   Filter,
   FindOptions,
   OptionalId,
+  OptionalUnlessRequiredId,
   UpdateFilter,
   DeleteResult,
   UpdateResult,
@@ -170,7 +171,7 @@ export abstract class BaseRepository<T extends Document> {
    */
   async create(document: OptionalId<T>): Promise<WithId<T>> {
     try {
-      const result = await this.getCollection().insertOne(document as any);
+      const result = await this.getCollection().insertOne(document as OptionalUnlessRequiredId<T>);
 
       if (!result.acknowledged) {
         throw new DatabaseError('Insert operation was not acknowledged');
@@ -188,7 +189,9 @@ export abstract class BaseRepository<T extends Document> {
    */
   async createMany(documents: OptionalId<T>[]): Promise<WithId<T>[]> {
     try {
-      const result = await this.getCollection().insertMany(documents as any);
+      const result = await this.getCollection().insertMany(
+        documents as OptionalUnlessRequiredId<T>[]
+      );
 
       if (!result.acknowledged) {
         throw new DatabaseError('Insert many operation was not acknowledged');

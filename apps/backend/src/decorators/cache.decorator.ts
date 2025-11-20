@@ -10,10 +10,14 @@ import { log } from '../utils/logger';
 /**
  * 메서드 결과 캐싱 데코레이터
  */
-export function Cacheable(options?: CacheOptions & { keyGenerator?: (...args: any[]) => string }) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Cacheable(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options?: CacheOptions & { keyGenerator?: (...args: any[]) => string }
+) {
+  return function (target: object, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     descriptor.value = async function (...args: any[]) {
       // 캐시 키 생성
       const cacheKey = options?.keyGenerator
@@ -50,10 +54,14 @@ export function Cacheable(options?: CacheOptions & { keyGenerator?: (...args: an
 /**
  * 메서드 실행 후 캐시 무효화 데코레이터
  */
-export function CacheEvict(patterns: string[] | ((result: any, ...args: any[]) => string[])) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+export function CacheEvict(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  patterns: string[] | ((result: any, ...args: any[]) => string[])
+) {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     descriptor.value = async function (...args: any[]) {
       const result = await originalMethod.apply(this, args);
 
@@ -80,10 +88,14 @@ export function CacheEvict(patterns: string[] | ((result: any, ...args: any[]) =
 /**
  * 메서드 실행 후 특정 캐시 키 업데이트 데코레이터
  */
-export function CachePut(options: CacheOptions & { keyGenerator: (...args: any[]) => string }) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+export function CachePut(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: CacheOptions & { keyGenerator: (...args: any[]) => string }
+) {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     descriptor.value = async function (...args: any[]) {
       const result = await originalMethod.apply(this, args);
 

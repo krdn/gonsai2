@@ -7,6 +7,9 @@
 import { config } from 'dotenv';
 import path from 'path';
 
+// NOTE: logger.ts를 여기서 import하면 순환 참조 발생
+// logger.ts가 envConfig를 import하기 때문에 printConfig()에서는 console.log 사용
+
 // .env 파일 로드 (백엔드 디렉토리 기준)
 // override: true 옵션으로 이미 존재하는 환경 변수도 덮어씀
 config({ path: path.resolve(__dirname, '../../.env'), override: true });
@@ -129,6 +132,8 @@ export const envConfig: AppConfig = validateEnvVariables();
  * 환경 변수 출력 (민감 정보 마스킹)
  */
 export function printConfig(): void {
+  // 순환 참조 방지를 위해 console.log 사용
+  // 이 함수는 서버 초기화 시점에 호출되므로 logger가 아직 준비되지 않을 수 있음
   console.log('📋 Application Configuration:');
   console.log(`  Environment: ${envConfig.NODE_ENV}`);
   console.log(`  Server: ${envConfig.HOST}:${envConfig.PORT}`);
