@@ -64,7 +64,9 @@ class WebSocketClient {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          console.log('[WebSocket] Connected');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[WebSocket] Connected');
+          }
           this.reconnectAttempts = 0;
           this.startHeartbeat();
           useWorkflowStore.getState().setConnected(true);
@@ -79,25 +81,33 @@ class WebSocketClient {
             const message: WebSocketMessage = JSON.parse(event.data);
             this.handleMessage(message);
           } catch (error) {
-            console.error('[WebSocket] Failed to parse message:', error);
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('[WebSocket] Failed to parse message:', error);
+            }
           }
         };
 
         this.ws.onerror = (error) => {
-          console.error('[WebSocket] Error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('[WebSocket] Error:', error);
+          }
           useWorkflowStore.getState().setConnectionError('WebSocket connection error');
           reject(error);
         };
 
         this.ws.onclose = () => {
-          console.log('[WebSocket] Disconnected');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[WebSocket] Disconnected');
+          }
           this.stopHeartbeat();
           useWorkflowStore.getState().setConnected(false);
           this.emit('connection.lost', {});
           this.attemptReconnect();
         };
       } catch (error) {
-        console.error('[WebSocket] Connection failed:', error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[WebSocket] Connection failed:', error);
+        }
         reject(error);
       }
     });
@@ -120,7 +130,9 @@ class WebSocketClient {
       };
       this.ws.send(JSON.stringify(message));
     } else {
-      console.warn('[WebSocket] Cannot send message: not connected');
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[WebSocket] Cannot send message: not connected');
+      }
     }
   }
 
@@ -147,7 +159,9 @@ class WebSocketClient {
         try {
           callback(data);
         } catch (error) {
-          console.error(`[WebSocket] Error in ${event} callback:`, error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error(`[WebSocket] Error in ${event} callback:`, error);
+          }
         }
       });
     }
@@ -179,6 +193,11 @@ class WebSocketClient {
       case 'workflow.deactivated':
         this.handleWorkflowStatusChanged(data);
         break;
+      default:
+        // 예상치 못한 메시지 타입 로깅
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[WebSocket] Unexpected message type:', type);
+        }
     }
 
     // 리스너에게 알림
@@ -239,7 +258,9 @@ class WebSocketClient {
 
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('[WebSocket] Max reconnect attempts reached');
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[WebSocket] Max reconnect attempts reached');
+      }
       useWorkflowStore.getState().setConnectionError('Failed to reconnect after maximum attempts');
       return;
     }
@@ -247,12 +268,16 @@ class WebSocketClient {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
-    console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    }
 
     setTimeout(() => {
       useWorkflowStore.getState().setConnecting(true);
       this.connect().catch((error) => {
-        console.error('[WebSocket] Reconnection failed:', error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[WebSocket] Reconnection failed:', error);
+        }
       });
     }, delay);
   }
@@ -292,18 +317,26 @@ export function getWebSocketClient(): WebSocketClient {
       if (win.location) {
         const hostname = win.location.hostname;
         if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-          // krdn.iptime.org 도메인은 내부 IP 사용 (NAT hairpin 문제 회피)
-          if (hostname === 'krdn.iptime.org') {
-            wsUrl = 'ws://192.168.0.50:3000/ws';
+          // NAT hairpin 문제를 피하기 위한 내부 IP는 환경 변수로 설정
+          // NEXT_PUBLIC_INTERNAL_WS_URL 환경 변수가 있으면 사용
+          const internalWsUrl = process.env.NEXT_PUBLIC_INTERNAL_WS_URL;
+          if (
+            internalWsUrl &&
+            (hostname === 'krdn.iptime.org' || hostname.endsWith('.iptime.org'))
+          ) {
+            wsUrl = internalWsUrl;
           } else {
             // 그 외 도메인은 같은 호스트의 백엔드 포트(3000)로 연결
-            wsUrl = `ws://${hostname}:3000/ws`;
+            const wsPort = process.env.NEXT_PUBLIC_WS_PORT || '3000';
+            wsUrl = `ws://${hostname}:${wsPort}/ws`;
           }
         }
       }
     }
 
-    console.log('[WebSocket] Connecting to:', wsUrl);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[WebSocket] Connecting to:', wsUrl);
+    }
     wsClient = new WebSocketClient(wsUrl);
   }
   return wsClient;

@@ -5,12 +5,12 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { MongoClient } from 'mongodb';
-import { envConfig } from '../utils/env-validator';
+import { Db } from 'mongodb';
 import { log } from '../utils/logger';
 import { N8nWebhookPayload, ApiResponse } from '../types/api.types';
 import { asyncHandler, verifyWebhookSignature } from '../middleware';
 import { COLLECTIONS } from '../../../../infrastructure/mongodb/schemas/types';
+import { databaseService } from '../services/database.service';
 
 const router = Router();
 
@@ -30,53 +30,44 @@ router.post(
       executionId: payload.executionId,
     });
 
-    // MongoDB 클라이언트 연결
-    const client = new MongoClient(envConfig.MONGODB_URI);
-    await client.connect();
-    const db = client.db();
+    // 싱글톤 DatabaseService에서 DB 인스턴스 가져오기 (연결 풀링 사용)
+    const db = databaseService.getDb();
 
-    try {
-      switch (payload.event) {
-        case 'workflow.execute.success':
-          await handleWorkflowSuccess(db, payload);
-          break;
+    switch (payload.event) {
+      case 'workflow.execute.success':
+        await handleWorkflowSuccess(db, payload);
+        break;
 
-        case 'workflow.execute.failed':
-          await handleWorkflowFailure(db, payload);
-          break;
+      case 'workflow.execute.failed':
+        await handleWorkflowFailure(db, payload);
+        break;
 
-        case 'node.execute.start':
-          await handleNodeExecuteStart(db, payload);
-          break;
+      case 'node.execute.start':
+        await handleNodeExecuteStart(db, payload);
+        break;
 
-        case 'node.execute.end':
-          await handleNodeExecuteEnd(db, payload);
-          break;
+      case 'node.execute.end':
+        await handleNodeExecuteEnd(db, payload);
+        break;
 
-        default:
-          log.warn('Unknown webhook event', { event: payload.event });
-      }
-
-      const response: ApiResponse = {
-        success: true,
-        message: 'Webhook processed successfully',
-        timestamp: new Date().toISOString(),
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      log.error('Webhook processing failed', error, { payload });
-      throw error;
-    } finally {
-      await client.close();
+      default:
+        log.warn('Unknown webhook event', { event: payload.event });
     }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Webhook processed successfully',
+      timestamp: new Date().toISOString(),
+    };
+
+    res.status(200).json(response);
   })
 );
 
 /**
  * 워크플로우 성공 처리
  */
-async function handleWorkflowSuccess(db: any, payload: N8nWebhookPayload): Promise<void> {
+async function handleWorkflowSuccess(db: Db, payload: N8nWebhookPayload): Promise<void> {
   log.info('Workflow execution succeeded', {
     workflowId: payload.workflowId,
     executionId: payload.executionId,
@@ -100,7 +91,7 @@ async function handleWorkflowSuccess(db: any, payload: N8nWebhookPayload): Promi
 /**
  * 워크플로우 실패 처리
  */
-async function handleWorkflowFailure(db: any, payload: N8nWebhookPayload): Promise<void> {
+async function handleWorkflowFailure(db: Db, payload: N8nWebhookPayload): Promise<void> {
   log.error('Workflow execution failed', undefined, {
     workflowId: payload.workflowId,
     executionId: payload.executionId,
@@ -130,7 +121,7 @@ async function handleWorkflowFailure(db: any, payload: N8nWebhookPayload): Promi
 /**
  * 노드 실행 시작 처리
  */
-async function handleNodeExecuteStart(db: any, payload: N8nWebhookPayload): Promise<void> {
+async function handleNodeExecuteStart(db: Db, payload: N8nWebhookPayload): Promise<void> {
   log.debug('Node execution started', {
     workflowId: payload.workflowId,
     executionId: payload.executionId,
@@ -152,7 +143,7 @@ async function handleNodeExecuteStart(db: any, payload: N8nWebhookPayload): Prom
 /**
  * 노드 실행 종료 처리
  */
-async function handleNodeExecuteEnd(db: any, payload: N8nWebhookPayload): Promise<void> {
+async function handleNodeExecuteEnd(db: Db, payload: N8nWebhookPayload): Promise<void> {
   log.debug('Node execution ended', {
     workflowId: payload.workflowId,
     executionId: payload.executionId,
@@ -183,7 +174,7 @@ function calculateExecutionTime(_payload: N8nWebhookPayload): number | undefined
 /**
  * 에러 패턴 매칭 및 업데이트
  */
-async function updateErrorPattern(db: any, errorMessage: string, workflowId: string): Promise<void> {
+async function updateErrorPattern(db: Db, errorMessage: string, workflowId: string): Promise<void> {
   // 모든 에러 패턴 조회
   const patterns = await db.collection(COLLECTIONS.ERROR_PATTERNS).find().toArray();
 

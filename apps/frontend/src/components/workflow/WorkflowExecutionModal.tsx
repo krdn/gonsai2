@@ -344,7 +344,7 @@ export default function WorkflowExecutionModal({
               <iframe
                 srcDoc={result.data.htmlContent}
                 className="w-full h-96 bg-white"
-                sandbox="allow-same-origin"
+                sandbox=""
                 title="워크플로우 응답"
               />
             </div>
