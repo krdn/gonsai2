@@ -1,5 +1,8 @@
 'use client';
 
+// Next.js 15 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/types/auth';
@@ -142,9 +145,7 @@ export default function ProfilePage() {
         {/* 헤더 */}
         <div className="border-b border-gray-200 px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-900">프로필 설정</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            계정 정보를 확인하고 수정할 수 있습니다.
-          </p>
+          <p className="mt-1 text-sm text-gray-500">계정 정보를 확인하고 수정할 수 있습니다.</p>
         </div>
 
         {/* 본문 */}
@@ -164,10 +165,7 @@ export default function ProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 이름 */}
             <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 이름
               </label>
               <input
@@ -184,10 +182,7 @@ export default function ProfilePage() {
 
             {/* 이메일 */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 이메일
               </label>
               <input
@@ -206,9 +201,7 @@ export default function ProfilePage() {
             {isEditing && (
               <>
                 <div className="border-t border-gray-200 pt-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">
-                    비밀번호 변경
-                  </h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">비밀번호 변경</h2>
 
                   {/* 현재 비밀번호 */}
                   <div className="mb-4">

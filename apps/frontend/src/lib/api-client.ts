@@ -24,9 +24,14 @@ function getApiUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   }
 
-  // 외부 도메인 접속: 같은 호스트의 포트 3000 사용
-  // 예: krdn.iptime.org:3002 → krdn.iptime.org:3000
-  return `http://${hostname}:3000`;
+  // 외부 도메인 접속: 같은 hostname에 포트 3000 사용 (백엔드 직접 호출)
+  // 개발환경: krdn.iptime.org:3002 → http://krdn.iptime.org:3000
+  // 운영환경(Nginx): Nginx가 /api를 백엔드로 프록시하므로 origin 사용
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    return window.location.origin;
+  }
+  return `${window.location.protocol}//${hostname}:3000`;
 }
 
 /**

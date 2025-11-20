@@ -1,7 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Bot, Settings, Play, Square, Activity, CheckCircle, XCircle, AlertCircle, HelpCircle, X } from 'lucide-react';
+import {
+  Bot,
+  Settings,
+  Play,
+  Square,
+  Activity,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  HelpCircle,
+  X,
+} from 'lucide-react';
+
+// Next.js 15에서 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
 
 interface Agent {
   id: string;
@@ -211,7 +225,7 @@ export default function AgentsPage() {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-sm font-medium text-green-700">
-                    {agents.filter(a => a.status === 'running').length}/{agents.length} 실행 중
+                    {agents.filter((a) => a.status === 'running').length}/{agents.length} 실행 중
                   </span>
                 </div>
               </div>
@@ -229,8 +243,8 @@ export default function AgentsPage() {
             <div>
               <h3 className="text-sm font-semibold text-blue-900 mb-1">에이전트 시스템 안내</h3>
               <p className="text-sm text-blue-700">
-                AI 에이전트는 백엔드 서버에서 자동으로 실행됩니다.
-                현재는 읽기 전용 모니터링 페이지이며, 향후 에이전트 제어 기능이 추가될 예정입니다.
+                AI 에이전트는 백엔드 서버에서 자동으로 실행됩니다. 현재는 읽기 전용 모니터링
+                페이지이며, 향후 에이전트 제어 기능이 추가될 예정입니다.
               </p>
             </div>
           </div>
@@ -269,11 +283,15 @@ export default function AgentsPage() {
                   <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">처리된 작업</p>
-                      <p className="text-lg font-semibold text-gray-900">{agent.stats.tasksProcessed}</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {agent.stats.tasksProcessed}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">성공률</p>
-                      <p className="text-lg font-semibold text-gray-900">{agent.stats.successRate}%</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {agent.stats.successRate}%
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">마지막 활동</p>
@@ -294,7 +312,11 @@ export default function AgentsPage() {
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </span>
                         <span className="font-medium text-gray-900">
-                          {typeof value === 'boolean' ? (value ? '활성화' : '비활성화') : String(value)}
+                          {typeof value === 'boolean'
+                            ? value
+                              ? '활성화'
+                              : '비활성화'
+                            : String(value)}
                         </span>
                       </div>
                     ))}
@@ -399,8 +421,9 @@ export default function AgentsPage() {
                 <section>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">📋 개요</h3>
                   <p className="text-gray-700">
-                    이 페이지에서는 gonsai2 시스템에서 동작하는 AI 에이전트들의 상태를 모니터링할 수 있습니다.
-                    현재는 읽기 전용 모니터링 페이지이며, 향후 에이전트 제어 기능이 추가될 예정입니다.
+                    이 페이지에서는 gonsai2 시스템에서 동작하는 AI 에이전트들의 상태를 모니터링할 수
+                    있습니다. 현재는 읽기 전용 모니터링 페이지이며, 향후 에이전트 제어 기능이 추가될
+                    예정입니다.
                   </p>
                 </section>
 
@@ -415,8 +438,8 @@ export default function AgentsPage() {
                       <div>
                         <h4 className="font-medium text-gray-900">Agent Orchestrator (조율자)</h4>
                         <p className="text-sm text-gray-600">
-                          AI 에이전트 간 작업 조율 및 워크플로우 최적화를 담당합니다.
-                          여러 에이전트의 작업을 효율적으로 분배하고 조정합니다.
+                          AI 에이전트 간 작업 조율 및 워크플로우 최적화를 담당합니다. 여러
+                          에이전트의 작업을 효율적으로 분배하고 조정합니다.
                         </p>
                       </div>
                     </div>
@@ -427,8 +450,8 @@ export default function AgentsPage() {
                       <div>
                         <h4 className="font-medium text-gray-900">Error Analyzer (분석기)</h4>
                         <p className="text-sm text-gray-600">
-                          n8n 워크플로우 오류 패턴을 분석하고 분류합니다.
-                          15가지 오류 패턴 데이터베이스를 활용하여 자동으로 오류 유형을 판단합니다.
+                          n8n 워크플로우 오류 패턴을 분석하고 분류합니다. 15가지 오류 패턴
+                          데이터베이스를 활용하여 자동으로 오류 유형을 판단합니다.
                         </p>
                       </div>
                     </div>
@@ -439,8 +462,8 @@ export default function AgentsPage() {
                       <div>
                         <h4 className="font-medium text-gray-900">Auto Healing Service (복구기)</h4>
                         <p className="text-sm text-gray-600">
-                          감지된 오류를 자동으로 수정하고 복구합니다.
-                          5분마다 실행되며, medium/low 심각도의 오류를 자동으로 처리합니다.
+                          감지된 오류를 자동으로 수정하고 복구합니다. 5분마다 실행되며, medium/low
+                          심각도의 오류를 자동으로 처리합니다.
                         </p>
                       </div>
                     </div>
@@ -451,8 +474,8 @@ export default function AgentsPage() {
                       <div>
                         <h4 className="font-medium text-gray-900">System Monitor (모니터)</h4>
                         <p className="text-sm text-gray-600">
-                          n8n 및 MongoDB 상태를 실시간으로 모니터링합니다.
-                          30초마다 시스템 상태를 체크하고 이상 징후를 감지합니다.
+                          n8n 및 MongoDB 상태를 실시간으로 모니터링합니다. 30초마다 시스템 상태를
+                          체크하고 이상 징후를 감지합니다.
                         </p>
                       </div>
                     </div>
@@ -469,7 +492,9 @@ export default function AgentsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-32 text-sm text-gray-600">성공률</div>
-                      <div className="text-sm text-gray-900">전체 작업 중 성공한 작업의 비율 (%)</div>
+                      <div className="text-sm text-gray-900">
+                        전체 작업 중 성공한 작업의 비율 (%)
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-32 text-sm text-gray-600">마지막 활동</div>
@@ -520,7 +545,9 @@ export default function AgentsPage() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="font-medium text-gray-700 w-32">cronSchedule:</span>
-                      <span className="text-gray-600">자동 실행 스케줄 (예: */5 * * * * = 5분마다)</span>
+                      <span className="text-gray-600">
+                        자동 실행 스케줄 (예: */5 * * * * = 5분마다)
+                      </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="font-medium text-gray-700 w-32">maxRetries:</span>
@@ -575,14 +602,18 @@ export default function AgentsPage() {
                       <span className="text-blue-600 mt-1">3.</span>
                       <div>
                         <h4 className="font-medium text-gray-900">활동 로그 뷰어</h4>
-                        <p className="text-sm text-gray-600">에이전트별 작업 기록 및 상세 로그 조회</p>
+                        <p className="text-sm text-gray-600">
+                          에이전트별 작업 기록 및 상세 로그 조회
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-blue-600 mt-1">4.</span>
                       <div>
                         <h4 className="font-medium text-gray-900">커스텀 에이전트 생성</h4>
-                        <p className="text-sm text-gray-600">사용자 정의 자동화 에이전트 설정 및 배포</p>
+                        <p className="text-sm text-gray-600">
+                          사용자 정의 자동화 에이전트 설정 및 배포
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -625,7 +656,9 @@ export default function AgentsPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-blue-600 mt-1">•</span>
-                      <span>현재 페이지는 읽기 전용이며, 에이전트 제어는 백엔드에서만 가능합니다.</span>
+                      <span>
+                        현재 페이지는 읽기 전용이며, 에이전트 제어는 백엔드에서만 가능합니다.
+                      </span>
                     </li>
                   </ul>
                 </section>

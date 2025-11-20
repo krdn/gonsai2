@@ -1,5 +1,8 @@
 'use client';
 
+// Next.js 15 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
