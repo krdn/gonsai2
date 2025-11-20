@@ -17,7 +17,7 @@ import {
   ExecutionStatus,
 } from '../types/agent.types';
 import { n8nClient } from './n8n-client.service';
-import { websocketService } from '../../../apps/backend/src/services/websocket.service';
+import { socketIOService } from '../../../apps/backend/src/services/socketio.service';
 
 /**
  * 우선순위별 작업 옵션
@@ -57,7 +57,7 @@ const PRIORITY_OPTIONS: Record<ExecutionPriority, JobOptions> = {
  * Execution Queue Service 클래스
  */
 export class ExecutionQueueService {
-  private queue: Queue<QueueJobData, QueueJobResult>;
+  private queue: Queue<QueueJobData>;
   private mongoClient: MongoClient;
 
   constructor() {
@@ -65,13 +65,13 @@ export class ExecutionQueueService {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
     // Bull 큐 생성
-    this.queue = new Bull<QueueJobData, QueueJobResult>('workflow-executions', redisUrl, {
+    this.queue = new Bull<QueueJobData>('workflow-executions', redisUrl, {
       defaultJobOptions: {
         removeOnComplete: 100, // 완료된 작업 100개까지 보관
-        removeOnFail: 500,     // 실패한 작업 500개까지 보관
+        removeOnFail: 500, // 실패한 작업 500개까지 보관
       },
       settings: {
-        maxStalledCount: 3,    // 최대 stalled 횟수
+        maxStalledCount: 3, // 최대 stalled 횟수
         stalledInterval: 30000, // Stalled 체크 간격 (30초)
       },
     });
@@ -91,7 +91,10 @@ export class ExecutionQueueService {
   /**
    * 작업 추가 (워크플로우 실행 요청)
    */
-  async addJob(jobData: QueueJobData, priority: ExecutionPriority = 'normal'): Promise<Job<QueueJobData>> {
+  async addJob(
+    jobData: QueueJobData,
+    priority: ExecutionPriority = 'normal'
+  ): Promise<Job<QueueJobData>> {
     const options = PRIORITY_OPTIONS[priority];
 
     const job = await this.queue.add(jobData, {
@@ -111,7 +114,7 @@ export class ExecutionQueueService {
     await this.saveExecutionRecord(jobData, 'queued');
 
     // WebSocket으로 큐 추가 알림
-    websocketService.broadcastExecutionUpdate({
+    socketIOService.broadcastExecutionStarted({
       executionId: jobData.executionId,
       workflowId: jobData.workflowId,
       status: 'queued',
@@ -138,7 +141,7 @@ export class ExecutionQueueService {
         // 1. 실행 상태를 'running'으로 업데이트
         await this.updateExecutionStatus(executionId, 'running');
 
-        websocketService.broadcastExecutionUpdate({
+        socketIOService.broadcastExecutionStarted({
           executionId,
           workflowId,
           status: 'running',
@@ -151,7 +154,7 @@ export class ExecutionQueueService {
           inputData
         );
 
-        websocketService.broadcastExecutionUpdate({
+        socketIOService.broadcastExecutionStarted({
           executionId,
           workflowId,
           status: 'running',
@@ -161,12 +164,9 @@ export class ExecutionQueueService {
         // 3. 실행 완료 대기 (옵션이 활성화된 경우)
         let result;
         if (options?.waitForExecution !== false) {
-          result = await n8nClient.waitForExecution(
-            n8nExecutionId,
-            options?.timeout || 300000
-          );
+          result = await n8nClient.waitForExecution(n8nExecutionId, options?.timeout || 300000);
 
-          websocketService.broadcastExecutionUpdate({
+          socketIOService.broadcastExecutionStarted({
             executionId,
             workflowId,
             status: result.status,
@@ -202,7 +202,6 @@ export class ExecutionQueueService {
         });
 
         return jobResult;
-
       } catch (error) {
         log.error('Workflow execution failed', error, {
           jobId: job.id,
@@ -213,7 +212,7 @@ export class ExecutionQueueService {
         // 실행 실패 기록
         await this.updateExecutionStatus(executionId, 'failed', error);
 
-        websocketService.broadcastExecutionUpdate({
+        socketIOService.broadcastExecutionStarted({
           executionId,
           workflowId,
           status: 'failed',
@@ -254,7 +253,7 @@ export class ExecutionQueueService {
     });
 
     this.queue.on('progress', (job: Job<QueueJobData>, progress: number) => {
-      websocketService.broadcastExecutionUpdate({
+      socketIOService.broadcastExecutionStarted({
         executionId: job.data.executionId,
         workflowId: job.data.workflowId,
         status: 'running',
@@ -334,19 +333,16 @@ export class ExecutionQueueService {
     try {
       await this.mongoClient.connect();
 
-      await this.mongoClient
-        .db()
-        .collection(COLLECTIONS.EXECUTIONS)
-        .insertOne({
-          n8nExecutionId: jobData.executionId,
-          workflowId: jobData.workflowId,
-          n8nWorkflowId: jobData.workflowId,
-          status,
-          mode: jobData.mode,
-          startedAt: jobData.createdAt,
-          inputData: jobData.inputData,
-          createdAt: jobData.createdAt,
-        });
+      await this.mongoClient.db().collection(COLLECTIONS.EXECUTIONS).insertOne({
+        n8nExecutionId: jobData.executionId,
+        workflowId: jobData.workflowId,
+        n8nWorkflowId: jobData.workflowId,
+        status,
+        mode: jobData.mode,
+        startedAt: jobData.createdAt,
+        inputData: jobData.inputData,
+        createdAt: jobData.createdAt,
+      });
     } catch (error) {
       log.error('Failed to save execution record', error);
     } finally {

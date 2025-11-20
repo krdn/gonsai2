@@ -49,9 +49,7 @@ const NODE_VALIDATION_RULES: Record<string, ValidationRule[]> = {
     { parameter: 'model', required: true, type: 'string' },
     { parameter: 'messages', required: true, type: 'object' },
   ],
-  '@n8n/n8n-nodes-langchain.chatOpenAi': [
-    { parameter: 'model', required: true, type: 'string' },
-  ],
+  '@n8n/n8n-nodes-langchain.chatOpenAi': [{ parameter: 'model', required: true, type: 'string' }],
   '@n8n/n8n-nodes-langchain.chatAnthropic': [
     { parameter: 'model', required: true, type: 'string' },
   ],
@@ -358,6 +356,16 @@ export class AgentManagerService {
       }
 
       return {
+        // Core required stats
+        totalExecutions: queueStats.completed + queueStats.failed,
+        successCount: queueStats.completed,
+        failedCount: queueStats.failed,
+        successRate:
+          queueStats.completed > 0
+            ? (queueStats.completed / (queueStats.completed + queueStats.failed)) * 100
+            : 0,
+        averageDuration: 0, // TODO: Calculate from execution history
+        // Extended stats
         totalWorkflows: workflows.length,
         activeWorkflows: workflows.filter((w) => w.active).length,
         totalAINodes,

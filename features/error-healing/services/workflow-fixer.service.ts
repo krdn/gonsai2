@@ -264,7 +264,7 @@ export class WorkflowFixerService {
     try {
       const workflow = await n8nClient.getWorkflow(workflowId);
       log.info('Workflow backed up', { workflowId });
-      return workflow as Record<string, unknown>;
+      return workflow as unknown as Record<string, unknown>;
     } catch (error) {
       log.error('Failed to backup workflow', error, { workflowId });
       throw error;
@@ -283,11 +283,7 @@ export class WorkflowFixerService {
 
     switch (action) {
       case 'update_node_parameter':
-        await this.updateNodeParameter(
-          workflowId,
-          analyzedError.executionError.nodeId,
-          parameters
-        );
+        await this.updateNodeParameter(workflowId, analyzedError.executionError.nodeId, parameters);
         break;
 
       case 'reconnect_nodes':
@@ -328,7 +324,7 @@ export class WorkflowFixerService {
 
     // 파라미터 업데이트 로직
     if (parameters.parameterName && parameters.increment) {
-      const currentValue = node.parameters[parameters.parameterName as string] || 0;
+      const currentValue = (node.parameters[parameters.parameterName as string] as number) || 0;
       node.parameters[parameters.parameterName as string] =
         currentValue + (parameters.increment as number);
     } else if (parameters.parameterName && parameters.value !== undefined) {

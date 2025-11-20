@@ -19,7 +19,6 @@ import {
   notFoundHandler,
   correlationIdMiddleware,
 } from './middleware';
-import { websocketService } from './services/websocket.service';
 import { socketIOService } from './services/socketio.service';
 import { databaseService } from './services/database.service';
 import { cacheService } from './services/cache.service';
@@ -44,10 +43,7 @@ function createApp(): Application {
   // CORS 설정 (가장 먼저 적용)
   app.use(
     cors({
-      origin:
-        envConfig.NODE_ENV === 'production'
-          ? ['https://your-frontend-domain.com'] // 프로덕션에서는 특정 도메인만 허용
-          : ['http://localhost:3002', 'http://krdn.iptime.org:3002', 'http://192.168.0.50:3002'],
+      origin: envConfig.ALLOWED_ORIGINS,
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'], // 커스텀 헤더 허용
       exposedHeaders: ['X-API-Key', 'Access-Control-Allow-Private-Network'],
@@ -177,10 +173,7 @@ async function startServer(): Promise<void> {
     // HTTP 서버 생성
     const httpServer: HTTPServer = createServer(app);
 
-    // WebSocket 서버 초기화 (네이티브 WebSocket)
-    websocketService.initialize(httpServer);
-
-    // Socket.io 서버 초기화 (프론트엔드와 호환)
+    // Socket.io 서버 초기화 (실시간 통신 통합)
     socketIOService.initialize(httpServer);
 
     // 서버 시작
@@ -224,9 +217,6 @@ function setupGracefulShutdown(server: HTTPServer): void {
     server.close(() => {
       log.info('HTTP server closed');
     });
-
-    // WebSocket 서버 종료
-    websocketService.shutdown();
 
     // Socket.io 서버 종료
     socketIOService.shutdown();

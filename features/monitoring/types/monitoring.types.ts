@@ -278,7 +278,7 @@ export interface Alert {
   acknowledgedBy?: string;
   resolved: boolean;
   resolvedAt?: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -287,7 +287,14 @@ export interface Alert {
 export interface AlertChannelConfig {
   channel: AlertChannel;
   enabled: boolean;
-  config: EmailConfig | WebhookConfig | SlackConfig | DiscordConfig;
+  config: ConsoleConfig | EmailConfig | WebhookConfig | SlackConfig | DiscordConfig;
+}
+
+/**
+ * 콘솔 설정 (빈 객체 허용)
+ */
+export interface ConsoleConfig {
+  [key: string]: never;
 }
 
 /**
@@ -443,6 +450,6 @@ export interface AggregatedLog {
   source: string;
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   count: number;
 }

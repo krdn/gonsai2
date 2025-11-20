@@ -14,6 +14,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     wsClient.connect().catch(console.error);
 
     return () => {
+      // 모든 이벤트 리스너 정리 (메모리 누수 방지)
+      wsClient.removeAllListeners();
       wsClient.disconnect();
     };
   }, []);

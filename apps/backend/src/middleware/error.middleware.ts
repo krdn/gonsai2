@@ -7,6 +7,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { log } from '../utils/logger';
 import { envConfig } from '../utils/env-validator';
+import { RequestWithCorrelationId } from './correlation-id.middleware';
 
 /**
  * 에러 응답 인터페이스
@@ -48,7 +49,7 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
   const message = err.message || 'Internal Server Error';
 
   // 상관관계 ID 추출 (요청 추적용)
-  const correlationId = (req as any).correlationId || 'unknown';
+  const correlationId = (req as RequestWithCorrelationId).correlationId || 'unknown';
 
   // 에러 로깅
   const errorContext = {

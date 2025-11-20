@@ -10,16 +10,114 @@ import { Cacheable, CacheEvict } from '../decorators/cache.decorator';
 import { COLLECTIONS } from '../../../../infrastructure/mongodb/schemas/types';
 
 /**
+ * n8n 노드 파라미터
+ */
+export interface N8nNodeParameters {
+  [key: string]: string | number | boolean | N8nNodeParameters | N8nNodeParameters[];
+}
+
+/**
+ * n8n 노드 위치
+ */
+export interface N8nNodePosition {
+  x: number;
+  y: number;
+}
+
+/**
+ * n8n 노드 인터페이스
+ */
+export interface N8nNode {
+  id: string;
+  name: string;
+  type: string;
+  typeVersion: number;
+  position: [number, number];
+  parameters: N8nNodeParameters;
+  credentials?: Record<string, { id: string; name: string }>;
+  disabled?: boolean;
+  notes?: string;
+  notesInFlow?: boolean;
+  retryOnFail?: boolean;
+  maxTries?: number;
+  waitBetweenTries?: number;
+  alwaysOutputData?: boolean;
+  executeOnce?: boolean;
+  onError?: 'stopWorkflow' | 'continueRegularOutput' | 'continueErrorOutput';
+}
+
+/**
+ * n8n 연결 정보
+ */
+export interface N8nConnectionInfo {
+  node: string;
+  type: string;
+  index: number;
+}
+
+/**
+ * n8n 연결 구조
+ */
+export interface N8nConnections {
+  [sourceNode: string]: {
+    [outputType: string]: N8nConnectionInfo[][];
+  };
+}
+
+/**
+ * n8n 워크플로우 설정
+ */
+export interface N8nWorkflowSettings {
+  saveExecutionProgress?: boolean;
+  saveManualExecutions?: boolean;
+  saveDataErrorExecution?: 'all' | 'none';
+  saveDataSuccessExecution?: 'all' | 'none';
+  executionTimeout?: number;
+  errorWorkflow?: string;
+  timezone?: string;
+  executionOrder?: 'v0' | 'v1';
+}
+
+/**
+ * n8n 정적 데이터
+ */
+export interface N8nStaticData {
+  [nodeId: string]: Record<string, unknown>;
+}
+
+/**
+ * 노드 실행 결과 데이터
+ */
+export interface NodeExecutionResult {
+  executionTime?: number;
+  startTime?: number;
+  executionStatus?: string;
+  data?: {
+    main?: Array<Array<{ json: Record<string, unknown>; binary?: Record<string, unknown> }>>;
+  };
+  error?: {
+    message: string;
+    stack?: string;
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * 실행 데이터 (입력/출력)
+ */
+export type ExecutionData = Record<string, NodeExecutionResult | unknown>;
+
+/**
  * 워크플로우 문서 인터페이스
  */
 export interface IWorkflow {
   n8nWorkflowId: string;
   name: string;
   active: boolean;
-  nodes: any[];
-  connections: any;
-  settings?: any;
-  staticData?: any;
+  nodes: N8nNode[];
+  connections: N8nConnections;
+  settings?: N8nWorkflowSettings;
+  staticData?: N8nStaticData;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,8 +133,8 @@ export interface IExecution {
   mode: 'manual' | 'webhook' | 'trigger';
   startedAt: Date;
   finishedAt?: Date;
-  inputData?: any;
-  outputData?: any;
+  inputData?: ExecutionData;
+  outputData?: ExecutionData;
   error?: string;
   createdAt: Date;
 }

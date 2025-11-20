@@ -8,6 +8,13 @@ import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 
 /**
+ * Express Request 확장 인터페이스
+ */
+export interface RequestWithCorrelationId extends Request {
+  correlationId: string;
+}
+
+/**
  * 상관관계 ID 헤더 이름
  */
 export const CORRELATION_ID_HEADER = 'X-Correlation-ID';
@@ -22,7 +29,7 @@ export function correlationIdMiddleware(req: Request, res: Response, next: NextF
   const correlationId = (req.get(CORRELATION_ID_HEADER) || randomUUID()) as string;
 
   // 요청 객체에 추가
-  (req as any).correlationId = correlationId;
+  (req as RequestWithCorrelationId).correlationId = correlationId;
 
   // 응답 헤더에 추가
   res.setHeader(CORRELATION_ID_HEADER, correlationId);
@@ -34,5 +41,5 @@ export function correlationIdMiddleware(req: Request, res: Response, next: NextF
  * 요청에서 상관관계 ID 추출
  */
 export function getCorrelationId(req: Request): string {
-  return (req as any).correlationId || 'unknown';
+  return (req as RequestWithCorrelationId).correlationId || 'unknown';
 }
