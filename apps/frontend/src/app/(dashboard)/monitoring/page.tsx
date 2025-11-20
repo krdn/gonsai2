@@ -8,7 +8,7 @@ import {
   MetricsCharts,
   NotificationCenter,
 } from '@/components/monitoring';
-import { getWebSocketClient } from '@/lib/websocket';
+import { getSocketClient } from '@/lib/socket-client';
 import { useMonitoringStats } from '@/hooks/useMonitoring';
 
 export default function MonitoringPage() {
@@ -22,7 +22,7 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     // WebSocket 연결
-    const socket = getWebSocketClient();
+    const socket = getSocketClient();
 
     const connectToSocket = async () => {
       try {
