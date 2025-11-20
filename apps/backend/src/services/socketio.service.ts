@@ -14,11 +14,20 @@ import { log } from '../utils/logger';
 export interface ExecutionUpdate {
   executionId: string;
   workflowId: string;
-  workflowName: string;
-  status: 'running' | 'success' | 'error' | 'waiting';
+  workflowName?: string;
+  status:
+    | 'queued'
+    | 'pending'
+    | 'running'
+    | 'success'
+    | 'error'
+    | 'failed'
+    | 'waiting'
+    | 'timeout'
+    | 'canceled';
   progress?: number;
   currentNode?: string;
-  startedAt: string;
+  startedAt?: string;
   stoppedAt?: string;
 }
 
@@ -30,7 +39,7 @@ export interface LogMessage {
   executionId?: string;
   workflowId?: string;
   nodeId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MetricUpdate {
@@ -56,6 +65,16 @@ export interface Notification {
     url: string;
   };
 }
+
+/**
+ * 브로드캐스트 데이터 타입 (Union)
+ */
+export type BroadcastData =
+  | ExecutionUpdate
+  | LogMessage
+  | MetricUpdate
+  | Notification
+  | Record<string, unknown>;
 
 /**
  * Socket.io 서버 클래스
@@ -168,7 +187,7 @@ export class SocketIOService {
   /**
    * 모든 클라이언트에게 브로드캐스트
    */
-  public broadcast(event: string, data: any): void {
+  public broadcast(event: string, data: BroadcastData): void {
     if (!this.io) {
       log.warn('Socket.io not initialized');
       return;
@@ -185,7 +204,7 @@ export class SocketIOService {
   /**
    * 특정 룸에 메시지 전송
    */
-  public broadcastToRoom(room: string, event: string, data: any): void {
+  public broadcastToRoom(room: string, event: string, data: BroadcastData): void {
     if (!this.io) {
       log.warn('Socket.io not initialized');
       return;

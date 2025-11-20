@@ -3,17 +3,28 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "../..",
     "baseUrl": ".",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["src/*"],
-      "@infrastructure/*": ["../infrastructure/*"],
-      "@features/*": ["../features/*"]
+      "@infrastructure/*": ["../../infrastructure/*"],
+      "@features/*": ["../../features/*"]
     }
   },
-  "include": ["src/**/*.ts", "../features/**/*.ts", "../infrastructure/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": [
+    "src/**/*.ts",
+    "../../features/**/*.ts",
+    "../../infrastructure/**/*.ts",
+    "../../.ai/**/*.json"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "../../features/**/tests/**",
+    "../../features/**/test-*.ts"
+  ]
 }

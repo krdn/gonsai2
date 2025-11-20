@@ -424,6 +424,9 @@ export interface QueryFilters {
   /** Sorting */
   sortBy?: 'name' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
+
+  /** Index signature for Record compatibility */
+  [key: string]: string | number | boolean | undefined;
 }
 
 /**

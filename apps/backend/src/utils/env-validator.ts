@@ -31,6 +31,9 @@ export interface AppConfig {
   // WebSocket Configuration
   WS_PORT: number;
 
+  // CORS Configuration
+  ALLOWED_ORIGINS: string[];
+
   // Logging
   LOG_LEVEL: 'error' | 'warn' | 'info' | 'debug';
 }
@@ -50,8 +53,28 @@ function validateEnvVariables(): AppConfig {
     );
   }
 
+  const nodeEnv = (process.env.NODE_ENV as AppConfig['NODE_ENV']) || 'development';
+
+  // 프로덕션 환경에서 추가 보안 검증
+  if (nodeEnv === 'production') {
+    const prodRequired = ['N8N_WEBHOOK_SECRET', 'CORS_ORIGINS'];
+    const prodMissing = prodRequired.filter((v) => !process.env[v]);
+    if (prodMissing.length > 0) {
+      throw new Error(
+        `Production environment requires: ${prodMissing.join(', ')}\n` +
+          'Please set these environment variables for production deployment'
+      );
+    }
+  }
+
+  // CORS_ORIGINS 파싱 (콤마로 구분)
+  const defaultOrigins = ['http://localhost:3002'];
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    : defaultOrigins;
+
   const config: AppConfig = {
-    NODE_ENV: (process.env.NODE_ENV as AppConfig['NODE_ENV']) || 'development',
+    NODE_ENV: nodeEnv,
     PORT: parseInt(process.env.PORT || '3000', 10),
     HOST: process.env.HOST || 'localhost',
 
@@ -64,6 +87,8 @@ function validateEnvVariables(): AppConfig {
     REDIS_URI: process.env.REDIS_URI,
 
     WS_PORT: parseInt(process.env.WS_PORT || '3001', 10),
+
+    ALLOWED_ORIGINS: allowedOrigins,
 
     LOG_LEVEL: (process.env.LOG_LEVEL as AppConfig['LOG_LEVEL']) || 'info',
   };
@@ -111,6 +136,7 @@ export function printConfig(): void {
   console.log(`  n8n URL: ${envConfig.N8N_BASE_URL}`);
   console.log(`  n8n API Key: ${maskSecret(envConfig.N8N_API_KEY)}`);
   console.log(`  MongoDB: ${maskMongoUri(envConfig.MONGODB_URI)}`);
+  console.log(`  Allowed Origins: ${envConfig.ALLOWED_ORIGINS.join(', ')}`);
   console.log(`  Log Level: ${envConfig.LOG_LEVEL}`);
 }
 

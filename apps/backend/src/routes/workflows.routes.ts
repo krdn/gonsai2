@@ -12,6 +12,7 @@ import { workflowRepository, executionRepository } from '../repositories/workflo
 import { ApiResponse, ExecuteWorkflowRequest, ExecuteWorkflowResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError, NotFoundError } from '../utils/errors';
+import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
 
 const router = Router();
 
@@ -181,14 +182,73 @@ router.post(
         });
       }
 
-      // Webhook 응답에서 execution ID 추출 (없을 수 있음)
-      executionId = `webhook-${Date.now()}`;
+      // Content-Type 확인하여 HTML, JSON, 텍스트 응답 처리
+      const contentType = response.headers.get('content-type');
+      let webhookResponseData: any;
+      let isHtmlResponse = false;
+
+      if (contentType && contentType.includes('text/html')) {
+        // HTML 응답인 경우
+        const htmlText = await response.text();
+        webhookResponseData = { htmlContent: htmlText };
+        isHtmlResponse = true;
+      } else if (contentType && contentType.includes('application/json')) {
+        // JSON 응답인 경우
+        webhookResponseData = await response.json();
+      } else {
+        // 기타 응답 형식
+        const textContent = await response.text();
+        webhookResponseData = { textContent, contentType: contentType || 'unknown' };
+      }
+
+      // Webhook 응답에서 execution ID 추출 (없으면 생성)
+      executionId =
+        webhookResponseData.executionId || webhookResponseData.id || `webhook-${Date.now()}`;
 
       log.info('Webhook workflow triggered successfully', {
         correlationId,
         workflowId: id,
         webhookUrl,
+        isHtmlResponse,
       });
+
+      // MongoDB에 실행 기록 저장
+      const execution = await executionRepository.createExecution({
+        n8nExecutionId: executionId,
+        workflowId: id,
+        n8nWorkflowId: id,
+        status: 'success',
+        mode: 'webhook',
+        startedAt: new Date(),
+        finishedAt: new Date(),
+        inputData: body.inputData,
+      });
+
+      log.info('Webhook workflow execution completed', {
+        correlationId,
+        executionId,
+        workflowId: id,
+      });
+
+      // Webhook 응답을 그대로 프론트엔드에 전달
+      const apiResponse: ApiResponse = {
+        success: true,
+        data: {
+          executionId,
+          workflowId: id,
+          status: 'success',
+          startedAt: execution.startedAt.toISOString(),
+          finishedAt: execution.finishedAt?.toISOString(),
+          message: isHtmlResponse
+            ? 'HTML 응답을 받았습니다.'
+            : '워크플로우가 성공적으로 실행되었습니다.',
+          webhookResponse: webhookResponseData, // 전체 webhook 응답 포함
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      res.status(200).json(apiResponse);
+      return; // 여기서 응답 종료
     } else {
       // 2-B. Manual 트리거 워크플로우인 경우 - 기존 API 엔드포인트 사용
       log.info('Detected manual workflow, using execute API', {
@@ -207,16 +267,19 @@ router.post(
         }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new N8nApiError(`Workflow execution failed: ${errorText}`, {
-          correlationId,
-          workflowId: id,
-          status: response.status,
-        });
-      }
+      // 응답 상태 확인
+      await checkN8nResponse(response, {
+        correlationId,
+        workflowId: id,
+        operation: 'execute workflow',
+      });
 
-      const n8nResponse = (await response.json()) as N8nExecutionResponse;
+      // JSON 응답 파싱
+      const n8nResponse = await parseN8nResponse<N8nExecutionResponse>(response, {
+        correlationId,
+        workflowId: id,
+        operation: 'execute workflow',
+      });
       executionId = n8nResponse.data.executionId;
     }
 

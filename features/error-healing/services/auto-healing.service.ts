@@ -8,7 +8,7 @@ import { CronJob } from 'cron';
 import { MongoClient } from 'mongodb';
 import { envConfig } from '../../../apps/backend/src/utils/env-validator';
 import { log } from '../../../apps/backend/src/utils/logger';
-import { websocketService } from '../../../apps/backend/src/services/websocket.service';
+import { socketIOService } from '../../../apps/backend/src/services/socketio.service';
 import { errorAnalyzer } from './error-analyzer.service';
 import { workflowFixer } from './workflow-fixer.service';
 import {
@@ -23,9 +23,9 @@ import {
  */
 const DEFAULT_CONFIG: AutoHealingConfig = {
   enabled: true,
-  cronSchedule: '*/5 * * * *',  // 5분마다
+  cronSchedule: '*/5 * * * *', // 5분마다
   maxRetries: 3,
-  retryDelay: 300,  // 5분 (초)
+  retryDelay: 300, // 5분 (초)
   autoFixSeverity: ['medium', 'low'],
   requireApprovalFor: ['authentication', 'credential_missing'],
   notifyOnFailure: true,
@@ -67,7 +67,7 @@ export class AutoHealingService {
         await this.healingCycle();
       },
       null,
-      true,  // start immediately
+      true, // start immediately
       'UTC'
     );
 
@@ -258,10 +258,7 @@ export class AutoHealingService {
         createdAt: new Date(),
       };
 
-      await this.mongoClient
-        .db()
-        .collection('healing_history')
-        .insertOne(history);
+      await this.mongoClient.db().collection('healing_history').insertOne(history);
 
       log.info('Healing history saved', { historyId: history.historyId });
     } catch (error) {
@@ -285,14 +282,11 @@ export class AutoHealingService {
 
     // WebSocket 알림
     if (this.config.notifyChannels.includes('websocket')) {
-      websocketService.broadcast({
-        type: 'healing.success',
-        data: {
-          workflowId: fixResult.workflowId,
-          errorType: analyzedError.errorType,
-          fixStrategy: fixResult.fixStrategy.name,
-          duration: fixResult.duration,
-        },
+      socketIOService.broadcast('healing.success', {
+        workflowId: fixResult.workflowId,
+        errorType: analyzedError.errorType,
+        fixStrategy: fixResult.fixStrategy.name,
+        duration: fixResult.duration,
         timestamp: new Date().toISOString(),
       });
     }
@@ -313,13 +307,10 @@ export class AutoHealingService {
 
     // WebSocket 알림
     if (this.config.notifyChannels.includes('websocket')) {
-      websocketService.broadcast({
-        type: 'healing.failure',
-        data: {
-          workflowId: analyzedError.executionError.workflowId,
-          errorType: analyzedError.errorType,
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        },
+      socketIOService.broadcast('healing.failure', {
+        workflowId: analyzedError.executionError.workflowId,
+        errorType: analyzedError.errorType,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
       });
     }
@@ -335,13 +326,10 @@ export class AutoHealingService {
 
     // WebSocket 알림
     if (this.config.notifyChannels.includes('websocket')) {
-      websocketService.broadcast({
-        type: 'healing.max_retries',
-        data: {
-          workflowId: analyzedError.executionError.workflowId,
-          errorType: analyzedError.errorType,
-          maxRetries: this.config.maxRetries,
-        },
+      socketIOService.broadcast('healing.max_retries', {
+        workflowId: analyzedError.executionError.workflowId,
+        errorType: analyzedError.errorType,
+        maxRetries: this.config.maxRetries,
         timestamp: new Date().toISOString(),
       });
     }
@@ -350,10 +338,7 @@ export class AutoHealingService {
   /**
    * 복구 이력 조회
    */
-  async getHealingHistory(
-    workflowId?: string,
-    limit: number = 50
-  ): Promise<HealingHistory[]> {
+  async getHealingHistory(workflowId?: string, limit: number = 50): Promise<HealingHistory[]> {
     try {
       await this.mongoClient.connect();
 

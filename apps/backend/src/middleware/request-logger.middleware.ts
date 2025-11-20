@@ -6,13 +6,14 @@
 
 import morgan from 'morgan';
 import { morganStream } from '../utils/logger';
+import { RequestWithCorrelationId } from './correlation-id.middleware';
 
 /**
  * Morgan 미들웨어 설정
  */
 export const requestLogger = morgan(
   (tokens, req, res) => {
-    const correlationId = (req as any).correlationId || 'unknown';
+    const correlationId = (req as RequestWithCorrelationId).correlationId || 'unknown';
 
     return [
       correlationId,

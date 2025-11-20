@@ -10,11 +10,10 @@ import {
   HelpCircle,
   X,
   Tag as TagIcon,
-  Brain,
 } from 'lucide-react';
 import { workflowsApi, tagsApi } from '@/lib/api-client';
 import WorkflowExecutionModal from '@/components/workflow/WorkflowExecutionModal';
-import KnowledgeLearningModal from '@/components/workflow/KnowledgeLearningModal';
+
 import { WORKFLOW_IDS } from '@/config/workflows.config';
 
 interface Tag {
@@ -55,7 +54,6 @@ export default function WorkflowsPage() {
     workflowId: '',
     workflowName: '',
   });
-  const [learningModal, setLearningModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -140,13 +138,6 @@ export default function WorkflowsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setLearningModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <Brain className="w-5 h-5" />
-                <span>지식 습득 프로세스</span>
-              </button>
               <button
                 onClick={() => setShowHelp(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -266,7 +257,7 @@ export default function WorkflowsPage() {
                       <span>실행</span>
                     </button>
                     <a
-                      href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/workflows`}
+                      href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/workflow/${workflow.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -287,13 +278,6 @@ export default function WorkflowsPage() {
         onClose={closeExecutionModal}
         workflowId={executionModal.workflowId}
         workflowName={executionModal.workflowName}
-      />
-
-      {/* Knowledge Learning Modal */}
-      <KnowledgeLearningModal
-        isOpen={learningModal}
-        onClose={() => setLearningModal(false)}
-        workflowId={WORKFLOW_IDS.LEARNING_PROCESS}
       />
 
       {/* Help Modal */}

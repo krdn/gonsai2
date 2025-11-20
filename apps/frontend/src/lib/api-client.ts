@@ -94,6 +94,24 @@ async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit
       );
     }
 
+    // Content-Type 검증 - HTML 응답을 JSON으로 파싱하려는 시도 방지
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await response.text();
+      console.error('[API Client] Non-JSON response:', {
+        url,
+        contentType,
+        responsePreview: responseText.substring(0, 200),
+      });
+      throw new ApiClientError(
+        response.status,
+        'Invalid Content-Type',
+        `Expected JSON response but received ${contentType || 'unknown'}. ` +
+          `This usually indicates a server error or configuration issue. ` +
+          `Response preview: ${responseText.substring(0, 100)}...`
+      );
+    }
+
     const data = await response.json();
     console.log('[API Client] Success:', url);
     return data;

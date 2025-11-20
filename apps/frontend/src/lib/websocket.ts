@@ -1,9 +1,10 @@
 /**
- * WebSocket Client
+ * Socket.io Client
  *
- * @description 실시간 n8n 워크플로우 업데이트를 위한 WebSocket 클라이언트
+ * @description 실시간 n8n 워크플로우 업데이트를 위한 Socket.io 클라이언트
  */
 
+import { io, Socket } from 'socket.io-client';
 import { useWorkflowStore } from '@/stores/workflow-store';
 import type { WorkflowExecution } from '@/types/workflow';
 
@@ -46,12 +47,10 @@ export interface ExecutionProgressData {
 }
 
 class WebSocketClient {
-  private ws: WebSocket | null = null;
+  private socket: Socket | null = null;
   private url: string;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
   private listeners = new Map<WebSocketEvent, Set<(data: any) => void>>();
 
   constructor(url: string) {
@@ -61,66 +60,166 @@ class WebSocketClient {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(this.url);
+        // Socket.io 클라이언트 초기화
+        this.socket = io(this.url, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: this.maxReconnectAttempts,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
+        });
 
-        this.ws.onopen = () => {
-          console.log('[WebSocket] Connected');
+        this.socket.on('connect', () => {
+          console.log('[Socket.io] Connected', { socketId: this.socket?.id });
           this.reconnectAttempts = 0;
-          this.startHeartbeat();
           useWorkflowStore.getState().setConnected(true);
           useWorkflowStore.getState().setConnecting(false);
           useWorkflowStore.getState().setConnectionError(null);
           this.emit('connection.established', {});
           resolve();
-        };
+        });
 
-        this.ws.onmessage = (event) => {
-          try {
-            const message: WebSocketMessage = JSON.parse(event.data);
-            this.handleMessage(message);
-          } catch (error) {
-            console.error('[WebSocket] Failed to parse message:', error);
-          }
-        };
+        // 서버에서 보내는 연결 성공 메시지
+        this.socket.on('connected', (data) => {
+          console.log('[Socket.io] Server welcome:', data);
+        });
 
-        this.ws.onerror = (error) => {
-          console.error('[WebSocket] Error:', error);
-          useWorkflowStore.getState().setConnectionError('WebSocket connection error');
+        // 실행 이벤트 리스너
+        this.socket.on('execution:started', (data) => {
+          this.handleExecutionStarted(data);
+          this.emit('execution.started', data);
+        });
+
+        this.socket.on('execution:finished', (data) => {
+          this.handleExecutionFinished(data);
+          this.emit('execution.finished', data);
+        });
+
+        this.socket.on('execution:error', (data) => {
+          this.handleExecutionError(data);
+          this.emit('execution.error', data);
+        });
+
+        this.socket.on('execution:update', (data) => {
+          this.handleExecutionUpdate(data);
+          this.emit('execution.progress', data);
+        });
+
+        // 워크플로우 이벤트 리스너
+        this.socket.on('workflow:updated', (data) => {
+          this.handleWorkflowUpdated(data);
+          this.emit('workflow.updated', data);
+        });
+
+        this.socket.on('workflow:activated', (data) => {
+          this.handleWorkflowStatusChanged(data);
+          this.emit('workflow.activated', data);
+        });
+
+        this.socket.on('workflow:deactivated', (data) => {
+          this.handleWorkflowStatusChanged(data);
+          this.emit('workflow.deactivated', data);
+        });
+
+        // 메트릭 및 로그 이벤트
+        this.socket.on('metric:update', (data) => {
+          useWorkflowStore.getState().updateLastUpdate();
+        });
+
+        this.socket.on('log:message', (data) => {
+          useWorkflowStore.getState().updateLastUpdate();
+        });
+
+        this.socket.on('notification', (data) => {
+          useWorkflowStore.getState().updateLastUpdate();
+        });
+
+        // Pong 응답 처리
+        this.socket.on('pong', (data) => {
+          console.log('[Socket.io] Pong received:', data);
+        });
+
+        this.socket.on('connect_error', (error) => {
+          console.error('[Socket.io] Connection error:', error.message);
+          useWorkflowStore
+            .getState()
+            .setConnectionError(`Socket.io connection error: ${error.message}`);
           reject(error);
-        };
+        });
 
-        this.ws.onclose = () => {
-          console.log('[WebSocket] Disconnected');
-          this.stopHeartbeat();
+        this.socket.on('disconnect', (reason) => {
+          console.log('[Socket.io] Disconnected:', reason);
           useWorkflowStore.getState().setConnected(false);
           this.emit('connection.lost', {});
-          this.attemptReconnect();
-        };
+
+          if (reason === 'io server disconnect') {
+            // 서버가 연결을 끊은 경우 수동으로 재연결
+            this.socket?.connect();
+          }
+        });
+
+        this.socket.on('reconnect', (attemptNumber) => {
+          console.log('[Socket.io] Reconnected after', attemptNumber, 'attempts');
+          this.reconnectAttempts = 0;
+        });
+
+        this.socket.on('reconnect_attempt', (attemptNumber) => {
+          console.log('[Socket.io] Reconnect attempt', attemptNumber);
+          this.reconnectAttempts = attemptNumber;
+          useWorkflowStore.getState().setConnecting(true);
+        });
+
+        this.socket.on('reconnect_failed', () => {
+          console.error('[Socket.io] Reconnection failed after max attempts');
+          useWorkflowStore
+            .getState()
+            .setConnectionError('Failed to reconnect after maximum attempts');
+        });
       } catch (error) {
-        console.error('[WebSocket] Connection failed:', error);
+        console.error('[Socket.io] Connection failed:', error);
         reject(error);
       }
     });
   }
 
   disconnect(): void {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
     }
-    this.stopHeartbeat();
   }
 
   send<T = any>(type: WebSocketEvent, data: T): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const message: WebSocketMessage<T> = {
-        type,
-        data,
-        timestamp: new Date().toISOString(),
-      };
-      this.ws.send(JSON.stringify(message));
+    if (this.socket && this.socket.connected) {
+      this.socket.emit(type.replace('.', ':'), data);
     } else {
-      console.warn('[WebSocket] Cannot send message: not connected');
+      console.warn('[Socket.io] Cannot send message: not connected');
+    }
+  }
+
+  // 구독 메서드 추가
+  subscribeToExecution(executionId: string): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('subscribe:execution', { executionId });
+    }
+  }
+
+  unsubscribeFromExecution(executionId: string): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('unsubscribe:execution', { executionId });
+    }
+  }
+
+  subscribeToWorkflow(workflowId: string): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('subscribe:workflow', { workflowId });
+    }
+  }
+
+  unsubscribeFromWorkflow(workflowId: string): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('unsubscribe:workflow', { workflowId });
     }
   }
 
@@ -140,6 +239,16 @@ class WebSocketClient {
     this.listeners.get(event)?.delete(callback);
   }
 
+  /**
+   * 모든 이벤트 리스너 제거 (메모리 누수 방지)
+   */
+  removeAllListeners(): void {
+    this.listeners.forEach((callbacks) => {
+      callbacks.clear();
+    });
+    this.listeners.clear();
+  }
+
   private emit(event: WebSocketEvent, data: any): void {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
@@ -147,63 +256,33 @@ class WebSocketClient {
         try {
           callback(data);
         } catch (error) {
-          console.error(`[WebSocket] Error in ${event} callback:`, error);
+          console.error(`[Socket.io] Error in ${event} callback:`, error);
         }
       });
     }
   }
 
-  private handleMessage(message: WebSocketMessage): void {
-    const { type, data } = message;
-
-    // 스토어 업데이트
-    useWorkflowStore.getState().updateLastUpdate();
-
-    switch (type) {
-      case 'execution.started':
-        this.handleExecutionStarted(data as ExecutionStartedData);
-        break;
-      case 'execution.finished':
-        this.handleExecutionFinished(data as ExecutionFinishedData);
-        break;
-      case 'execution.error':
-        this.handleExecutionError(data);
-        break;
-      case 'execution.progress':
-        this.handleExecutionProgress(data as ExecutionProgressData);
-        break;
-      case 'workflow.updated':
-        this.handleWorkflowUpdated(data);
-        break;
-      case 'workflow.activated':
-      case 'workflow.deactivated':
-        this.handleWorkflowStatusChanged(data);
-        break;
-    }
-
-    // 리스너에게 알림
-    this.emit(type, data);
-  }
-
-  private handleExecutionStarted(data: ExecutionStartedData): void {
+  private handleExecutionStarted(data: any): void {
     const execution: WorkflowExecution = {
       id: data.executionId,
       workflowId: data.workflowId,
-      workflowName: '',
+      workflowName: data.workflowName || '',
       mode: 'trigger',
       status: 'running',
       startedAt: data.startedAt,
       finished: false,
     };
     useWorkflowStore.getState().addRunningExecution(execution);
+    useWorkflowStore.getState().updateLastUpdate();
   }
 
-  private handleExecutionFinished(data: ExecutionFinishedData): void {
+  private handleExecutionFinished(data: any): void {
     useWorkflowStore.getState().updateRunningExecution(data.executionId, {
       status: data.status,
-      stoppedAt: data.finishedAt,
+      stoppedAt: data.stoppedAt || data.finishedAt,
       finished: true,
     });
+    useWorkflowStore.getState().updateLastUpdate();
 
     // 일정 시간 후 실행 목록에서 제거
     setTimeout(() => {
@@ -214,19 +293,29 @@ class WebSocketClient {
   private handleExecutionError(data: any): void {
     useWorkflowStore.getState().updateRunningExecution(data.executionId, {
       status: 'error',
-      stoppedAt: data.finishedAt,
+      stoppedAt: data.stoppedAt || data.finishedAt,
       finished: true,
     });
+    useWorkflowStore.getState().updateLastUpdate();
   }
 
-  private handleExecutionProgress(data: ExecutionProgressData): void {
-    // 실행 진행 상황 업데이트 (필요시 구현)
+  private handleExecutionUpdate(data: any): void {
+    // 실행 업데이트 처리
+    if (data.executionId) {
+      useWorkflowStore.getState().updateRunningExecution(data.executionId, {
+        status: data.status,
+        ...(data.stoppedAt && { stoppedAt: data.stoppedAt }),
+        ...(data.progress && { progress: data.progress }),
+      });
+    }
+    useWorkflowStore.getState().updateLastUpdate();
   }
 
   private handleWorkflowUpdated(data: any): void {
     if (data.workflow) {
       useWorkflowStore.getState().updateWorkflow(data.workflow.id, data.workflow);
     }
+    useWorkflowStore.getState().updateLastUpdate();
   }
 
   private handleWorkflowStatusChanged(data: any): void {
@@ -235,45 +324,18 @@ class WebSocketClient {
         active: data.active,
       });
     }
-  }
-
-  private attemptReconnect(): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('[WebSocket] Max reconnect attempts reached');
-      useWorkflowStore.getState().setConnectionError('Failed to reconnect after maximum attempts');
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-
-    console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
-
-    setTimeout(() => {
-      useWorkflowStore.getState().setConnecting(true);
-      this.connect().catch((error) => {
-        console.error('[WebSocket] Reconnection failed:', error);
-      });
-    }, delay);
-  }
-
-  private startHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type: 'ping' }));
-      }
-    }, 30000); // 30초마다 heartbeat
-  }
-
-  private stopHeartbeat(): void {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
-    }
+    useWorkflowStore.getState().updateLastUpdate();
   }
 
   isConnected(): boolean {
-    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+    return this.socket !== null && this.socket.connected;
+  }
+
+  // Ping 전송 (서버 연결 확인용)
+  ping(): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('ping');
+    }
   }
 }
 
@@ -283,7 +345,7 @@ let wsClient: WebSocketClient | null = null;
 export function getWebSocketClient(): WebSocketClient {
   if (!wsClient) {
     // 브라우저 환경에서 동적으로 URL 결정
-    let wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000/ws';
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 
     // 클라이언트 사이드에서만 실행
     if (typeof globalThis !== 'undefined' && typeof globalThis.window !== 'undefined') {
@@ -294,16 +356,16 @@ export function getWebSocketClient(): WebSocketClient {
         if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
           // krdn.iptime.org 도메인은 내부 IP 사용 (NAT hairpin 문제 회피)
           if (hostname === 'krdn.iptime.org') {
-            wsUrl = 'ws://192.168.0.50:3000/ws';
+            wsUrl = 'http://192.168.0.50:3000';
           } else {
             // 그 외 도메인은 같은 호스트의 백엔드 포트(3000)로 연결
-            wsUrl = `ws://${hostname}:3000/ws`;
+            wsUrl = `http://${hostname}:3000`;
           }
         }
       }
     }
 
-    console.log('[WebSocket] Connecting to:', wsUrl);
+    console.log('[Socket.io] Connecting to:', wsUrl);
     wsClient = new WebSocketClient(wsUrl);
   }
   return wsClient;

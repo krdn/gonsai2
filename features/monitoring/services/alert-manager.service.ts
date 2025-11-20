@@ -8,7 +8,7 @@ import { MongoClient, Db, Collection } from 'mongodb';
 import { CronJob } from 'cron';
 import { log } from '../../../apps/backend/src/utils/logger';
 import { metricsCollector } from './metrics-collector.service';
-import { websocketService } from '../../../apps/backend/src/services/websocket.service';
+import { socketIOService } from '../../../apps/backend/src/services/socketio.service';
 import {
   AlertRule,
   Alert,
@@ -314,10 +314,7 @@ export class AlertManagerService {
    * 메트릭 값 조회
    */
   private async getMetricValue(condition: AlertCondition): Promise<number> {
-    const timeRange = metricsCollector.createTimeRange(
-      condition.timeWindowMinutes,
-      'minute'
-    );
+    const timeRange = metricsCollector.createTimeRange(condition.timeWindowMinutes, 'minute');
 
     switch (condition.metric) {
       case 'execution_time':
@@ -416,8 +413,8 @@ export class AlertManagerService {
       rule.condition.metric === 'cost'
         ? `$${metricValue.toFixed(2)}`
         : rule.condition.metric === 'execution_time'
-        ? `${(metricValue / 1000).toFixed(2)}s`
-        : `${metricValue.toFixed(2)}%`;
+          ? `${(metricValue / 1000).toFixed(2)}s`
+          : `${metricValue.toFixed(2)}%`;
 
     return `${rule.description}: ${formattedValue} (threshold: ${rule.threshold})`;
   }
@@ -473,9 +470,14 @@ export class AlertManagerService {
     console.log('='.repeat(80) + '\n');
 
     // WebSocket으로도 전송
-    websocketService.broadcast({
-      type: 'alert.triggered',
-      data: alert,
+    socketIOService.broadcast('alert.triggered', {
+      id: alert.id,
+      ruleId: alert.ruleId,
+      ruleName: alert.ruleName,
+      level: alert.level,
+      message: alert.message,
+      triggeredAt: alert.triggeredAt.toISOString(),
+      metadata: alert.metadata,
       timestamp: new Date().toISOString(),
     });
   }
@@ -516,7 +518,8 @@ export class AlertManagerService {
    */
   private async sendSlackAlert(alert: Alert, config: SlackConfig): Promise<void> {
     try {
-      const color = alert.level === 'critical' ? 'danger' : alert.level === 'warning' ? 'warning' : 'good';
+      const color =
+        alert.level === 'critical' ? 'danger' : alert.level === 'warning' ? 'warning' : 'good';
 
       const payload = {
         channel: config.channel,
@@ -586,11 +589,7 @@ export class AlertManagerService {
   /**
    * 알림 조회
    */
-  async getAlerts(
-    resolved?: boolean,
-    level?: AlertLevel,
-    limit: number = 50
-  ): Promise<Alert[]> {
+  async getAlerts(resolved?: boolean, level?: AlertLevel, limit: number = 50): Promise<Alert[]> {
     try {
       if (!this.alertsCollection) {
         throw new Error('Alerts collection not initialized');
