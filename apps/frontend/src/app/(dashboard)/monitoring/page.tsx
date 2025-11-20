@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Activity, Wifi, WifiOff, TrendingUp, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Activity, Wifi, WifiOff, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import {
   ExecutionList,
   LogStream,
@@ -9,45 +9,18 @@ import {
   NotificationCenter,
 } from '@/components/monitoring';
 import { getWebSocketClient } from '@/lib/websocket';
-import { monitoringApi } from '@/lib/api-client';
-
-interface SystemStats {
-  totalWorkflows: number;
-  activeWorkflows: number;
-  totalExecutions: number;
-  successfulExecutions: number;
-  failedExecutions: number;
-  runningExecutions: number;
-  successRate: number;
-  avgExecutionTime: number;
-  period: string;
-  timestamp: string;
-}
+import { useMonitoringStats } from '@/hooks/useMonitoring';
 
 export default function MonitoringPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
-  const [stats, setStats] = useState<SystemStats | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-  // 통계 데이터 로드
-  const loadStats = async () => {
-    try {
-      const response = await monitoringApi.stats();
-      if (response.success && response.data) {
-        setStats(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    } finally {
-      setIsLoadingStats(false);
-    }
-  };
+  // React Query로 통계 데이터 관리 (자동 캐싱 및 갱신)
+  const { data: stats, isLoading: isLoadingStats } = useMonitoringStats({
+    refetchInterval: 60000, // 1분마다 자동 갱신
+  });
 
   useEffect(() => {
-    // 초기 통계 로드
-    loadStats();
-
     // WebSocket 연결
     const socket = getWebSocketClient();
 
@@ -70,12 +43,8 @@ export default function MonitoringPage() {
       setIsConnected(socket.isConnected());
     }, 5000);
 
-    // 통계 자동 새로고침 (1분마다)
-    const statsInterval = setInterval(loadStats, 60000);
-
     return () => {
       clearInterval(checkConnection);
-      clearInterval(statsInterval);
     };
   }, []);
 
