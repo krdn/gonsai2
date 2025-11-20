@@ -1,12 +1,24 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Play, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { getSocketClient, type ExecutionUpdate } from '@/lib/socket-client';
 import { formatExecutionTime } from '@/lib/workflow-utils';
 import { useRecentExecutions, type RecentExecution } from '@/hooks/useMonitoring';
+
+// 🔧 가상화를 위한 타입 정의
+type VirtualListItem =
+  | { type: 'header'; label: string; count: number; icon: React.ReactNode; colorClass: string }
+  | { type: 'execution'; data: ExecutionUpdate };
+
+// 🔧 아이템 높이 상수 (픽셀)
+const ITEM_HEIGHT = {
+  header: 32,
+  execution: 80, // p-3 (12px * 2) + content (~56px)
+};
 
 interface ExecutionListProps {
   className?: string;
@@ -205,6 +217,75 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
     [executions]
   );
 
+  // 🔧 가상화를 위한 평탄화된 아이템 목록
+  const virtualizedItems = useMemo<VirtualListItem[]>(() => {
+    const items: VirtualListItem[] = [];
+
+    // 실행 중
+    if (executions.running.length > 0) {
+      items.push({
+        type: 'header',
+        label: '실행 중',
+        count: executions.running.length,
+        icon: <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />,
+        colorClass: 'text-gray-700',
+      });
+      executions.running.forEach((exec) => items.push({ type: 'execution', data: exec }));
+    }
+
+    // 대기 중
+    if (executions.waiting.length > 0) {
+      items.push({
+        type: 'header',
+        label: '대기 중',
+        count: executions.waiting.length,
+        icon: <Clock className="w-4 h-4 text-yellow-500" />,
+        colorClass: 'text-gray-700',
+      });
+      executions.waiting.forEach((exec) => items.push({ type: 'execution', data: exec }));
+    }
+
+    // 실패 (강조)
+    if (executions.failed.length > 0) {
+      items.push({
+        type: 'header',
+        label: '실패',
+        count: executions.failed.length,
+        icon: <XCircle className="w-4 h-4 text-red-500" />,
+        colorClass: 'text-red-700',
+      });
+      executions.failed.forEach((exec) => items.push({ type: 'execution', data: exec }));
+    }
+
+    // 완료
+    if (executions.completed.length > 0) {
+      items.push({
+        type: 'header',
+        label: '최근 완료',
+        count: executions.completed.length,
+        icon: <CheckCircle2 className="w-4 h-4 text-green-500" />,
+        colorClass: 'text-gray-700',
+      });
+      executions.completed.forEach((exec) => items.push({ type: 'execution', data: exec }));
+    }
+
+    return items;
+  }, [executions]);
+
+  // 🔧 가상화 스크롤 컨테이너 ref
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // 🔧 가상화 설정
+  const rowVirtualizer = useVirtualizer({
+    count: virtualizedItems.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: (index) => {
+      const item = virtualizedItems[index];
+      return item?.type === 'header' ? ITEM_HEIGHT.header : ITEM_HEIGHT.execution;
+    },
+    overscan: 5, // 화면 밖에 미리 렌더링할 아이템 수
+  });
+
   return (
     <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}>
       {/* Header */}
@@ -250,8 +331,8 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
         </div>
       </div>
 
-      {/* Execution Groups */}
-      <div className="p-4 space-y-4 max-h-[600px] overflow-y-auto">
+      {/* Execution Groups - 가상화된 목록 */}
+      <div ref={scrollContainerRef} className="p-4 max-h-[600px] overflow-y-auto">
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
@@ -274,55 +355,46 @@ export function ExecutionList({ className = '' }: ExecutionListProps) {
           </div>
         )}
 
-        {/* Running */}
-        {!isLoading && !error && executions.running.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-              <h4 className="text-sm font-semibold text-gray-700">
-                실행 중 ({executions.running.length})
-              </h4>
-            </div>
-            <div className="space-y-2">{executions.running.map(renderExecutionItem)}</div>
-          </div>
-        )}
+        {/* 🔧 가상화된 실행 목록 */}
+        {!isLoading && !error && virtualizedItems.length > 0 && (
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const item = virtualizedItems[virtualRow.index];
+              if (!item) return null;
 
-        {/* Waiting */}
-        {!isLoading && !error && executions.waiting.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-yellow-500" />
-              <h4 className="text-sm font-semibold text-gray-700">
-                대기 중 ({executions.waiting.length})
-              </h4>
-            </div>
-            <div className="space-y-2">{executions.waiting.map(renderExecutionItem)}</div>
-          </div>
-        )}
-
-        {/* Failed (Highlighted) */}
-        {!isLoading && !error && executions.failed.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <XCircle className="w-4 h-4 text-red-500" />
-              <h4 className="text-sm font-semibold text-red-700">
-                실패 ({executions.failed.length})
-              </h4>
-            </div>
-            <div className="space-y-2">{executions.failed.map(renderExecutionItem)}</div>
-          </div>
-        )}
-
-        {/* Completed */}
-        {!isLoading && !error && executions.completed.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <h4 className="text-sm font-semibold text-gray-700">
-                최근 완료 ({executions.completed.length})
-              </h4>
-            </div>
-            <div className="space-y-2">{executions.completed.map(renderExecutionItem)}</div>
+              return (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {item.type === 'header' ? (
+                    // 그룹 헤더 렌더링
+                    <div className="flex items-center gap-2 mb-2 pt-2">
+                      {item.icon}
+                      <h4 className={`text-sm font-semibold ${item.colorClass}`}>
+                        {item.label} ({item.count})
+                      </h4>
+                    </div>
+                  ) : (
+                    // 실행 아이템 렌더링
+                    renderExecutionItem(item.data)
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
