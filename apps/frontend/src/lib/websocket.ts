@@ -371,9 +371,5 @@ export function getWebSocketClient(): WebSocketClient {
   return wsClient;
 }
 
-export function disconnectWebSocket(): void {
-  if (wsClient) {
-    wsClient.disconnect();
-    wsClient = null;
-  }
-}
+// disconnectWebSocket 함수는 사용되지 않아 제거됨
+// 필요시 wsClient.disconnect()를 직접 호출하세요
