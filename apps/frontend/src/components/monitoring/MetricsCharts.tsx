@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import { getSocketClient, type MetricUpdate } from '@/lib/socket-client';
 import { useHourlyMetrics, type HourlyMetric } from '@/hooks/useMonitoring';
 
-interface MetricsChartsProps {
+export interface MetricsChartsProps {
   className?: string;
 }
 
