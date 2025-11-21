@@ -19,17 +19,17 @@ const wsMessageLatency = new Trend('ws_message_latency');
 // Test configuration
 export const options = {
   stages: [
-    { duration: '30s', target: 10 },   // Start with 10 connections
-    { duration: '1m', target: 50 },    // Scale to 50 connections
-    { duration: '1m', target: 100 },   // Scale to 100 connections
-    { duration: '2m', target: 100 },   // Hold at 100 connections
-    { duration: '30s', target: 0 },    // Ramp down
+    { duration: '30s', target: 10 }, // Start with 10 connections
+    { duration: '1m', target: 50 }, // Scale to 50 connections
+    { duration: '1m', target: 100 }, // Scale to 100 connections
+    { duration: '2m', target: 100 }, // Hold at 100 connections
+    { duration: '30s', target: 0 }, // Ramp down
   ],
 
   thresholds: {
-    ws_connection_errors: ['rate<0.05'],        // Error rate below 5%
-    ws_connection_duration: ['p(95)<2000'],     // 95% connections under 2s
-    ws_message_latency: ['p(95)<500'],          // 95% messages under 500ms
+    ws_connection_errors: ['rate<0.05'], // Error rate below 5%
+    ws_connection_duration: ['p(95)<2000'], // 95% connections under 2s
+    ws_message_latency: ['p(95)<500'], // 95% messages under 500ms
   },
 };
 
@@ -62,10 +62,12 @@ export default function () {
       // Send periodic ping messages
       socket.setInterval(() => {
         const pingTime = Date.now();
-        socket.send(JSON.stringify({
-          type: 'ping',
-          timestamp: pingTime,
-        }));
+        socket.send(
+          JSON.stringify({
+            type: 'ping',
+            timestamp: pingTime,
+          })
+        );
         wsMessagesSent.add(1);
       }, 5000); // Every 5 seconds
     });
@@ -171,7 +173,7 @@ function generateSummary(data) {
   summary += '🎯 Threshold Results:\n';
 
   const thresholds = data.thresholds || {};
-  Object.keys(thresholds).forEach(threshold => {
+  Object.keys(thresholds).forEach((threshold) => {
     const result = thresholds[threshold];
     const passed = result.ok ? '✅ PASS' : '❌ FAIL';
     summary += `  ${threshold}: ${passed}\n`;

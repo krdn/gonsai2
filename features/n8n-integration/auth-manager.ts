@@ -73,9 +73,7 @@ export class AuthManager {
       case 'basicAuth':
         if (this.config.basicAuth) {
           const { username, password } = this.config.basicAuth;
-          const encoded = Buffer.from(`${username}:${password}`).toString(
-            'base64'
-          );
+          const encoded = Buffer.from(`${username}:${password}`).toString('base64');
           authHeaders['Authorization'] = `Basic ${encoded}`;
         }
         break;
@@ -113,10 +111,7 @@ export class AuthManager {
         break;
 
       case 'basicAuth':
-        if (
-          !this.config.basicAuth?.username ||
-          !this.config.basicAuth?.password
-        ) {
+        if (!this.config.basicAuth?.username || !this.config.basicAuth?.password) {
           return { valid: false, error: 'Basic auth credentials incomplete' };
         }
         break;
@@ -188,9 +183,7 @@ export class AuthManager {
  * @aiContext
  * Quick way to get headers with authentication applied.
  */
-export function createAuthHeaders(
-  config?: AuthConfig
-): Record<string, string> {
+export function createAuthHeaders(config?: AuthConfig): Record<string, string> {
   const manager = config ? new AuthManager(config) : AuthManager.fromEnv();
   return manager.applyAuth({
     'Content-Type': 'application/json',

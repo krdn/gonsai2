@@ -22,19 +22,19 @@ n8n 워크플로우 실행을 실시간으로 모니터링하는 대시보드 �
 
 ```typescript
 // 실행 관련
-'execution:update'   // 실행 상태 업데이트
-'execution:started'  // 실행 시작
-'execution:finished' // 실행 완료
-'execution:error'    // 실행 오류
+'execution:update'; // 실행 상태 업데이트
+'execution:started'; // 실행 시작
+'execution:finished'; // 실행 완료
+'execution:error'; // 실행 오류
 
 // 로그 관련
-'log:message'        // 로그 메시지
+'log:message'; // 로그 메시지
 
 // 메트릭 관련
-'metric:update'      // 메트릭 데이터 업데이트
+'metric:update'; // 메트릭 데이터 업데이트
 
 // 알림 관련
-'notification'       // 시스템 알림
+'notification'; // 시스템 알림
 ```
 
 #### 사용 예시
@@ -67,6 +67,7 @@ socket.disconnect();
 현재 실행 중인 워크플로우 목록을 실시간으로 표시합니다.
 
 #### 기능
+
 - ✅ 실행 중 (Running) - 진행률 표시
 - ✅ 대기 중 (Waiting) - 큐에 대기
 - ✅ 최근 완료 (Completed) - 성공한 실행
@@ -95,6 +96,7 @@ export default function MonitoringPage() {
 실시간 로그를 터미널 스타일로 표시합니다.
 
 #### 기능
+
 - ✅ 실시간 로그 스트리밍
 - ✅ 로그 레벨별 필터 (INFO, WARN, ERROR, DEBUG)
 - ✅ 검색 기능
@@ -120,6 +122,7 @@ export default function MonitoringPage() {
 ```
 
 #### 로그 레벨별 색상
+
 - **INFO**: 파란색 (`text-blue-600`)
 - **WARN**: 노란색 (`text-yellow-600`)
 - **ERROR**: 빨간색 (`text-red-600`)
@@ -132,29 +135,35 @@ Recharts 기반 실시간 메트릭 시각화입니다.
 #### 차트 종류
 
 **1. 현재 메트릭 카드 (4개)**
+
 - 실행/분 (Activity)
 - 평균 실행 시간 (Clock)
 - 오류율 (AlertTriangle)
 - AI 토큰 사용량 (Zap)
 
 **2. 실행 추이 (AreaChart)**
+
 - 시간별 실행/분 변화
 - 그라데이션 영역 차트
 - 최근 60분 데이터
 
 **3. 평균 실행 시간 (LineChart)**
+
 - 시간별 평균 실행 시간
 - 밀리초 단위 → 초 단위 변환
 
 **4. 오류율 (AreaChart)**
+
 - 백분율 오류율
 - 빨간색 그라데이션
 
 **5. 큐 길이 & 활성 실행 (BarChart)**
+
 - 대기 중 (노란색)
 - 실행 중 (초록색)
 
 **6. AI 토큰 사용량 (AreaChart)**
+
 - 누적 토큰 사용량
 - 조건부 렌더링 (데이터가 있을 때만)
 
@@ -177,6 +186,7 @@ export default function MonitoringPage() {
 실시간 알림 시스템입니다.
 
 #### 기능
+
 - ✅ 실시간 알림 수신 (Socket.io)
 - ✅ 미읽음 개수 배지
 - ✅ 알림 타입별 아이콘/색상
@@ -221,7 +231,7 @@ if ('Notification' in window && Notification.permission === 'default') {
 }
 ```
 
-### 6. 모니터링 대시보드 페이지 ([monitoring/page.tsx](src/app/(dashboard)/monitoring/page.tsx))
+### 6. 모니터링 대시보드 페이지 ([monitoring/page.tsx](<src/app/(dashboard)/monitoring/page.tsx>))
 
 모든 컴포넌트를 통합한 완전한 대시보드입니다.
 
@@ -293,6 +303,7 @@ io.on('connection', (socket) => {
 ### 이벤트 데이터 형식
 
 **ExecutionUpdate**
+
 ```typescript
 {
   executionId: string;
@@ -307,6 +318,7 @@ io.on('connection', (socket) => {
 ```
 
 **LogMessage**
+
 ```typescript
 {
   id: string;
@@ -321,6 +333,7 @@ io.on('connection', (socket) => {
 ```
 
 **MetricUpdate**
+
 ```typescript
 {
   timestamp: string;
@@ -334,6 +347,7 @@ io.on('connection', (socket) => {
 ```
 
 **Notification**
+
 ```typescript
 {
   id: string;
@@ -388,10 +402,10 @@ http://localhost:3000/monitoring
 ```tsx
 // 실행 상태 색상 커스터마이징
 const statusColors = {
-  running: 'text-blue-500',   // 기본: 파란색
+  running: 'text-blue-500', // 기본: 파란색
   waiting: 'text-yellow-500', // 기본: 노란색
-  success: 'text-green-500',  // 기본: 초록색
-  error: 'text-red-500',      // 기본: 빨간색
+  success: 'text-green-500', // 기본: 초록색
+  error: 'text-red-500', // 기본: 빨간색
 };
 ```
 
@@ -430,6 +444,7 @@ const MAX_DATA_POINTS = 60; // 기본값: 60 (60분)
 ### 메모리 관리
 
 모든 컴포넌트는 최대 개수를 설정하여 메모리 사용을 제한합니다:
+
 - ExecutionList: 각 상태별 10개 (총 40개)
 - LogStream: 500개
 - MetricsCharts: 60개 (1시간)
@@ -454,6 +469,7 @@ const handleLogMessage = useCallback((log: LogMessage) => {
 **증상**: "연결 끊김" 메시지 표시
 
 **해결 방법**:
+
 1. 백엔드 서버가 실행 중인지 확인
 2. `NEXT_PUBLIC_SOCKET_URL` 환경 변수 확인
 3. CORS 설정 확인 (백엔드)
@@ -462,6 +478,7 @@ const handleLogMessage = useCallback((log: LogMessage) => {
 ### 브라우저 알림이 작동하지 않음
 
 **해결 방법**:
+
 1. HTTPS 환경에서 실행 (localhost는 HTTP 허용)
 2. 브라우저 알림 권한 확인
 3. 콘솔에서 `Notification.permission` 확인
@@ -469,6 +486,7 @@ const handleLogMessage = useCallback((log: LogMessage) => {
 ### 차트가 표시되지 않음
 
 **해결 방법**:
+
 1. Socket.io 연결 상태 확인
 2. 백엔드에서 메트릭 데이터 발송 확인
 3. 브라우저 개발자 도구 콘솔 확인

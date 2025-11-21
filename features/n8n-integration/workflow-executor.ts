@@ -8,10 +8,7 @@ import type { WorkflowExecution, WorkflowTriggerData } from './types';
 export class WorkflowExecutor {
   constructor(private readonly client: N8nClient) {}
 
-  async executeAndWait(
-    workflowId: string,
-    data?: WorkflowTriggerData
-  ): Promise<WorkflowExecution> {
+  async executeAndWait(workflowId: string, data?: WorkflowTriggerData): Promise<WorkflowExecution> {
     const execution = await this.client.executions.execute(workflowId, data);
     return await this.client.executions.waitForCompletion(execution.id);
   }

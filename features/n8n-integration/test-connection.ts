@@ -46,9 +46,7 @@ function logSection(title: string): void {
  * 메인 테스트 함수
  */
 async function runTests(): Promise<void> {
-  console.log(
-    `${colors.cyan}n8n Connection Test Suite${colors.reset}\n`
-  );
+  console.log(`${colors.cyan}n8n Connection Test Suite${colors.reset}\n`);
   console.log(`시작 시간: ${new Date().toISOString()}\n`);
 
   let totalTests = 0;
@@ -78,14 +76,10 @@ async function runTests(): Promise<void> {
   if (hasApiKey) passedTests++;
 
   if (!hasApiUrl || !hasApiKey) {
-    console.log(
-      `\n${colors.yellow}⚠️  .env 파일을 확인하세요:${colors.reset}`
-    );
+    console.log(`\n${colors.yellow}⚠️  .env 파일을 확인하세요:${colors.reset}`);
     console.log(`   N8N_API_URL=http://localhost:5678`);
     console.log(`   N8N_API_KEY=your-api-key-here`);
-    console.log(
-      `\n${colors.yellow}💡 API 키 생성: n8n UI → Settings → API${colors.reset}\n`
-    );
+    console.log(`\n${colors.yellow}💡 API 키 생성: n8n UI → Settings → API${colors.reset}\n`);
     process.exit(1);
   }
 
@@ -102,9 +96,7 @@ async function runTests(): Promise<void> {
   logTest(
     '인증 방법',
     authValid.valid,
-    authValid.valid
-      ? `${authMethod} 사용 중`
-      : authValid.error ?? '알 수 없는 오류'
+    authValid.valid ? `${authMethod} 사용 중` : (authValid.error ?? '알 수 없는 오류')
   );
   if (authValid.valid) passedTests++;
 
@@ -128,11 +120,7 @@ async function runTests(): Promise<void> {
     );
     if (isHealthy) passedTests++;
   } catch (error) {
-    logTest(
-      'n8n 헬스체크',
-      false,
-      `연결 실패: ${error instanceof Error ? error.message : error}`
-    );
+    logTest('n8n 헬스체크', false, `연결 실패: ${error instanceof Error ? error.message : error}`);
   }
 
   // ============================================
@@ -146,24 +134,14 @@ async function runTests(): Promise<void> {
   totalTests++;
   try {
     const workflows = await client.workflows.getAll();
-    const count = Array.isArray(workflows.data)
-      ? workflows.data.length
-      : workflows.data
-      ? 1
-      : 0;
+    const count = Array.isArray(workflows.data) ? workflows.data.length : workflows.data ? 1 : 0;
 
-    logTest(
-      '워크플로우 목록 조회',
-      true,
-      `${count}개의 워크플로우 발견`
-    );
+    logTest('워크플로우 목록 조회', true, `${count}개의 워크플로우 발견`);
     passedTests++;
 
     // 워크플로우가 있으면 상세 정보 출력
     if (count > 0) {
-      const workflowList = Array.isArray(workflows.data)
-        ? workflows.data
-        : [workflows.data];
+      const workflowList = Array.isArray(workflows.data) ? workflows.data : [workflows.data];
 
       console.log(`\n   ${colors.cyan}워크플로우 목록:${colors.reset}`);
       workflowList.slice(0, 5).forEach((wf: any) => {
@@ -187,38 +165,23 @@ async function runTests(): Promise<void> {
   totalTests++;
   try {
     const executions = await client.executions.getAll({ pageSize: 5 });
-    const count = Array.isArray(executions.data)
-      ? executions.data.length
-      : executions.data
-      ? 1
-      : 0;
+    const count = Array.isArray(executions.data) ? executions.data.length : executions.data ? 1 : 0;
 
     logTest('실행 내역 조회', true, `최근 ${count}개의 실행 내역`);
     passedTests++;
 
     if (count > 0) {
-      const executionList = Array.isArray(executions.data)
-        ? executions.data
-        : [executions.data];
+      const executionList = Array.isArray(executions.data) ? executions.data : [executions.data];
 
       console.log(`\n   ${colors.cyan}최근 실행:${colors.reset}`);
       executionList.forEach((exec: any) => {
-        const statusIcon =
-          exec.status === 'success'
-            ? '✅'
-            : exec.status === 'error'
-            ? '❌'
-            : '⏳';
+        const statusIcon = exec.status === 'success' ? '✅' : exec.status === 'error' ? '❌' : '⏳';
         const time = new Date(exec.startedAt).toLocaleString('ko-KR');
         console.log(`   - ${statusIcon} ${exec.status} (${time})`);
       });
     }
   } catch (error) {
-    logTest(
-      '실행 내역 조회',
-      false,
-      `오류: ${error instanceof Error ? error.message : error}`
-    );
+    logTest('실행 내역 조회', false, `오류: ${error instanceof Error ? error.message : error}`);
   }
 
   // ============================================
@@ -251,34 +214,22 @@ async function runTests(): Promise<void> {
   const allPassed = passedTests === totalTests;
 
   console.log(`총 테스트: ${totalTests}`);
-  console.log(
-    `${colors.green}통과: ${passedTests}${colors.reset}`
-  );
-  console.log(
-    `${colors.red}실패: ${totalTests - passedTests}${colors.reset}`
-  );
+  console.log(`${colors.green}통과: ${passedTests}${colors.reset}`);
+  console.log(`${colors.red}실패: ${totalTests - passedTests}${colors.reset}`);
   console.log(`성공률: ${successRate}%\n`);
 
   if (allPassed) {
-    console.log(
-      `${colors.green}🎉 모든 테스트 통과! n8n 연결이 정상입니다.${colors.reset}\n`
-    );
+    console.log(`${colors.green}🎉 모든 테스트 통과! n8n 연결이 정상입니다.${colors.reset}\n`);
   } else {
-    console.log(
-      `${colors.yellow}⚠️  일부 테스트 실패. 설정을 확인하세요.${colors.reset}\n`
-    );
+    console.log(`${colors.yellow}⚠️  일부 테스트 실패. 설정을 확인하세요.${colors.reset}\n`);
   }
 
   // 다음 단계 안내
   console.log(`${colors.cyan}다음 단계:${colors.reset}`);
   console.log(`1. 샘플 워크플로우 실행 테스트:`);
-  console.log(
-    `   npx ts-node features/n8n-integration/test-workflow-execution.ts`
-  );
+  console.log(`   npx ts-node features/n8n-integration/test-workflow-execution.ts`);
   console.log(`2. WebSocket 연결 테스트:`);
-  console.log(
-    `   npx ts-node features/n8n-integration/test-websocket.ts`
-  );
+  console.log(`   npx ts-node features/n8n-integration/test-websocket.ts`);
   console.log();
 
   process.exit(allPassed ? 0 : 1);

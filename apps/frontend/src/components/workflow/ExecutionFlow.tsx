@@ -103,16 +103,24 @@ export function ExecutionFlow({ workflow, execution, className = '' }: Execution
               <Clock className="w-4 h-4 text-gray-400" />
               <span>{formatExecutionTime(totalExecutionTime)}</span>
             </div>
-            <div className={`text-xs font-medium mt-1 ${
-              execution.status === 'success' ? 'text-green-600' :
-              execution.status === 'error' ? 'text-red-600' :
-              execution.status === 'running' ? 'text-blue-600' :
-              'text-gray-600'
-            }`}>
-              {execution.status === 'success' ? '✅ 성공' :
-               execution.status === 'error' ? '❌ 실패' :
-               execution.status === 'running' ? '🔄 실행 중' :
-               execution.status}
+            <div
+              className={`text-xs font-medium mt-1 ${
+                execution.status === 'success'
+                  ? 'text-green-600'
+                  : execution.status === 'error'
+                    ? 'text-red-600'
+                    : execution.status === 'running'
+                      ? 'text-blue-600'
+                      : 'text-gray-600'
+              }`}
+            >
+              {execution.status === 'success'
+                ? '✅ 성공'
+                : execution.status === 'error'
+                  ? '❌ 실패'
+                  : execution.status === 'running'
+                    ? '🔄 실행 중'
+                    : execution.status}
             </div>
           </div>
         </div>
@@ -140,9 +148,7 @@ export function ExecutionFlow({ workflow, execution, className = '' }: Execution
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{getNodeIcon(step.nodeType)}</span>
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {step.nodeName}
-                          </div>
+                          <div className="text-sm font-semibold text-gray-900">{step.nodeName}</div>
                           <div className="text-xs text-gray-500">{step.nodeType}</div>
                         </div>
                       </div>

@@ -9,11 +9,7 @@ import path from 'path';
 import { MongoClient, Db, Collection } from 'mongodb';
 import { CronJob } from 'cron';
 import { log } from '../../../apps/backend/src/utils/logger';
-import {
-  LogAggregationConfig,
-  LogSource,
-  AggregatedLog,
-} from '../types/monitoring.types';
+import { LogAggregationConfig, LogSource, AggregatedLog } from '../types/monitoring.types';
 
 /**
  * 기본 로그 집계 설정
@@ -288,10 +284,7 @@ export class LogAggregatorService {
 
       if (existing) {
         // 카운트 증가
-        await this.logsCollection.updateOne(
-          { _id: existing._id },
-          { $inc: { count: 1 } }
-        );
+        await this.logsCollection.updateOne({ _id: existing._id }, { $inc: { count: 1 } });
       } else {
         // 새 로그 추가
         const aggregatedLog: AggregatedLog = {
@@ -345,11 +338,7 @@ export class LogAggregatorService {
         }
       }
 
-      return await this.logsCollection
-        .find(query)
-        .sort({ timestamp: -1 })
-        .limit(limit)
-        .toArray();
+      return await this.logsCollection.find(query).sort({ timestamp: -1 }).limit(limit).toArray();
     } catch (error) {
       log.error('Failed to get logs', error);
       throw error;
@@ -387,16 +376,10 @@ export class LogAggregatorService {
       const [total, byLevel, bySource] = await Promise.all([
         this.logsCollection.countDocuments(query),
         this.logsCollection
-          .aggregate([
-            { $match: query },
-            { $group: { _id: '$level', count: { $sum: '$count' } } },
-          ])
+          .aggregate([{ $match: query }, { $group: { _id: '$level', count: { $sum: '$count' } } }])
           .toArray(),
         this.logsCollection
-          .aggregate([
-            { $match: query },
-            { $group: { _id: '$source', count: { $sum: '$count' } } },
-          ])
+          .aggregate([{ $match: query }, { $group: { _id: '$source', count: { $sum: '$count' } } }])
           .toArray(),
       ]);
 

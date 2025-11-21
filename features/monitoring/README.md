@@ -123,6 +123,7 @@ npm install
 ```
 
 필수 패키지:
+
 - `winston`: 구조화된 로깅
 - `mongodb`: 데이터 저장
 - `cron`: 스케줄링
@@ -134,6 +135,7 @@ npm run init:mongodb
 ```
 
 생성되는 컬렉션:
+
 - `execution_metrics`: 실행 메트릭
 - `alert_rules`: 알림 규칙
 - `alerts`: 알림 이력
@@ -243,6 +245,7 @@ await monitoringService.resolveAlert('alert-123');
 **파일**: `services/metrics-collector.service.ts`
 
 **주요 메서드**:
+
 - `saveExecutionMetric(metric)`: 실행 메트릭 저장
 - `calculateNodeMetrics(...)`: 노드 메트릭 계산
 - `calculateAITokenUsage(...)`: AI 토큰 사용량 및 비용 계산
@@ -250,6 +253,7 @@ await monitoringService.resolveAlert('alert-123');
 - `calculateSuccessRate(timeRange)`: 성공률 계산
 
 **AI 모델 비용** (per 1K tokens):
+
 ```typescript
 const AI_MODEL_COSTS = {
   'gpt-4': { input: 0.03, output: 0.06 },
@@ -266,6 +270,7 @@ const AI_MODEL_COSTS = {
 **파일**: `services/dashboard.service.ts`
 
 **주요 메서드**:
+
 - `getDashboardData(timeRange)`: 전체 대시보드 데이터
 - `getOverview(timeRange)`: 대시보드 개요
 - `getRealtimeStatus()`: 실시간 실행 상태
@@ -278,6 +283,7 @@ const AI_MODEL_COSTS = {
 **파일**: `services/alert-manager.service.ts`
 
 **주요 메서드**:
+
 - `initialize()`: 알림 규칙 로드 및 채널 설정
 - `start()`: 알림 모니터링 시작 (1분 간격)
 - `getAlerts(resolved, level, limit)`: 알림 조회
@@ -285,6 +291,7 @@ const AI_MODEL_COSTS = {
 - `resolveAlert(alertId)`: 알림 해결
 
 **기본 알림 규칙**:
+
 ```typescript
 [
   {
@@ -311,7 +318,7 @@ const AI_MODEL_COSTS = {
     level: 'warning',
     cooldownMinutes: 60,
   },
-]
+];
 ```
 
 ### LogAggregator
@@ -319,12 +326,14 @@ const AI_MODEL_COSTS = {
 **파일**: `services/log-aggregator.service.ts`
 
 **주요 메서드**:
+
 - `initialize()`: 로그 소스 설정 및 MongoDB 연결
 - `start()`: 로그 집계 시작 (5분 간격)
 - `getLogs(source, level, startDate, endDate, limit)`: 로그 조회
 - `getLogStatistics(startDate, endDate)`: 로그 통계
 
 **로그 소스 설정**:
+
 ```typescript
 {
   sources: [
@@ -359,6 +368,7 @@ const AI_MODEL_COSTS = {
    - Webhook URL 복사
 
 2. 환경 변수 설정:
+
 ```bash
 ALERT_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ALERT_SLACK_CHANNEL=#monitoring
@@ -371,6 +381,7 @@ ALERT_SLACK_CHANNEL=#monitoring
    - Webhook URL 복사
 
 2. 환경 변수 설정:
+
 ```bash
 ALERT_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR/WEBHOOK
 ```
@@ -381,6 +392,7 @@ ALERT_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR/WEBHOOK
    - Google 계정 설정 → 보안 → 2단계 인증 → 앱 비밀번호
 
 2. 환경 변수 설정:
+
 ```bash
 ALERT_EMAIL_ENABLED=true
 ALERT_EMAIL_TO=admin@example.com
@@ -408,10 +420,7 @@ const router = express.Router();
 // 대시보드 데이터
 router.get('/dashboard', async (req, res) => {
   const { duration = 24, unit = 'hour' } = req.query;
-  const timeRange = monitoringService.createTimeRange(
-    parseInt(duration as string),
-    unit as any
-  );
+  const timeRange = monitoringService.createTimeRange(parseInt(duration as string), unit as any);
   const data = await monitoringService.getDashboardData(timeRange);
   res.json(data);
 });
@@ -432,10 +441,7 @@ router.get('/health', async (req, res) => {
 router.get('/workflows/:workflowId/statistics', async (req, res) => {
   const { workflowId } = req.params;
   const { duration = 24, unit = 'hour' } = req.query;
-  const timeRange = monitoringService.createTimeRange(
-    parseInt(duration as string),
-    unit as any
-  );
+  const timeRange = monitoringService.createTimeRange(parseInt(duration as string), unit as any);
   const stats = await monitoringService.getWorkflowStatistics(workflowId, timeRange);
   res.json(stats);
 });
@@ -521,10 +527,12 @@ import { logger } from './apps/backend/src/utils/logger';
 import { WinstonMonitoringTransport } from './features/monitoring/services/winston-monitoring-transport';
 
 // 모니터링 Transport 추가
-logger.add(new WinstonMonitoringTransport({
-  level: 'info',
-  sourceName: 'application',
-}));
+logger.add(
+  new WinstonMonitoringTransport({
+    level: 'info',
+    sourceName: 'application',
+  })
+);
 ```
 
 ### WebSocket 이벤트
@@ -595,11 +603,13 @@ await Promise.all(
 ### 알림이 전송되지 않음
 
 **원인**:
+
 - 알림 규칙이 비활성화됨
 - 쿨다운 기간 중
 - 채널 설정 오류
 
 **해결**:
+
 ```typescript
 // 알림 규칙 확인
 const rules = await alertManager['rulesCollection'].find().toArray();
@@ -613,10 +623,12 @@ console.log('Channel configs:', Array.from(configs.entries()));
 ### 메트릭이 저장되지 않음
 
 **원인**:
+
 - MongoDB 연결 실패
 - 스키마 검증 오류
 
 **해결**:
+
 ```bash
 # MongoDB 연결 확인
 npm run test:mongodb
@@ -628,10 +640,12 @@ mongosh "$MONGODB_URI" --eval "db.getCollectionNames()"
 ### 로그 집계가 실행되지 않음
 
 **원인**:
+
 - Cron 스케줄 오류
 - 로그 파일 경로 오류
 
 **해결**:
+
 ```typescript
 // 로그 집계 상태 확인
 const config = logAggregator.getConfig();
@@ -654,6 +668,7 @@ MIT License
 문제가 발생하면 GitHub Issues에 등록해주세요.
 
 **관련 문서**:
+
 - [Error Healing](../error-healing/README.md)
 - [Agent Orchestration](../agent-orchestration/ARCHITECTURE.md)
 - [Backend API](../../apps/backend/README.md)

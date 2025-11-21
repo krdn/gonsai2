@@ -67,9 +67,7 @@ const sidebars = {
     {
       type: 'category',
       label: '아키텍처 다이어그램',
-      items: [
-        'architecture/diagrams',
-      ],
+      items: ['architecture/diagrams'],
     },
   ],
 };

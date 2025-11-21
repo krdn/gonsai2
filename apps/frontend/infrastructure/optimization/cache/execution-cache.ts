@@ -122,14 +122,10 @@ class ExecutionCache {
 
     try {
       // Get recent executions for this workflow
-      const recentIds = await client.zrevrange(
-        `${this.RECENT_KEY}:${workflowId}`,
-        0,
-        limit - 1
-      );
+      const recentIds = await client.zrevrange(`${this.RECENT_KEY}:${workflowId}`, 0, limit - 1);
 
       // Fetch execution data
-      const keys = recentIds.map(id => `${this.PREFIX}${id}`);
+      const keys = recentIds.map((id) => `${this.PREFIX}${id}`);
       if (keys.length > 0) {
         const values = await client.mget(...keys);
 
@@ -159,11 +155,11 @@ class ExecutionCache {
     try {
       const recentIds = await client.zrevrange(this.RECENT_KEY, 0, limit - 1);
 
-      const keys = recentIds.map(id => `${this.PREFIX}${id}`);
+      const keys = recentIds.map((id) => `${this.PREFIX}${id}`);
       if (keys.length > 0) {
         const values = await client.mget(...keys);
 
-        values.forEach(value => {
+        values.forEach((value) => {
           if (value) {
             results.push(JSON.parse(value));
           }
@@ -217,7 +213,7 @@ class ExecutionCache {
       const keys = await client.keys(`${this.RECENT_KEY}:*`);
       if (keys.length > 0) {
         const pipeline = client.pipeline();
-        keys.forEach(key => pipeline.zrem(key, executionId));
+        keys.forEach((key) => pipeline.zrem(key, executionId));
         await pipeline.exec();
       }
     } catch (error) {
@@ -259,14 +255,16 @@ class ExecutionCache {
       const executionIds = await client.zrange(`${this.RECENT_KEY}:${workflowId}`, 0, -1);
 
       if (executionIds.length > 0) {
-        const keys = executionIds.map(id => `${this.PREFIX}${id}`);
+        const keys = executionIds.map((id) => `${this.PREFIX}${id}`);
         await client.del(...keys);
       }
 
       // Clear recent list for this workflow
       await client.del(`${this.RECENT_KEY}:${workflowId}`);
 
-      console.log(`✅ Cleared ${executionIds.length} execution cache entries for workflow ${workflowId}`);
+      console.log(
+        `✅ Cleared ${executionIds.length} execution cache entries for workflow ${workflowId}`
+      );
     } catch (error) {
       console.error(`❌ Failed to clear execution cache for workflow ${workflowId}:`, error);
     }

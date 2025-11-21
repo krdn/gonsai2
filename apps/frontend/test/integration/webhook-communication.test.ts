@@ -168,7 +168,7 @@ describe('Webhook Communication Integration', () => {
       testWorkflowId = created.id;
 
       // Wait for webhook to be registered
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     });
 
     it('should trigger workflow via webhook POST', async () => {
@@ -187,7 +187,7 @@ describe('Webhook Communication Integration', () => {
       expect(response.ok).toBe(true);
 
       // Wait for execution to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Verify execution was created
       const executions = await client.getExecutions({
@@ -219,7 +219,7 @@ describe('Webhook Communication Integration', () => {
       });
 
       // Wait for execution
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get execution details
       const executions = await client.getExecutions({
@@ -262,7 +262,7 @@ describe('Webhook Communication Integration', () => {
       const created = await client.createWorkflow(workflow);
       testWorkflowId = created.id;
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const webhookUrl = `${TestEnvironment.getUrl()}/webhook/error-test`;
 
@@ -334,7 +334,7 @@ describe('Webhook Communication Integration', () => {
       const created = await client.createWorkflow(workflow);
       testWorkflowId = created.id;
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const webhookUrl = `${TestEnvironment.getUrl()}/webhook/on-received-test`;
 
@@ -427,7 +427,7 @@ describe('Webhook Communication Integration', () => {
       workflow1Id = created1.id;
       workflow2Id = created2.id;
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Trigger both webhooks
       const webhook1Url = `${TestEnvironment.getUrl()}/webhook/multi-test-1`;
@@ -450,7 +450,7 @@ describe('Webhook Communication Integration', () => {
       expect(response2.ok).toBe(true);
 
       // Wait for executions
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Verify both workflows executed
       const executions1 = await client.getExecutions({ workflowId: workflow1Id });

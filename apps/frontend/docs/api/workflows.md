@@ -9,16 +9,16 @@ title: 워크플로우 API
 
 ## 엔드포인트 목록
 
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| GET | `/api/v1/workflows` | 워크플로우 목록 조회 |
-| GET | `/api/v1/workflows/:id` | 워크플로우 상세 조회 |
-| POST | `/api/v1/workflows` | 워크플로우 생성 |
-| PUT | `/api/v1/workflows/:id` | 워크플로우 수정 |
-| DELETE | `/api/v1/workflows/:id` | 워크플로우 삭제 |
-| POST | `/api/v1/workflows/:id/execute` | 워크플로우 실행 |
-| POST | `/api/v1/workflows/:id/activate` | 워크플로우 활성화 |
-| POST | `/api/v1/workflows/:id/deactivate` | 워크플로우 비활성화 |
+| 메서드 | 엔드포인트                         | 설명                 |
+| ------ | ---------------------------------- | -------------------- |
+| GET    | `/api/v1/workflows`                | 워크플로우 목록 조회 |
+| GET    | `/api/v1/workflows/:id`            | 워크플로우 상세 조회 |
+| POST   | `/api/v1/workflows`                | 워크플로우 생성      |
+| PUT    | `/api/v1/workflows/:id`            | 워크플로우 수정      |
+| DELETE | `/api/v1/workflows/:id`            | 워크플로우 삭제      |
+| POST   | `/api/v1/workflows/:id/execute`    | 워크플로우 실행      |
+| POST   | `/api/v1/workflows/:id/activate`   | 워크플로우 활성화    |
+| POST   | `/api/v1/workflows/:id/deactivate` | 워크플로우 비활성화  |
 
 ## 워크플로우 데이터 구조
 
@@ -73,10 +73,10 @@ GET /api/v1/workflows
 
 **쿼리 파라미터:**
 
-| 파라미터 | 타입 | 설명 | 기본값 |
-|---------|------|------|--------|
-| `active` | boolean | 활성 상태 필터 | - |
-| `tags` | string | 태그 필터 (쉼표 구분) | - |
+| 파라미터 | 타입    | 설명                  | 기본값 |
+| -------- | ------- | --------------------- | ------ |
+| `active` | boolean | 활성 상태 필터        | -      |
+| `tags`   | string  | 태그 필터 (쉼표 구분) | -      |
 
 **요청 예시:**
 
@@ -110,7 +110,7 @@ curl -X GET \
 const workflows = await n8nClient.getWorkflows();
 
 // 활성 워크플로우만 조회
-const activeWorkflows = workflows.filter(w => w.active);
+const activeWorkflows = workflows.filter((w) => w.active);
 ```
 
 ### 2. 워크플로우 상세 조회
@@ -123,9 +123,9 @@ GET /api/v1/workflows/:id
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 워크플로우 ID |
+| 파라미터 | 타입   | 설명          |
+| -------- | ------ | ------------- |
+| `id`     | string | 워크플로우 ID |
 
 **요청 예시:**
 
@@ -303,9 +303,9 @@ PUT /api/v1/workflows/:id
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 워크플로우 ID |
+| 파라미터 | 타입   | 설명          |
+| -------- | ------ | ------------- |
+| `id`     | string | 워크플로우 ID |
 
 **요청 본문:**
 
@@ -350,9 +350,9 @@ DELETE /api/v1/workflows/:id
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 워크플로우 ID |
+| 파라미터 | 타입   | 설명          |
+| -------- | ------ | ------------- |
+| `id`     | string | 워크플로우 ID |
 
 **요청 예시:**
 
@@ -389,9 +389,9 @@ POST /api/v1/workflows/:id/execute
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 워크플로우 ID |
+| 파라미터 | 타입   | 설명          |
+| -------- | ------ | ------------- |
+| `id`     | string | 워크플로우 ID |
 
 **요청 본문 (선택):**
 
@@ -619,15 +619,13 @@ function validateWorkflow(workflow: Workflow): ValidationResult {
   }
 
   // Start 노드 검증
-  const hasStartNode = workflow.nodes.some(
-    node => node.type === 'n8n-nodes-base.start'
-  );
+  const hasStartNode = workflow.nodes.some((node) => node.type === 'n8n-nodes-base.start');
   if (!hasStartNode) {
     errors.push('Start 노드가 필요합니다');
   }
 
   // 연결 검증
-  const nodeIds = new Set(workflow.nodes.map(n => n.id));
+  const nodeIds = new Set(workflow.nodes.map((n) => n.id));
   for (const [sourceId, connections] of Object.entries(workflow.connections)) {
     if (!nodeIds.has(sourceId)) {
       errors.push(`존재하지 않는 노드 ID: ${sourceId}`);
@@ -656,6 +654,7 @@ function validateWorkflow(workflow: Workflow): ValidationResult {
 ### 일반적인 에러
 
 **404 Not Found:**
+
 ```json
 {
   "code": "WORKFLOW_NOT_FOUND",
@@ -664,20 +663,19 @@ function validateWorkflow(workflow: Workflow): ValidationResult {
 ```
 
 **400 Bad Request:**
+
 ```json
 {
   "code": "INVALID_WORKFLOW",
   "message": "Invalid workflow structure",
   "details": {
-    "errors": [
-      "At least one node is required",
-      "Start node is missing"
-    ]
+    "errors": ["At least one node is required", "Start node is missing"]
   }
 }
 ```
 
 **409 Conflict:**
+
 ```json
 {
   "code": "WORKFLOW_NAME_EXISTS",

@@ -64,12 +64,7 @@ describe('Monitoring System Integration Tests', () => {
     });
 
     it('should calculate AI token costs correctly', () => {
-      const tokenUsage = metricsCollector.calculateAITokenUsage(
-        'gpt-4',
-        1000,
-        500,
-        'openai'
-      );
+      const tokenUsage = metricsCollector.calculateAITokenUsage('gpt-4', 1000, 500, 'openai');
 
       expect(tokenUsage.totalTokens).toBe(1500);
       expect(tokenUsage.cost).toBe(0.03 * 1 + 0.06 * 0.5); // $0.06

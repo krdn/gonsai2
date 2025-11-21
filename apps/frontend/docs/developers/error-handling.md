@@ -54,12 +54,7 @@ export class BaseError extends Error {
 
 // API 관련 에러
 export class ApiError extends BaseError {
-  constructor(
-    code: string,
-    message: string,
-    details?: any,
-    statusCode: number = 500
-  ) {
+  constructor(code: string, message: string, details?: any, statusCode: number = 500) {
     super(message, code, statusCode, details);
   }
 }
@@ -99,24 +94,16 @@ export class NotFoundError extends BaseError {
 // Rate Limit 에러
 export class RateLimitError extends BaseError {
   constructor(resetAt: Date) {
-    super(
-      '요청 제한을 초과했습니다. 잠시 후 다시 시도해주세요.',
-      'RATE_LIMIT_EXCEEDED',
-      429,
-      { resetAt }
-    );
+    super('요청 제한을 초과했습니다. 잠시 후 다시 시도해주세요.', 'RATE_LIMIT_EXCEEDED', 429, {
+      resetAt,
+    });
   }
 }
 
 // 타임아웃 에러
 export class TimeoutError extends BaseError {
   constructor(operation: string, timeout: number) {
-    super(
-      `작업 시간이 초과되었습니다: ${operation}`,
-      'TIMEOUT_ERROR',
-      408,
-      { operation, timeout }
-    );
+    super(`작업 시간이 초과되었습니다: ${operation}`, 'TIMEOUT_ERROR', 408, { operation, timeout });
   }
 }
 
@@ -165,21 +152,13 @@ export class ErrorFactory {
         return new AuthorizationError(body?.error?.message);
 
       case 404:
-        return new NotFoundError(
-          body?.error?.resource || 'Resource',
-          body?.error?.id
-        );
+        return new NotFoundError(body?.error?.resource || 'Resource', body?.error?.id);
 
       case 408:
-        return new TimeoutError(
-          body?.error?.operation || 'Request',
-          body?.error?.timeout || 30000
-        );
+        return new TimeoutError(body?.error?.operation || 'Request', body?.error?.timeout || 30000);
 
       case 429:
-        return new RateLimitError(
-          new Date(body?.error?.resetAt || Date.now() + 60000)
-        );
+        return new RateLimitError(new Date(body?.error?.resetAt || Date.now() + 60000));
 
       case 502:
       case 503:
@@ -216,11 +195,9 @@ export class ErrorFactory {
       return new TimeoutError('Request', 30000);
     }
 
-    return new ApiError(
-      'INTERNAL_ERROR',
-      error.message || '내부 오류가 발생했습니다.',
-      { originalError: error }
-    );
+    return new ApiError('INTERNAL_ERROR', error.message || '내부 오류가 발생했습니다.', {
+      originalError: error,
+    });
   }
 }
 ```
@@ -234,12 +211,7 @@ export class ErrorFactory {
 ```typescript
 // lib/n8n/errors.ts
 export class ApiError extends BaseError {
-  constructor(
-    code: string,
-    message: string,
-    details?: any,
-    statusCode: number = 500
-  ) {
+  constructor(code: string, message: string, details?: any, statusCode: number = 500) {
     super(message, code, statusCode, details);
   }
 
@@ -290,10 +262,7 @@ export class ApiError extends BaseError {
 
     const retryableStatusCodes = [408, 429, 500, 502, 503, 504];
 
-    return (
-      retryableCodes.includes(this.code) ||
-      retryableStatusCodes.includes(this.statusCode)
-    );
+    return retryableCodes.includes(this.code) || retryableStatusCodes.includes(this.statusCode);
   }
 }
 ```
@@ -331,18 +300,14 @@ export class WorkflowService {
     }
   }
 
-  private async retryGetWorkflow(
-    id: string,
-    attempt: number = 1
-  ): Promise<Workflow> {
+  private async retryGetWorkflow(id: string, attempt: number = 1): Promise<Workflow> {
     const maxRetries = 3;
 
     if (attempt > maxRetries) {
-      throw new ApiError(
-        'MAX_RETRIES_EXCEEDED',
-        '최대 재시도 횟수를 초과했습니다.',
-        { workflowId: id, attempts: attempt }
-      );
+      throw new ApiError('MAX_RETRIES_EXCEEDED', '최대 재시도 횟수를 초과했습니다.', {
+        workflowId: id,
+        attempts: attempt,
+      });
     }
 
     const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
@@ -367,9 +332,7 @@ export class WorkflowService {
 
 ```typescript
 // lib/utils/result.ts
-export type Result<T, E = BaseError> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+export type Result<T, E = BaseError> = { ok: true; value: T } | { ok: false; error: E };
 
 export function Ok<T>(value: T): Result<T, never> {
   return { ok: true, value };
@@ -380,9 +343,7 @@ export function Err<E extends BaseError>(error: E): Result<never, E> {
 }
 
 // 사용 예시
-export async function getWorkflowResult(
-  id: string
-): Promise<Result<Workflow, ApiError>> {
+export async function getWorkflowResult(id: string): Promise<Result<Workflow, ApiError>> {
   try {
     const workflow = await n8nClient.getWorkflow(id);
     return Ok(workflow);
@@ -470,9 +431,7 @@ export class Either<L, R> {
 }
 
 // 사용 예시
-export async function getWorkflowEither(
-  id: string
-): Promise<Either<ApiError, Workflow>> {
+export async function getWorkflowEither(id: string): Promise<Either<ApiError, Workflow>> {
   try {
     const workflow = await n8nClient.getWorkflow(id);
     return Either.right(workflow);
@@ -668,9 +627,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BaseError } from '@/lib/errors/base';
 import { logger } from '@/lib/logger';
 
-export function withErrorHandler(
-  handler: (request: NextRequest) => Promise<NextResponse>
-) {
+export function withErrorHandler(handler: (request: NextRequest) => Promise<NextResponse>) {
   return async (request: NextRequest): Promise<NextResponse> => {
     try {
       return await handler(request);
@@ -976,7 +933,7 @@ export const toast = {
     sonnerToast.info(message);
   },
 
-  promise: async <T,>(
+  promise: async <T>(
     promise: Promise<T>,
     {
       loading,
@@ -1060,10 +1017,7 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
     new winston.transports.File({
       filename: 'logs/error.log',

@@ -307,7 +307,7 @@ describe('WorkflowParser', () => {
       const result = WorkflowParser.validate(disconnectedWorkflow);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('Disconnected nodes'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('Disconnected nodes'))).toBe(true);
     });
 
     it('should detect invalid connections', () => {
@@ -333,7 +333,7 @@ describe('WorkflowParser', () => {
       const result = WorkflowParser.validate(invalidWorkflow);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('target node not found'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('target node not found'))).toBe(true);
     });
   });
 });

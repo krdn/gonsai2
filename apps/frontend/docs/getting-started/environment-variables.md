@@ -57,6 +57,7 @@ NEXT_PUBLIC_N8N_WEBSOCKET_URL=ws://localhost:5678
 ```
 
 **프로덕션 예시:**
+
 ```bash
 NEXT_PUBLIC_N8N_API_URL=https://n8n.yourdomain.com/api/v1
 NEXT_PUBLIC_N8N_API_KEY=n8n_api_xxxxxxxxxxxxx
@@ -80,6 +81,7 @@ MONGODB_PASSWORD=secure-password-here
 ```
 
 **프로덕션 예시 (MongoDB Atlas):**
+
 ```bash
 MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/n8n_frontend?retryWrites=true&w=majority
 ```
@@ -101,6 +103,7 @@ REDIS_DB=0
 ```
 
 **프로덕션 예시:**
+
 ```bash
 REDIS_HOST=redis.yourdomain.com
 REDIS_PORT=6379

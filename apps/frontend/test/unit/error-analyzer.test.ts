@@ -446,7 +446,7 @@ describe('ErrorAnalyzer', () => {
         { message: 'EConnRefused' },
       ];
 
-      errors.forEach(error => {
+      errors.forEach((error) => {
         const analysis = ErrorAnalyzer.analyze(error);
         expect(analysis.category).toBe(ErrorCategory.NETWORK);
       });

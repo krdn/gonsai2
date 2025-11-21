@@ -76,13 +76,7 @@ graph TB
 
 ```typescript
 // lib/monitoring/prometheus.ts
-import {
-  collectDefaultMetrics,
-  Counter,
-  Gauge,
-  Histogram,
-  Registry,
-} from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from 'prom-client';
 
 // 레지스트리 생성
 export const register = new Registry();
@@ -166,15 +160,9 @@ export const cacheHitRate = new Counter({
 ```typescript
 // middleware/metrics.ts
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  httpRequestsTotal,
-  httpRequestDuration,
-} from '@/lib/monitoring/prometheus';
+import { httpRequestsTotal, httpRequestDuration } from '@/lib/monitoring/prometheus';
 
-export async function metricsMiddleware(
-  request: NextRequest,
-  next: () => Promise<NextResponse>
-) {
+export async function metricsMiddleware(request: NextRequest, next: () => Promise<NextResponse>) {
   const start = Date.now();
   const route = request.nextUrl.pathname;
   const method = request.method;
@@ -267,7 +255,7 @@ export class WorkflowMetricsCollector {
     try {
       // 활성 워크플로우 수
       const workflows = await n8nClient.getWorkflows();
-      const activeCount = workflows.filter(w => w.active).length;
+      const activeCount = workflows.filter((w) => w.active).length;
 
       activeWorkflowsGauge.set(activeCount);
 
@@ -280,10 +268,7 @@ export class WorkflowMetricsCollector {
     }
   }
 
-  private async collectWorkflowExecutionMetrics(
-    workflowId: string,
-    workflowName: string
-  ) {
+  private async collectWorkflowExecutionMetrics(workflowId: string, workflowName: string) {
     try {
       // 최근 1시간 실행 조회
       const executions = await n8nClient.getExecutions({
@@ -302,8 +287,7 @@ export class WorkflowMetricsCollector {
         // 실행 시간 기록
         if (execution.stoppedAt && execution.startedAt) {
           const duration =
-            (new Date(execution.stoppedAt).getTime() -
-              new Date(execution.startedAt).getTime()) /
+            (new Date(execution.stoppedAt).getTime() - new Date(execution.startedAt).getTime()) /
             1000;
 
           workflowExecutionDuration.observe(
@@ -316,10 +300,7 @@ export class WorkflowMetricsCollector {
         }
       }
     } catch (error) {
-      console.error(
-        `Failed to collect metrics for workflow ${workflowId}:`,
-        error
-      );
+      console.error(`Failed to collect metrics for workflow ${workflowId}:`, error);
     }
   }
 }
@@ -390,10 +371,7 @@ export const logger = winston.createLogger({
   transports: [
     // 콘솔 출력
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
 
     // 에러 로그 파일
@@ -452,11 +430,7 @@ export class StructuredLogger {
   }
 
   // HTTP 응답 로깅
-  logHttpResponse(res: {
-    statusCode: number;
-    duration: number;
-    url: string;
-  }) {
+  logHttpResponse(res: { statusCode: number; duration: number; url: string }) {
     logger.info('HTTP Response', {
       type: 'http_response',
       statusCode: res.statusCode,
@@ -536,12 +510,7 @@ export class StructuredLogger {
   // 민감한 정보 제거
   private sanitizeHeaders(headers: Record<string, string>) {
     const sanitized = { ...headers };
-    const sensitiveHeaders = [
-      'authorization',
-      'cookie',
-      'x-api-key',
-      'x-auth-token',
-    ];
+    const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token'];
 
     for (const header of sensitiveHeaders) {
       if (sanitized[header]) {
@@ -579,10 +548,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { structuredLogger } from '@/lib/logging/structured-logger';
 import { n8nClient } from '@/lib/n8n/client';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const startTime = Date.now();
 
   try {
@@ -623,10 +589,7 @@ export async function POST(
       endpoint: `/api/workflows/${params.id}/execute`,
     });
 
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 ```
@@ -729,11 +692,7 @@ export class TracingService {
   }
 
   // API 호출 추적
-  async traceApiCall<T>(
-    method: string,
-    url: string,
-    fn: () => Promise<T>
-  ): Promise<T> {
+  async traceApiCall<T>(method: string, url: string, fn: () => Promise<T>): Promise<T> {
     return tracer.startActiveSpan(
       `http.${method.toLowerCase()}`,
       {
@@ -1116,10 +1075,7 @@ export class AlertingService {
         this.sendEmailAlert(alert),
       ]);
     } else if (alert.severity === 'error') {
-      await Promise.all([
-        this.sendSlackAlert(alert),
-        this.sendPagerDutyAlert(alert),
-      ]);
+      await Promise.all([this.sendSlackAlert(alert), this.sendPagerDutyAlert(alert)]);
     } else {
       await this.sendSlackAlert(alert);
     }
@@ -1313,6 +1269,7 @@ datasources:
 ## 모니터링 체크리스트
 
 ### 설정 확인
+
 - [ ] Prometheus 메트릭 수집 설정 완료
 - [ ] Winston 로거 설정 및 로그 레벨 구성
 - [ ] OpenTelemetry 분산 추적 활성화
@@ -1320,12 +1277,14 @@ datasources:
 - [ ] Grafana 대시보드 생성
 
 ### 알림 구성
+
 - [ ] Slack webhook URL 설정
 - [ ] PagerDuty 통합 키 설정
 - [ ] 알림 규칙 및 임계값 정의
 - [ ] 심각도별 알림 채널 매핑
 
 ### 데이터 수집
+
 - [ ] HTTP 요청/응답 메트릭 수집
 - [ ] 워크플로우 실행 메트릭 수집
 - [ ] 데이터베이스 쿼리 성능 추적
@@ -1333,6 +1292,7 @@ datasources:
 - [ ] 에러 및 예외 로깅
 
 ### 시각화
+
 - [ ] 실시간 대시보드 구성
 - [ ] 주요 메트릭 패널 생성
 - [ ] 알림 이력 대시보드

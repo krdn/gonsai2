@@ -147,7 +147,15 @@ async function setupExecutionValidation(db: any): Promise<void> {
       validator: {
         $jsonSchema: {
           bsonType: 'object',
-          required: ['n8nExecutionId', 'workflowId', 'n8nWorkflowId', 'status', 'mode', 'startedAt', 'createdAt'],
+          required: [
+            'n8nExecutionId',
+            'workflowId',
+            'n8nWorkflowId',
+            'status',
+            'mode',
+            'startedAt',
+            'createdAt',
+          ],
           properties: {
             n8nExecutionId: {
               bsonType: 'string',
@@ -314,8 +322,6 @@ export async function calculateExecutionStats(
     successCount: result.successCount,
     failedCount: result.failedCount,
     averageExecutionTime: Math.round(result.averageExecutionTime || 0),
-    successRate: result.totalExecutions > 0
-      ? result.successCount / result.totalExecutions
-      : 0,
+    successRate: result.totalExecutions > 0 ? result.successCount / result.totalExecutions : 0,
   };
 }

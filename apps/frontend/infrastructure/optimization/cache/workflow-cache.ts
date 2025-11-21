@@ -65,11 +65,7 @@ class WorkflowCache {
     const key = `${this.PREFIX}${workflowId}`;
 
     try {
-      await client.setex(
-        key,
-        this.WORKFLOW_TTL,
-        JSON.stringify(metadata)
-      );
+      await client.setex(key, this.WORKFLOW_TTL, JSON.stringify(metadata));
 
       await this.incrementStat('sets');
     } catch (error) {
@@ -122,11 +118,7 @@ class WorkflowCache {
     const client = await RedisClient.getClient();
 
     try {
-      await client.setex(
-        this.LIST_KEY,
-        this.LIST_TTL,
-        JSON.stringify(workflows)
-      );
+      await client.setex(this.LIST_KEY, this.LIST_TTL, JSON.stringify(workflows));
 
       await this.incrementStat('sets');
     } catch (error) {
@@ -154,7 +146,7 @@ class WorkflowCache {
     const client = await RedisClient.getClient();
     const result = new Map<string, WorkflowMetadata>();
 
-    const keys = workflowIds.map(id => `${this.PREFIX}${id}`);
+    const keys = workflowIds.map((id) => `${this.PREFIX}${id}`);
 
     try {
       const values = await client.mget(...keys);
@@ -182,7 +174,7 @@ class WorkflowCache {
     const client = await RedisClient.getClient();
     const pipeline = client.pipeline();
 
-    workflows.forEach(workflow => {
+    workflows.forEach((workflow) => {
       const key = `${this.PREFIX}${workflow.id}`;
       pipeline.setex(key, this.WORKFLOW_TTL, JSON.stringify(workflow));
     });

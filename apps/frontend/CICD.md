@@ -18,6 +18,7 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 **트리거**: Push/PR to `main` or `develop` 브랜치
 
 **작업 흐름**:
+
 1. **코드 품질 검사**: ESLint, TypeScript, Tests
 2. **n8n 컨테이너 연결 테스트**: n8n, PostgreSQL, Redis 연결 확인
 3. **API 통합 테스트**: n8n API 엔드포인트 테스트
@@ -25,6 +26,7 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 5. **빌드 테스트**: Next.js 애플리케이션 빌드
 
 **주요 기능**:
+
 - n8n 서비스와의 완전한 통합 테스트
 - 자동화된 워크플로우 실행 검증
 - 데이터베이스 및 큐 연결 테스트
@@ -32,10 +34,12 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 ### 2. Deploy Pipeline ([cd.yml](.github/workflows/cd.yml))
 
 **트리거**:
+
 - Push to `main` 브랜치 (자동 배포)
 - Manual dispatch (환경 선택 가능)
 
 **작업 흐름**:
+
 1. **도커 이미지 빌드**: GitHub Container Registry에 푸시
 2. **통합 테스트**: n8n과의 연동 확인
 3. **배포 준비**: docker-compose 매니페스트 생성
@@ -44,6 +48,7 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 6. **롤백**: 실패 시 자동 롤백
 
 **주요 기능**:
+
 - 기존 n8n 컨테이너와 네트워크 공유
 - 자동 백업 및 롤백 전략
 - 배포 후 자동 헬스 체크
@@ -51,10 +56,12 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 ### 3. n8n Health Check ([n8n-health.yml](.github/workflows/n8n-health.yml))
 
 **트리거**:
+
 - 5분마다 자동 실행
 - Manual dispatch
 
 **작업 흐름**:
+
 1. **n8n API 상태 확인**: 헬스 엔드포인트 및 API 엔드포인트
 2. **워크플로우 상태 검증**: 활성 워크플로우 및 실패한 실행 확인
 3. **데이터베이스 연결 확인**: PostgreSQL, Redis 연결
@@ -63,6 +70,7 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 6. **오류 자동 수정**: 감지된 문제 자동 해결
 
 **자동 수정 기능**:
+
 - n8n 서비스 재시작
 - 데이터베이스 재시작
 - 디스크 공간 정리
@@ -71,11 +79,13 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 ### 4. Auto Fix Errors ([auto-fix.yml](.github/workflows/auto-fix.yml))
 
 **트리거**:
+
 - 매일 새벽 3시 (UTC)
 - Manual dispatch
 - Issue 생성/라벨링 시
 
 **작업 흐름**:
+
 1. **오류 로그 분석**: ESLint, TypeScript, Test, Dependency 오류 감지
 2. **ESLint 자동 수정**: `--fix` 플래그로 자동 수정
 3. **TypeScript 오류 분석**: 수정 가능 여부 판단, 이슈 생성
@@ -84,6 +94,7 @@ n8n 통합을 포함한 CI/CD 파이프라인 설정 및 사용 가이드입니�
 6. **자동 병합**: 모든 테스트 통과 시 PR 자동 병합
 
 **주요 기능**:
+
 - 자동 코드 수정 및 커밋
 - 보안 취약점 자동 업데이트
 - 수정 결과 PR 자동 생성
@@ -100,40 +111,40 @@ GitHub 리포지토리 설정에서 다음 Secrets를 추가해야 합니다:
 
 #### 1. n8n 관련
 
-| Secret 이름 | 설명 | 예시 |
-|-------------|------|------|
-| `N8N_ENCRYPTION_KEY` | n8n 암호화 키 (기존 n8n 설정에서 가져오기) | `a1b2c3d4e5f6...` |
-| `NEXT_PUBLIC_N8N_URL` | n8n 접속 URL | `https://n8n.yourdomain.com` |
-| `N8N_API_KEY` | n8n API 키 (선택사항) | `n8n_api_...` |
+| Secret 이름           | 설명                                       | 예시                         |
+| --------------------- | ------------------------------------------ | ---------------------------- |
+| `N8N_ENCRYPTION_KEY`  | n8n 암호화 키 (기존 n8n 설정에서 가져오기) | `a1b2c3d4e5f6...`            |
+| `NEXT_PUBLIC_N8N_URL` | n8n 접속 URL                               | `https://n8n.yourdomain.com` |
+| `N8N_API_KEY`         | n8n API 키 (선택사항)                      | `n8n_api_...`                |
 
 #### 2. 데이터베이스 관련
 
-| Secret 이름 | 설명 | 예시 |
-|-------------|------|------|
-| `POSTGRES_USER` | PostgreSQL 사용자명 | `n8n` |
-| `POSTGRES_PASSWORD` | PostgreSQL 비밀번호 | `secure_password` |
-| `POSTGRES_DB` | PostgreSQL 데이터베이스명 | `n8n` |
-| `POSTGRES_HOST` | PostgreSQL 호스트 (옵션) | `localhost` or `postgres.example.com` |
-| `N8N_DB_TYPE` | 데이터베이스 타입 | `postgresdb` or `sqlite` |
-| `REDIS_HOST` | Redis 호스트 (옵션) | `localhost` or `redis.example.com` |
+| Secret 이름         | 설명                      | 예시                                  |
+| ------------------- | ------------------------- | ------------------------------------- |
+| `POSTGRES_USER`     | PostgreSQL 사용자명       | `n8n`                                 |
+| `POSTGRES_PASSWORD` | PostgreSQL 비밀번호       | `secure_password`                     |
+| `POSTGRES_DB`       | PostgreSQL 데이터베이스명 | `n8n`                                 |
+| `POSTGRES_HOST`     | PostgreSQL 호스트 (옵션)  | `localhost` or `postgres.example.com` |
+| `N8N_DB_TYPE`       | 데이터베이스 타입         | `postgresdb` or `sqlite`              |
+| `REDIS_HOST`        | Redis 호스트 (옵션)       | `localhost` or `redis.example.com`    |
 
 #### 3. 배포 관련
 
-| Secret 이름 | 설명 | 예시 |
-|-------------|------|------|
-| `DEPLOY_HOST` | 배포 대상 서버 호스트 | `your-server.com` |
-| `DEPLOY_USER` | SSH 사용자명 | `ubuntu` or `deploy` |
-| `DEPLOY_SSH_KEY` | SSH 개인키 (전체 내용) | `-----BEGIN RSA PRIVATE KEY-----\n...` |
-| `DEPLOY_PORT` | SSH 포트 (옵션, 기본값: 22) | `22` or `2222` |
+| Secret 이름      | 설명                        | 예시                                   |
+| ---------------- | --------------------------- | -------------------------------------- |
+| `DEPLOY_HOST`    | 배포 대상 서버 호스트       | `your-server.com`                      |
+| `DEPLOY_USER`    | SSH 사용자명                | `ubuntu` or `deploy`                   |
+| `DEPLOY_SSH_KEY` | SSH 개인키 (전체 내용)      | `-----BEGIN RSA PRIVATE KEY-----\n...` |
+| `DEPLOY_PORT`    | SSH 포트 (옵션, 기본값: 22) | `22` or `2222`                         |
 
 #### 4. 애플리케이션 환경 변수
 
-| Secret 이름 | 설명 | 예시 |
-|-------------|------|------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `https://api.yourdomain.com` |
-| `NEXT_PUBLIC_SOCKET_URL` | Socket.io 서버 URL | `https://api.yourdomain.com` |
-| `NEXT_PUBLIC_WS_URL` | WebSocket URL | `wss://api.yourdomain.com` |
-| `APP_URL` | 프론트엔드 애플리케이션 URL | `https://app.yourdomain.com` |
+| Secret 이름              | 설명                        | 예시                         |
+| ------------------------ | --------------------------- | ---------------------------- |
+| `NEXT_PUBLIC_API_URL`    | Backend API URL             | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_SOCKET_URL` | Socket.io 서버 URL          | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_WS_URL`     | WebSocket URL               | `wss://api.yourdomain.com`   |
+| `APP_URL`                | 프론트엔드 애플리케이션 URL | `https://app.yourdomain.com` |
 
 ---
 
@@ -174,12 +185,14 @@ cat ~/.ssh/github-actions-deploy.pub
 ```
 
 GitHub Secret에 등록:
+
 - Secret 이름: `DEPLOY_SSH_KEY`
 - Value: `cat ~/.ssh/github-actions-deploy` 출력 전체 (-----BEGIN RSA PRIVATE KEY----- 부터 -----END RSA PRIVATE KEY----- 까지)
 
 ### 3. n8n API 키 생성 (선택사항)
 
 n8n UI에서:
+
 1. Settings → API
 2. "Create API Key" 클릭
 3. 생성된 키를 `N8N_API_KEY` Secret으로 추가
@@ -209,10 +222,12 @@ cat .env | grep POSTGRES
 ### CI 파이프라인 실행
 
 **자동 실행**:
+
 - `main` 또는 `develop` 브랜치에 push
 - Pull Request 생성
 
 **확인 방법**:
+
 ```bash
 # GitHub Actions 페이지에서 확인
 # https://github.com/YOUR_USERNAME/YOUR_REPO/actions
@@ -221,6 +236,7 @@ cat .env | grep POSTGRES
 ### 배포 파이프라인 실행
 
 **자동 배포**:
+
 ```bash
 git checkout main
 git merge develop
@@ -229,6 +245,7 @@ git push origin main
 ```
 
 **수동 배포**:
+
 1. GitHub Actions 페이지로 이동
 2. "Deploy" 워크플로우 선택
 3. "Run workflow" 버튼 클릭
@@ -240,6 +257,7 @@ git push origin main
 **자동 실행**: 5분마다 자동 실행
 
 **수동 실행**:
+
 1. GitHub Actions 페이지로 이동
 2. "n8n Health Check" 워크플로우 선택
 3. "Run workflow" 버튼 클릭
@@ -251,6 +269,7 @@ git push origin main
 **자동 실행**: 매일 새벽 3시 (UTC)
 
 **수동 실행**:
+
 1. GitHub Actions 페이지로 이동
 2. "Auto Fix Errors" 워크플로우 선택
 3. "Run workflow" 버튼 클릭
@@ -325,6 +344,7 @@ docker exec gonsai2-frontend curl -f http://n8n:5678/healthz
 **증상**: "n8n API connection failed"
 
 **해결 방법**:
+
 ```bash
 # N8N_ENCRYPTION_KEY Secret 확인
 # GitHub Settings → Secrets에서 올바르게 설정되었는지 확인
@@ -338,6 +358,7 @@ docker exec gonsai2-frontend curl -f http://n8n:5678/healthz
 **증상**: "TypeScript check failed"
 
 **해결 방법**:
+
 ```bash
 # 로컬에서 타입 체크
 npm run type-check
@@ -353,6 +374,7 @@ git push
 **증상**: "Test failures detected"
 
 **해결 방법**:
+
 ```bash
 # 로컬에서 테스트 실행
 npm run test
@@ -373,6 +395,7 @@ git push
 **증상**: "Permission denied (publickey)"
 
 **해결 방법**:
+
 ```bash
 # SSH 키 확인
 ssh -i ~/.ssh/github-actions-deploy user@your-server.com
@@ -389,6 +412,7 @@ cat ~/.ssh/authorized_keys | grep github-actions
 **증상**: "Build and push Docker image failed"
 
 **해결 방법**:
+
 ```bash
 # Dockerfile 확인
 cat Dockerfile
@@ -405,6 +429,7 @@ docker build -t test-frontend .
 **증상**: "Health check failed"
 
 **해결 방법**:
+
 ```bash
 # 서버에서 헬스 엔드포인트 확인
 curl http://localhost:3000/api/health
@@ -424,6 +449,7 @@ docker network inspect n8n-network
 **증상**: "Rollback failed - no backup found"
 
 **해결 방법**:
+
 - 첫 배포인 경우 백업이 없는 것이 정상
 - 수동으로 이전 버전 배포:
 
@@ -445,6 +471,7 @@ docker-compose up -d
 **증상**: "n8n API is unhealthy"
 
 **해결 방법**:
+
 ```bash
 # 서버에서 n8n 상태 확인
 cd ~/docker-n8n
@@ -462,6 +489,7 @@ docker-compose restart n8n
 **증상**: "PostgreSQL connection failed"
 
 **해결 방법**:
+
 ```bash
 # PostgreSQL 상태 확인
 docker-compose exec postgres pg_isready -U n8n
@@ -478,6 +506,7 @@ cat .env | grep POSTGRES
 **증상**: "Critical: Disk usage above 90%"
 
 **해결 방법**:
+
 ```bash
 # 디스크 사용량 확인
 df -h
@@ -499,6 +528,7 @@ find ~/docker-n8n/logs -mtime +7 -delete
 **증상**: "ESLint auto-fix failed"
 
 **해결 방법**:
+
 ```bash
 # 로컬에서 ESLint 실행
 npm run lint -- --fix
@@ -517,6 +547,7 @@ git push
 **증상**: "npm audit fix failed"
 
 **해결 방법**:
+
 ```bash
 # 로컬에서 취약점 확인
 npm audit
@@ -573,10 +604,12 @@ curl http://localhost:3000/api/health
 ### 알림 설정 (선택사항)
 
 GitHub에서 알림 설정:
+
 1. Watch → Custom → Actions 체크
 2. 실패한 워크플로우에 대한 이메일 알림 받기
 
 Slack 통합 (선택사항):
+
 - Slack Webhook URL을 Secret으로 추가
 - 워크플로우에 Slack 알림 step 추가
 

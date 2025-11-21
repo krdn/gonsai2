@@ -285,8 +285,8 @@ export function incrementErrorOccurrence(
   const affectedWorkflows = errorPattern.affectedWorkflows
     ? [...new Set([...errorPattern.affectedWorkflows, ...(workflowId ? [workflowId] : [])])]
     : workflowId
-    ? [workflowId]
-    : [];
+      ? [workflowId]
+      : [];
 
   return {
     ...errorPattern,
@@ -335,11 +335,7 @@ export async function getTopFrequentErrors(
     filter.category = category;
   }
 
-  return collection
-    .find(filter)
-    .sort({ frequency: -1 })
-    .limit(limit)
-    .toArray();
+  return collection.find(filter).sort({ frequency: -1 }).limit(limit).toArray();
 }
 
 /**
@@ -350,10 +346,7 @@ export async function getCriticalErrors(
 ): Promise<ErrorPatternDocument[]> {
   return collection
     .find({
-      $or: [
-        { severity: 'critical' },
-        { severity: 'high', frequency: { $gte: 10 } },
-      ],
+      $or: [{ severity: 'critical' }, { severity: 'high', frequency: { $gte: 10 } }],
     })
     .sort({ frequency: -1 })
     .toArray();

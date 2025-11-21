@@ -15,17 +15,17 @@ const workflowDuration = new Trend('workflow_duration');
 // Test configuration
 export const options = {
   stages: [
-    { duration: '1m', target: 10 },   // Ramp up to 10 VUs
-    { duration: '3m', target: 50 },   // Peak load at 50 VUs
-    { duration: '2m', target: 100 },  // Spike to 100 VUs
-    { duration: '2m', target: 50 },   // Back to 50 VUs
-    { duration: '1m', target: 0 },    // Ramp down
+    { duration: '1m', target: 10 }, // Ramp up to 10 VUs
+    { duration: '3m', target: 50 }, // Peak load at 50 VUs
+    { duration: '2m', target: 100 }, // Spike to 100 VUs
+    { duration: '2m', target: 50 }, // Back to 50 VUs
+    { duration: '1m', target: 0 }, // Ramp down
   ],
 
   thresholds: {
     http_req_duration: ['p(95)<2000'], // 95% of requests under 2s
-    http_req_failed: ['rate<0.01'],    // Error rate below 1%
-    errors: ['rate<0.05'],             // Custom error rate below 5%
+    http_req_failed: ['rate<0.01'], // Error rate below 1%
+    errors: ['rate<0.05'], // Custom error rate below 5%
     workflow_duration: ['p(95)<5000'], // 95% workflows complete under 5s
   },
 };
@@ -80,11 +80,9 @@ export function setup() {
     headers['X-N8N-API-KEY'] = API_KEY;
   }
 
-  const createResponse = http.post(
-    `${BASE_URL}/api/v1/workflows`,
-    JSON.stringify(testWorkflow),
-    { headers }
-  );
+  const createResponse = http.post(`${BASE_URL}/api/v1/workflows`, JSON.stringify(testWorkflow), {
+    headers,
+  });
 
   check(createResponse, {
     'workflow created': (r) => r.status === 200 || r.status === 201,
@@ -140,10 +138,9 @@ export default function (data) {
     while (!completed && attempts < maxAttempts) {
       sleep(0.5);
 
-      const statusResponse = http.get(
-        `${BASE_URL}/api/v1/executions/${execution.executionId}`,
-        { headers }
-      );
+      const statusResponse = http.get(`${BASE_URL}/api/v1/executions/${execution.executionId}`, {
+        headers,
+      });
 
       if (statusResponse.status === 200) {
         const status = JSON.parse(statusResponse.body);
@@ -183,11 +180,9 @@ export function teardown(data) {
     headers['X-N8N-API-KEY'] = API_KEY;
   }
 
-  const deleteResponse = http.del(
-    `${BASE_URL}/api/v1/workflows/${data.workflowId}`,
-    null,
-    { headers }
-  );
+  const deleteResponse = http.del(`${BASE_URL}/api/v1/workflows/${data.workflowId}`, null, {
+    headers,
+  });
 
   check(deleteResponse, {
     'workflow deleted': (r) => r.status === 200 || r.status === 204,

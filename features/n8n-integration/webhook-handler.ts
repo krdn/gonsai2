@@ -15,11 +15,7 @@
  * ```
  */
 
-import type {
-  WebhookRequest,
-  WebhookResponse,
-  WorkflowExecution,
-} from './types';
+import type { WebhookRequest, WebhookResponse, WorkflowExecution } from './types';
 import type { N8nClient } from './api-client';
 
 /**
@@ -118,24 +114,14 @@ export class WebhookHandler {
       if (this.authValidator) {
         const isAuthenticated = await this.authValidator(request);
         if (!isAuthenticated) {
-          return this.createErrorResult(
-            401,
-            'Unauthorized',
-            startTime,
-            warnings
-          );
+          return this.createErrorResult(401, 'Unauthorized', startTime, warnings);
         }
       }
 
       // Step 2: Extract workflow identifier from path
       const workflowId = this.extractWorkflowId(request);
       if (!workflowId) {
-        return this.createErrorResult(
-          400,
-          'Workflow ID not found in request',
-          startTime,
-          warnings
-        );
+        return this.createErrorResult(400, 'Workflow ID not found in request', startTime, warnings);
       }
 
       // Step 3: Validate request body
@@ -175,10 +161,9 @@ export class WebhookHandler {
 
       // Wait for workflow completion
       try {
-        const completedExecution =
-          await this.n8nClient.executions.waitForCompletion(execution.id, {
-            maxWaitMs: this.responseTimeout,
-          });
+        const completedExecution = await this.n8nClient.executions.waitForCompletion(execution.id, {
+          maxWaitMs: this.responseTimeout,
+        });
 
         if (completedExecution.status === 'error') {
           return this.createErrorResult(
@@ -193,13 +178,7 @@ export class WebhookHandler {
         // Extract response from last node
         const responseData = this.extractResponseData(completedExecution);
 
-        return this.createSuccessResult(
-          200,
-          responseData,
-          startTime,
-          warnings,
-          execution.id
-        );
+        return this.createSuccessResult(200, responseData, startTime, warnings, execution.id);
       } catch (timeoutError) {
         warnings.push('Workflow execution timeout');
         return this.createSuccessResult(
@@ -282,9 +261,7 @@ export class WebhookHandler {
   /**
    * Get response mode from request
    */
-  private getResponseMode(
-    request: WebhookRequest
-  ): 'onReceived' | 'lastNode' {
+  private getResponseMode(request: WebhookRequest): 'onReceived' | 'lastNode' {
     const mode = request.headers['x-n8n-response-mode'] ?? 'lastNode';
     return mode === 'onReceived' ? 'onReceived' : 'lastNode';
   }

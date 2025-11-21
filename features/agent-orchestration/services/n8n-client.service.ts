@@ -191,10 +191,7 @@ export class N8nClientService {
   /**
    * 워크플로우의 모든 실행 기록 조회
    */
-  async getWorkflowExecutions(
-    workflowId: string,
-    limit: number = 10
-  ): Promise<ExecutionResult[]> {
+  async getWorkflowExecutions(workflowId: string, limit: number = 10): Promise<ExecutionResult[]> {
     try {
       const response = await fetch(
         `${this.baseUrl}/api/v1/executions?workflowId=${workflowId}&limit=${limit}`,
@@ -220,7 +217,11 @@ export class N8nClientService {
    * n8n 실행 데이터를 ExecutionResult로 변환
    */
   private parseExecutionResult(n8nExecution: any): ExecutionResult {
-    const status = this.mapN8nStatus(n8nExecution.finished, n8nExecution.stoppedAt, n8nExecution.data);
+    const status = this.mapN8nStatus(
+      n8nExecution.finished,
+      n8nExecution.stoppedAt,
+      n8nExecution.data
+    );
 
     const result: ExecutionResult = {
       executionId: n8nExecution.id,
@@ -290,9 +291,11 @@ export class N8nClientService {
           nodeType: execution.executionStatus || 'unknown',
           startedAt: execution.startTime ? new Date(execution.startTime) : new Date(),
           finishedAt: execution.executionTime ? new Date(execution.executionTime) : undefined,
-          duration: execution.executionTime && execution.startTime
-            ? new Date(execution.executionTime).getTime() - new Date(execution.startTime).getTime()
-            : undefined,
+          duration:
+            execution.executionTime && execution.startTime
+              ? new Date(execution.executionTime).getTime() -
+                new Date(execution.startTime).getTime()
+              : undefined,
           executionStatus: execution.error ? 'error' : 'success',
           data: execution.data,
           error: execution.error?.message,

@@ -75,10 +75,10 @@ async function displayCacheStats() {
 
     // Overall Summary
     const totalHits = workflowStats.hits + executionStats.hits + apiStats.hits + sessionStats.hits;
-    const totalMisses = workflowStats.misses + executionStats.misses + apiStats.misses + sessionStats.misses;
-    const overallHitRate = totalHits + totalMisses > 0
-      ? (totalHits / (totalHits + totalMisses)) * 100
-      : 0;
+    const totalMisses =
+      workflowStats.misses + executionStats.misses + apiStats.misses + sessionStats.misses;
+    const overallHitRate =
+      totalHits + totalMisses > 0 ? (totalHits / (totalHits + totalMisses)) * 100 : 0;
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📈 Overall Summary:');
@@ -96,7 +96,6 @@ async function displayCacheStats() {
     } else if (overallHitRate >= 90) {
       console.log('✅ Excellent cache performance! Hit rate above 90%\n');
     }
-
   } catch (error: any) {
     console.error('❌ Error retrieving cache statistics:', error.message);
     process.exit(1);

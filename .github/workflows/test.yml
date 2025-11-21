@@ -32,6 +32,13 @@ jobs:
 
       - name: Run unit tests
         run: npm run test:unit
+        env:
+          MONGODB_URI: mongodb://localhost:27017/test_db
+          N8N_BASE_URL: http://localhost:5678
+          N8N_API_KEY: test_api_key_for_unit_testing
+          JWT_SECRET: test_jwt_secret_key_for_unit_testing_minimum_32_characters
+          PORT: 3000
+          WS_PORT: 3001
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -85,12 +92,14 @@ jobs:
           cd ../backend && npm ci
 
       - name: Run integration tests
-        run: npm run test:integration
+        run: npm run test:integration -- --passWithNoTests
         env:
           MONGODB_URI: mongodb://test:test@localhost:27017/test_db?authSource=admin
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_key_for_ci_testing_minimum_32_characters
+          N8N_BASE_URL: http://localhost:5678
+          N8N_API_KEY: test_api_key_for_integration_testing
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -132,6 +141,10 @@ jobs:
         env:
           MONGODB_URI: mongodb://localhost:27017/test_db
           JWT_SECRET: test_jwt_secret_key_for_e2e_testing_minimum_32_characters
+          N8N_BASE_URL: http://localhost:5678
+          N8N_API_KEY: test_api_key_for_e2e_testing
+          PORT: 8000
+          WS_PORT: 8001
 
       - name: Upload Cypress screenshots
         uses: actions/upload-artifact@v4

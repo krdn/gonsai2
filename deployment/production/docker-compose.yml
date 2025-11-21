@@ -26,7 +26,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     ports:
-      - "3000:3000"
+      - '3000:3000'
     networks:
       - gonsai2-network
     depends_on:
@@ -36,14 +36,15 @@ services:
     volumes:
       - app-logs:/app/logs
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "com.gonsai2.service=frontend"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=frontend'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -91,7 +92,7 @@ services:
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
-      - EXECUTIONS_DATA_MAX_AGE=336  # 14일
+      - EXECUTIONS_DATA_MAX_AGE=336 # 14일
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
 
@@ -114,7 +115,7 @@ services:
       - N8N_HIRING_BANNER_ENABLED=false
       - N8N_PERSONALIZATION_ENABLED=false
     ports:
-      - "5678:5678"
+      - '5678:5678'
     networks:
       - gonsai2-network
     depends_on:
@@ -125,14 +126,15 @@ services:
       - n8n-files:/files
       - n8n-logs:/home/node/.n8n/logs
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+      test:
+        ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:5678/healthz']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "com.gonsai2.service=n8n"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=n8n'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -177,10 +179,10 @@ services:
       - n8n-data:/home/node/.n8n
       - n8n-files:/files
     labels:
-      - "com.gonsai2.service=n8n-worker"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=n8n-worker'
+      - 'com.gonsai2.environment=production'
     deploy:
-      replicas: 2  # 2개의 워커로 시작
+      replicas: 2 # 2개의 워커로 시작
       resources:
         limits:
           cpus: '1.5'
@@ -202,7 +204,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
-      - "127.0.0.1:5432:5432"
+      - '127.0.0.1:5432:5432'
     networks:
       - gonsai2-network
     volumes:
@@ -211,13 +213,13 @@ services:
       - postgres-backups:/backups
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-n8n} -d ${POSTGRES_DB:-n8n}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-n8n} -d ${POSTGRES_DB:-n8n}']
       interval: 10s
       timeout: 5s
       retries: 5
     labels:
-      - "com.gonsai2.service=postgres"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=postgres'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -239,7 +241,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
       - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-gonsai2}
     ports:
-      - "127.0.0.1:27017:27017"
+      - '127.0.0.1:27017:27017'
     networks:
       - gonsai2-network
     volumes:
@@ -249,13 +251,13 @@ services:
       - ./mongodb-init:/docker-entrypoint-initdb.d:ro
     command: mongod --auth --bind_ip_all
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
     labels:
-      - "com.gonsai2.service=mongodb"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=mongodb'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -280,20 +282,20 @@ services:
       --maxmemory 2gb
       --maxmemory-policy allkeys-lru
     ports:
-      - "127.0.0.1:6379:6379"
+      - '127.0.0.1:6379:6379'
     networks:
       - gonsai2-network
     volumes:
       - redis-data:/data
       - redis-backups:/backups
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
     labels:
-      - "com.gonsai2.service=redis"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=redis'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -311,8 +313,8 @@ services:
     container_name: nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     networks:
       - gonsai2-network
     depends_on:
@@ -324,13 +326,13 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx-logs:/var/log/nginx
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost/health']
       interval: 30s
       timeout: 10s
       retries: 3
     labels:
-      - "com.gonsai2.service=nginx"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=nginx'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -352,7 +354,7 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'
     ports:
-      - "127.0.0.1:9090:9090"
+      - '127.0.0.1:9090:9090'
     networks:
       - gonsai2-network
     volumes:
@@ -360,8 +362,8 @@ services:
       - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
     labels:
-      - "com.gonsai2.service=prometheus"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=prometheus'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -385,7 +387,7 @@ services:
       - GF_SMTP_USER=${GRAFANA_SMTP_USER}
       - GF_SMTP_PASSWORD=${GRAFANA_SMTP_PASSWORD}
     ports:
-      - "127.0.0.1:3001:3000"
+      - '127.0.0.1:3001:3000'
     networks:
       - gonsai2-network
     depends_on:
@@ -395,8 +397,8 @@ services:
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     labels:
-      - "com.gonsai2.service=grafana"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=grafana'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -412,15 +414,15 @@ services:
     restart: unless-stopped
     command: -config.file=/etc/loki/loki-config.yml
     ports:
-      - "127.0.0.1:3100:3100"
+      - '127.0.0.1:3100:3100'
     networks:
       - gonsai2-network
     volumes:
       - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
       - loki-data:/loki
     labels:
-      - "com.gonsai2.service=loki"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=loki'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -446,8 +448,8 @@ services:
       - nginx-logs:/var/log/nginx:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
     labels:
-      - "com.gonsai2.service=promtail"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=promtail'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:
@@ -465,15 +467,15 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
     ports:
-      - "127.0.0.1:9093:9093"
+      - '127.0.0.1:9093:9093'
     networks:
       - gonsai2-network
     volumes:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
     labels:
-      - "com.gonsai2.service=alertmanager"
-      - "com.gonsai2.environment=production"
+      - 'com.gonsai2.service=alertmanager'
+      - 'com.gonsai2.environment=production'
     deploy:
       resources:
         limits:

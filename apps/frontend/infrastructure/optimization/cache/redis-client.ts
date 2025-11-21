@@ -43,7 +43,7 @@ class RedisClient {
     if (!this.instance) {
       if (this.isConnecting) {
         // Wait for existing connection attempt
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return this.getClient();
       }
 

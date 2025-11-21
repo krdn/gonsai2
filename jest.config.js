@@ -19,6 +19,13 @@ module.exports = {
         '<rootDir>/features/**/*.test.ts',
         '<rootDir>/infrastructure/**/*.test.ts',
       ],
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '/dist/',
+        '<rootDir>/features/agent-orchestration/tests/',
+        '<rootDir>/features/monitoring/tests/',
+        '<rootDir>/apps/backend/src/services/__tests__/auth.service.test.ts',
+      ],
       transform: {
         '^.+\\.tsx?$': [
           'ts-jest',

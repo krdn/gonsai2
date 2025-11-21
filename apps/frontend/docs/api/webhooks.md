@@ -31,6 +31,7 @@ sequenceDiagram
 n8n 워크플로우로부터 데이터를 수신합니다.
 
 **URL:**
+
 ```
 https://yourdomain.com/api/webhooks/n8n
 ```
@@ -38,6 +39,7 @@ https://yourdomain.com/api/webhooks/n8n
 **메서드:** `POST`
 
 **헤더:**
+
 ```http
 Content-Type: application/json
 X-Webhook-Secret: your-webhook-secret (선택)
@@ -83,10 +85,7 @@ export async function POST(request: NextRequest) {
     const secret = request.headers.get('X-Webhook-Secret');
 
     if (process.env.WEBHOOK_SECRET && secret !== process.env.WEBHOOK_SECRET) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 2. 요청 본문 파싱
@@ -96,10 +95,7 @@ export async function POST(request: NextRequest) {
 
     // 3. 데이터 검증
     if (!payload.workflowId || !payload.executionId) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // 4. MongoDB에 저장
@@ -116,10 +112,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Webhook error:', error);
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -155,10 +148,7 @@ export async function POST(request: NextRequest) {
     const receivedSignature = request.headers.get('X-Webhook-Signature');
 
     if (!receivedSignature) {
-      return NextResponse.json(
-        { error: 'Missing signature' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
     // 3. 서명 생성
@@ -168,14 +158,8 @@ export async function POST(request: NextRequest) {
       .digest('hex');
 
     // 4. 서명 비교 (타이밍 공격 방지)
-    if (!crypto.timingSafeEqual(
-      Buffer.from(receivedSignature),
-      Buffer.from(expectedSignature)
-    )) {
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      );
+    if (!crypto.timingSafeEqual(Buffer.from(receivedSignature), Buffer.from(expectedSignature))) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     // 5. 검증 통과 - 데이터 처리
@@ -186,10 +170,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -208,17 +189,20 @@ export async function POST(request: NextRequest) {
 **Response Mode:** Using 'Respond to Webhook' Node
 
 **Options:**
+
 - **Response Headers**: `Content-Type: application/json`
 - **Response Body**: `{ "success": true }`
 
 ### Webhook URL 설정
 
 **Production URL:**
+
 ```
 https://yourdomain.com/api/webhooks/n8n
 ```
 
 **Development URL (ngrok 사용):**
+
 ```
 https://abc123.ngrok.io/api/webhooks/n8n
 ```
@@ -422,10 +406,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -438,10 +419,7 @@ webhookQueue.process('process-webhook', async (job) => {
 ### 재시도 로직
 
 ```typescript
-async function processWebhookWithRetry(
-  payload: any,
-  maxRetries = 3
-): Promise<void> {
+async function processWebhookWithRetry(payload: any, maxRetries = 3): Promise<void> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await handleWebhookEvent(payload);
@@ -457,7 +435,7 @@ async function processWebhookWithRetry(
 
       // 지수 백오프
       const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
@@ -678,10 +656,7 @@ export async function POST(request: NextRequest) {
   try {
     await limiter.check(request, 10); // 분당 10회 제한
   } catch {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded' },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
   // ... 나머지 처리
@@ -697,10 +672,7 @@ export async function POST(request: NextRequest) {
   const ip = request.ip || request.headers.get('x-forwarded-for');
 
   if (ALLOWED_IPS.length > 0 && !ALLOWED_IPS.includes(ip!)) {
-    return NextResponse.json(
-      { error: 'Forbidden' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // ... 나머지 처리
