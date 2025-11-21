@@ -9,11 +9,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
 
-    const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL;
-    const n8nApiKey = process.env.NEXT_PUBLIC_N8N_API_KEY;
+    // Docker 내부 네트워크 사용 (런타임 환경변수 또는 빌드타임 폴백)
+    const n8nBaseUrl =
+      process.env.N8N_INTERNAL_URL || process.env.NEXT_PUBLIC_N8N_BASE_URL || 'http://n8n:5678';
+    const n8nApiKey =
+      process.env.NEXT_PUBLIC_N8N_API_KEY || process.env.NEXT_PUBLIC_BACKEND_API_KEY || '';
 
-    if (!n8nBaseUrl || !n8nApiKey) {
-      return NextResponse.json({ error: 'n8n API configuration missing' }, { status: 500 });
+    if (!n8nApiKey) {
+      console.error('[n8n API Proxy] Missing API key');
+      return NextResponse.json({ error: 'n8n API key configuration missing' }, { status: 500 });
     }
 
     const n8nResponse = await fetch(`${n8nBaseUrl}/api/v1/workflows/${id}`, {

@@ -102,8 +102,8 @@ The project follows a GitFlow-like branching strategy:
 
 The project uses the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages. This helps to maintain a clear and descriptive commit history. Examples:
 
-- `feat: add new AI agent`
-- `fix: resolve issue with workflow execution`
-- `docs: update README with new instructions`
-- `refactor: improve performance of agent manager`
-- `test: add unit tests for n8n client`
+- `feat: 새로운 AI 에이전트 추가`
+- `fix: 워크플로우 실행 오류 수정`
+- `docs: README 문서 업데이트`
+- `refactor: 에이전트 매니저 성능 개선`
+- `test: n8n 클라이언트 유닛 테스트 추가`

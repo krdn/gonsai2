@@ -13,6 +13,7 @@ import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError } from '../utils/errors';
 import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
 import { AI_NODE_TYPES } from '../utils/n8n-constants';
+import { cacheService } from '../services/cache.service';
 import {
   N8nWorkflow,
   N8nNode,
@@ -27,6 +28,46 @@ import {
   NodeTypeDistribution,
   AgentOverviewStats,
 } from '../types/n8n.types';
+
+// 캐시 TTL 상수 (초 단위)
+const CACHE_TTL = {
+  WORKFLOWS: 30, // 워크플로우 목록: 30초
+  WORKFLOW_DETAIL: 60, // 워크플로우 상세: 60초
+  EXECUTIONS: 10, // 실행 목록: 10초
+  STATS: 15, // 통계: 15초
+};
+
+// n8n API 호출 헬퍼 함수
+async function fetchN8nApi<T>(endpoint: string, cacheKey?: string, ttl?: number): Promise<T> {
+  // 캐시 확인
+  if (cacheKey) {
+    const cached = await cacheService.get<T>(cacheKey, { prefix: 'n8n' });
+    if (cached) {
+      return cached;
+    }
+  }
+
+  const response = await fetch(`${envConfig.N8N_BASE_URL}${endpoint}`, {
+    headers: {
+      'X-N8N-API-KEY': envConfig.N8N_API_KEY,
+    },
+  });
+
+  if (!response.ok) {
+    throw new N8nApiError(`Failed to fetch ${endpoint}`, {
+      status: response.status,
+    });
+  }
+
+  const data = (await response.json()) as T;
+
+  // 캐시 저장
+  if (cacheKey && ttl) {
+    await cacheService.set(cacheKey, data, { prefix: 'n8n', ttl });
+  }
+
+  return data;
+}
 
 const router = Router();
 
@@ -43,19 +84,13 @@ router.get(
     const correlationId = getCorrelationId(req);
 
     try {
-      // n8n에서 모든 워크플로우 조회
-      const workflowsResponse = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows`, {
-        headers: { 'X-N8N-API-KEY': envConfig.N8N_API_KEY },
-      });
+      // ⚡ 성능 최적화: 캐싱 적용
+      const workflowsData = await fetchN8nApi<N8nListResponse<N8nWorkflow>>(
+        '/api/v1/workflows',
+        'workflows:list',
+        CACHE_TTL.WORKFLOWS
+      );
 
-      if (!workflowsResponse.ok) {
-        throw new N8nApiError('Failed to fetch workflows', {
-          correlationId,
-          status: workflowsResponse.status,
-        });
-      }
-
-      const workflowsData = (await workflowsResponse.json()) as N8nListResponse<N8nWorkflow>;
       const workflows = workflowsData.data || [];
 
       // AI 노드가 포함된 워크플로우 필터링 및 정보 추출
@@ -122,22 +157,19 @@ router.get(
     const correlationId = getCorrelationId(req);
 
     try {
-      // 워크플로우 상세 정보 조회
-      const workflowResponse = await fetch(
-        `${envConfig.N8N_BASE_URL}/api/v1/workflows/${workflowId}`,
-        {
-          headers: { 'X-N8N-API-KEY': envConfig.N8N_API_KEY },
-        }
-      );
-
-      if (!workflowResponse.ok) {
-        throw new N8nApiError('Failed to fetch workflow', {
-          correlationId,
-          status: workflowResponse.status,
-        });
-      }
-
-      const workflow = (await workflowResponse.json()) as N8nWorkflow;
+      // ⚡ 성능 최적화: 병렬 API 호출 + 캐싱
+      const [workflow, executionsData] = await Promise.all([
+        fetchN8nApi<N8nWorkflow>(
+          `/api/v1/workflows/${workflowId}`,
+          `workflow:detail:${workflowId}`,
+          CACHE_TTL.WORKFLOW_DETAIL
+        ),
+        fetchN8nApi<N8nListResponse<N8nExecution>>(
+          `/api/v1/executions?workflowId=${workflowId}&limit=50`,
+          `executions:workflow:${workflowId}`,
+          CACHE_TTL.EXECUTIONS
+        ),
+      ]);
 
       // AI 노드 추출 및 상세 정보
       const aiNodes = (workflow.nodes || []).filter((node: N8nNode) =>
@@ -156,41 +188,22 @@ router.get(
         parameters: node.parameters,
       }));
 
-      // 최근 실행 통계 조회
-      const executionsResponse = await fetch(
-        `${envConfig.N8N_BASE_URL}/api/v1/executions?workflowId=${workflowId}&limit=50`,
-        {
-          headers: { 'X-N8N-API-KEY': envConfig.N8N_API_KEY },
-        }
-      );
-
-      let executionStats: ExecutionStats = {
-        totalExecutions: 0,
-        successCount: 0,
-        failedCount: 0,
-        successRate: 0,
-        lastExecutedAt: null,
+      // 실행 통계 계산
+      const executions = executionsData.data || [];
+      const executionStats: ExecutionStats = {
+        totalExecutions: executions.length,
+        successCount: executions.filter((e: N8nExecution) => e.status === 'success').length,
+        failedCount: executions.filter((e: N8nExecution) => e.status === 'error').length,
+        successRate:
+          executions.length > 0
+            ? Math.round(
+                (executions.filter((e: N8nExecution) => e.status === 'success').length /
+                  executions.length) *
+                  100
+              )
+            : 0,
+        lastExecutedAt: executions[0]?.startedAt || null,
       };
-
-      if (executionsResponse.ok) {
-        const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
-        const executions = executionsData.data || [];
-
-        executionStats = {
-          totalExecutions: executions.length,
-          successCount: executions.filter((e: N8nExecution) => e.status === 'success').length,
-          failedCount: executions.filter((e: N8nExecution) => e.status === 'error').length,
-          successRate:
-            executions.length > 0
-              ? Math.round(
-                  (executions.filter((e: N8nExecution) => e.status === 'success').length /
-                    executions.length) *
-                    100
-                )
-              : 0,
-          lastExecutedAt: executions[0]?.startedAt || null,
-        };
-      }
 
       const detailedWorkflow: AgentWorkflowDetail = {
         id: workflow.id,
@@ -364,19 +377,20 @@ router.get(
     const correlationId = getCorrelationId(req);
 
     try {
-      // 모든 워크플로우 조회
-      const workflowsResponse = await fetch(`${envConfig.N8N_BASE_URL}/api/v1/workflows`, {
-        headers: { 'X-N8N-API-KEY': envConfig.N8N_API_KEY },
-      });
+      // ⚡ 성능 최적화: 병렬 API 호출 + 캐싱
+      const [workflowsData, executionsData] = await Promise.all([
+        fetchN8nApi<N8nListResponse<N8nWorkflow>>(
+          '/api/v1/workflows',
+          'workflows:list',
+          CACHE_TTL.WORKFLOWS
+        ),
+        fetchN8nApi<N8nListResponse<N8nExecution>>(
+          '/api/v1/executions?limit=200',
+          'executions:overview',
+          CACHE_TTL.STATS
+        ),
+      ]);
 
-      if (!workflowsResponse.ok) {
-        throw new N8nApiError('Failed to fetch workflows', {
-          correlationId,
-          status: workflowsResponse.status,
-        });
-      }
-
-      const workflowsData = (await workflowsResponse.json()) as N8nListResponse<N8nWorkflow>;
       const workflows = workflowsData.data || [];
 
       // AI 노드 통계
@@ -401,12 +415,7 @@ router.get(
 
       // 최근 24시간 실행 통계
       const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const executionsResponse = await fetch(
-        `${envConfig.N8N_BASE_URL}/api/v1/executions?limit=200`,
-        {
-          headers: { 'X-N8N-API-KEY': envConfig.N8N_API_KEY },
-        }
-      );
+      const allExecutions = executionsData.data || [];
 
       let executionStats: ExecutionStats = {
         totalExecutions: 0,
@@ -416,10 +425,7 @@ router.get(
         averageDuration: 0,
       };
 
-      if (executionsResponse.ok) {
-        const executionsData = (await executionsResponse.json()) as N8nListResponse<N8nExecution>;
-        const allExecutions = executionsData.data || [];
-
+      {
         // 24시간 내 실행만 필터링
         const recentExecutions = allExecutions.filter((exec: N8nExecution) => {
           const startDate = new Date(exec.startedAt);

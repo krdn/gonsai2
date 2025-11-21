@@ -1,7 +1,21 @@
 'use client';
 
+// Next.js 15 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
+
 import React, { useEffect, useState } from 'react';
-import { History, RefreshCw, CheckCircle, XCircle, Clock, Filter, ChevronDown, ChevronUp, HelpCircle, X } from 'lucide-react';
+import {
+  History,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  X,
+} from 'lucide-react';
 import { workflowsApi, ApiClientError } from '@/lib/api-client';
 
 interface WorkflowExecution {
@@ -72,7 +86,7 @@ export default function ExecutionsPage() {
       const executionsData = data.data || [];
 
       // 워크플로우 이름 추가
-      const workflow = workflows.find(w => w.id === workflowId);
+      const workflow = workflows.find((w) => w.id === workflowId);
       const executionsWithName = executionsData.map((exec: WorkflowExecution) => ({
         ...exec,
         workflowName: workflow?.name || 'Unknown Workflow',
@@ -153,7 +167,7 @@ export default function ExecutionsPage() {
     }
   };
 
-  const filteredExecutions = executions.filter(exec => {
+  const filteredExecutions = executions.filter((exec) => {
     if (selectedStatus === 'all') return true;
     return exec.status === selectedStatus;
   });
@@ -265,7 +279,9 @@ export default function ExecutionsPage() {
             <div className="text-center">
               <History className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600 text-lg mb-2">워크플로우를 선택하세요</p>
-              <p className="text-gray-500 text-sm">위 필터에서 워크플로우를 선택하면 실행 내역이 표시됩니다</p>
+              <p className="text-gray-500 text-sm">
+                위 필터에서 워크플로우를 선택하면 실행 내역이 표시됩니다
+              </p>
             </div>
           </div>
         ) : loading && executions.length === 0 ? (
@@ -286,7 +302,10 @@ export default function ExecutionsPage() {
         ) : (
           <div className="space-y-4">
             {filteredExecutions.map((execution) => (
-              <div key={execution.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div
+                key={execution.id}
+                className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+              >
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
@@ -304,12 +323,16 @@ export default function ExecutionsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-500">시작 시간</p>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(execution.startedAt)}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatDate(execution.startedAt)}
+                      </p>
                     </div>
                     {execution.stoppedAt && (
                       <div>
                         <p className="text-sm text-gray-500">종료 시간</p>
-                        <p className="text-sm font-medium text-gray-900">{formatDate(execution.stoppedAt)}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {formatDate(execution.stoppedAt)}
+                        </p>
                       </div>
                     )}
                     <div>
@@ -399,7 +422,9 @@ export default function ExecutionsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">워크플로우 선택</h4>
-                      <p className="text-sm text-gray-600">드롭다운에서 워크플로우를 선택하면 해당 워크플로우의 실행 내역이 표시됩니다.</p>
+                      <p className="text-sm text-gray-600">
+                        드롭다운에서 워크플로우를 선택하면 해당 워크플로우의 실행 내역이 표시됩니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -408,7 +433,9 @@ export default function ExecutionsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">상태 필터링</h4>
-                      <p className="text-sm text-gray-600">성공, 실패, 실행 중, 대기 상태별로 필터링할 수 있습니다.</p>
+                      <p className="text-sm text-gray-600">
+                        성공, 실패, 실행 중, 대기 상태별로 필터링할 수 있습니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -417,7 +444,9 @@ export default function ExecutionsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">실행 시간 표시</h4>
-                      <p className="text-sm text-gray-600">시작 시간, 종료 시간, 총 실행 시간을 자동으로 계산하여 표시합니다.</p>
+                      <p className="text-sm text-gray-600">
+                        시작 시간, 종료 시간, 총 실행 시간을 자동으로 계산하여 표시합니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -426,7 +455,9 @@ export default function ExecutionsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">상세 정보 확장</h4>
-                      <p className="text-sm text-gray-600">"상세 정보" 버튼을 클릭하면 실행 데이터(JSON)를 확인할 수 있습니다.</p>
+                      <p className="text-sm text-gray-600">
+                        "상세 정보" 버튼을 클릭하면 실행 데이터(JSON)를 확인할 수 있습니다.
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -435,7 +466,9 @@ export default function ExecutionsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">표시 개수 조절</h4>
-                      <p className="text-sm text-gray-600">10, 20, 50, 100개 단위로 표시할 실행 내역 개수를 선택할 수 있습니다.</p>
+                      <p className="text-sm text-gray-600">
+                        10, 20, 50, 100개 단위로 표시할 실행 내역 개수를 선택할 수 있습니다.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -469,7 +502,9 @@ export default function ExecutionsPage() {
                       <CheckCircle className="w-4 h-4" />
                       성공
                     </span>
-                    <span className="text-sm text-gray-600">워크플로우 실행이 성공적으로 완료됨</span>
+                    <span className="text-sm text-gray-600">
+                      워크플로우 실행이 성공적으로 완료됨
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-800">
@@ -513,11 +548,15 @@ export default function ExecutionsPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">•</span>
-                    <span>"n8n에서 열기" 버튼으로 n8n UI에서 실행 상세 내역을 확인할 수 있습니다.</span>
+                    <span>
+                      "n8n에서 열기" 버튼으로 n8n UI에서 실행 상세 내역을 확인할 수 있습니다.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">•</span>
-                    <span>실행 데이터는 JSON 형태로 표시되며, 워크플로우의 입출력 데이터를 포함합니다.</span>
+                    <span>
+                      실행 데이터는 JSON 형태로 표시되며, 워크플로우의 입출력 데이터를 포함합니다.
+                    </span>
                   </li>
                 </ul>
               </section>
@@ -542,13 +581,15 @@ export default function ExecutionsPage() {
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <h4 className="font-medium text-red-900 mb-1">실행 내역이 표시되지 않음</h4>
                     <p className="text-sm text-red-700">
-                      워크플로우를 선택했는지 확인하고, 백엔드 서버와 n8n API 연결 상태를 확인하세요.
+                      워크플로우를 선택했는지 확인하고, 백엔드 서버와 n8n API 연결 상태를
+                      확인하세요.
                     </p>
                   </div>
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                     <h4 className="font-medium text-yellow-900 mb-1">실시간 업데이트 안 됨</h4>
                     <p className="text-sm text-yellow-700">
-                      새로고침 버튼을 클릭하여 최신 실행 내역을 가져오세요. 자동 새로고침 기능은 향후 추가될 예정입니다.
+                      새로고침 버튼을 클릭하여 최신 실행 내역을 가져오세요. 자동 새로고침 기능은
+                      향후 추가될 예정입니다.
                     </p>
                   </div>
                 </div>

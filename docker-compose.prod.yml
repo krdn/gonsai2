@@ -1,0 +1,159 @@
+# ==================================================
+# gonsai2 Production Docker Compose
+# ==================================================
+# 사용법:
+#   시작: docker-compose -f docker-compose.prod.yml up -d --build
+#   종료: docker-compose -f docker-compose.prod.yml down
+#   로그: docker-compose -f docker-compose.prod.yml logs -f
+# ==================================================
+
+version: '3.8'
+
+services:
+  # ==================================================
+  # Backend Service
+  # ==================================================
+  gonsai2-backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: gonsai2-backend
+    restart: unless-stopped
+    env_file:
+      - apps/backend/.env.production
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://gonsai2:${MONGO_PASSWORD:-gonsai2_prod_password}@mongodb-prod:27017/gonsai2_prod?authSource=admin
+      - N8N_BASE_URL=http://n8n:5678
+    volumes:
+      - backend_logs:/app/logs
+      - backend_uploads:/app/uploads
+    networks:
+      - gonsai2-network
+      - n8n-network
+    depends_on:
+      mongodb-prod:
+        condition: service_healthy
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ==================================================
+  # Frontend Service
+  # ==================================================
+  gonsai2-frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        # 빈 문자열로 설정하여 클라이언트가 상대 경로 사용 (origin 기준)
+        - NEXT_PUBLIC_API_URL=
+        - NEXT_PUBLIC_WS_URL=
+        - NEXT_PUBLIC_SOCKET_URL=
+        - NEXT_PUBLIC_N8N_BASE_URL=http://localhost:5678
+        - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
+        - NEXT_PUBLIC_N8N_UI_URL=https://krdn-n8n.duckdns.org
+        - NEXT_PUBLIC_BACKEND_API_KEY=${N8N_API_KEY}
+    container_name: gonsai2-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BACKEND_INTERNAL_URL=http://gonsai2-backend:3000/api/:path*
+      - N8N_INTERNAL_URL=http://n8n:5678
+      - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
+    networks:
+      - gonsai2-network
+      - n8n-network
+    depends_on:
+      gonsai2-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:3002']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ==================================================
+  # MongoDB (Production - 별도 포트)
+  # ==================================================
+  mongodb-prod:
+    image: mongo:7
+    container_name: gonsai2-mongodb-prod
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=gonsai2
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-gonsai2_prod_password}
+      - MONGO_INITDB_DATABASE=gonsai2_prod
+    volumes:
+      - mongodb_prod_data:/data/db
+      - mongodb_prod_config:/data/configdb
+    ports:
+      # 27018로 외부 노출 (개발 DB 27017과 분리)
+      - '127.0.0.1:27018:27017'
+    networks:
+      - gonsai2-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ==================================================
+  # Nginx Reverse Proxy
+  # ==================================================
+  nginx:
+    image: nginx:alpine
+    container_name: gonsai2-nginx
+    restart: unless-stopped
+    ports:
+      # 호스트 Nginx가 80 사용 중이므로 8081 사용
+      - '8081:80'
+      # SSL을 사용하려면 아래 주석 해제
+      # - "8443:443"
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # SSL 인증서 (필요시)
+      # - ./deployment/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - gonsai2-network
+    depends_on:
+      gonsai2-frontend:
+        condition: service_healthy
+      gonsai2-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ==================================================
+# Networks
+# ==================================================
+networks:
+  gonsai2-network:
+    driver: bridge
+  # n8n 네트워크 연결 (외부 네트워크)
+  n8n-network:
+    external: true
+    name: docker-n8n_n8n-network
+
+# ==================================================
+# Volumes
+# ==================================================
+volumes:
+  mongodb_prod_data:
+    name: gonsai2_mongodb_prod_data
+  mongodb_prod_config:
+    name: gonsai2_mongodb_prod_config
+  backend_logs:
+    name: gonsai2_backend_logs
+  backend_uploads:
+    name: gonsai2_backend_uploads

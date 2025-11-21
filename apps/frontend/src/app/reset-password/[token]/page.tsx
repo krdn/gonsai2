@@ -1,5 +1,8 @@
 'use client';
 
+// Next.js 15 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';

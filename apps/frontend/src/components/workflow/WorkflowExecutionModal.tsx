@@ -66,19 +66,8 @@ export default function WorkflowExecutionModal({
       setLoadingWorkflow(true);
       setStatus('loading');
 
-      // n8n API로 워크플로우 정보 가져오기 (백엔드 프록시 사용)
-      const response = await fetch(`/api/workflows/${workflowId}`);
-      if (!response.ok) {
-        throw new Error('워크플로우 정보를 불러올 수 없습니다.');
-      }
-
-      // Content-Type 검증
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`예상치 못한 응답 형식입니다 (Content-Type: ${contentType || 'unknown'})`);
-      }
-
-      const responseData = await response.json();
+      // api-client를 사용하여 워크플로우 정보 가져오기 (X-API-Key 헤더 자동 포함)
+      const responseData = await workflowsApi.get(workflowId);
 
       const workflow: N8nWorkflow = responseData.data || responseData;
       setWorkflowInfo(workflow);
@@ -344,7 +333,7 @@ export default function WorkflowExecutionModal({
               <iframe
                 srcDoc={result.data.htmlContent}
                 className="w-full h-96 bg-white"
-                sandbox="allow-same-origin"
+                sandbox="allow-scripts"
                 title="워크플로우 응답"
               />
             </div>

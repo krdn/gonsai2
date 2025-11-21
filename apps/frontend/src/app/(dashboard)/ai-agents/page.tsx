@@ -1,5 +1,8 @@
 'use client';
 
+// Next.js 15 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
+
 import React, { useEffect, useState, useRef } from 'react';
 import {
   Bot,

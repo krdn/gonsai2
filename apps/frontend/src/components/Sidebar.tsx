@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
@@ -62,7 +62,8 @@ const staticNavigation: NavigationItem[] = [
   },
 ];
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+// 내부 사이드바 콘텐츠 컴포넌트 (useSearchParams 사용)
+function SidebarContent({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [expandedItems, setExpandedItems] = useState<string[]>(['Admin']);
@@ -292,5 +293,26 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
       </aside>
     </>
+  );
+}
+
+// Suspense로 감싼 Sidebar export (Next.js 15 호환)
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  return (
+    <Suspense
+      fallback={
+        <aside className="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
+          <div className="px-3 py-4">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </aside>
+      }
+    >
+      <SidebarContent isOpen={isOpen} onClose={onClose} />
+    </Suspense>
   );
 }

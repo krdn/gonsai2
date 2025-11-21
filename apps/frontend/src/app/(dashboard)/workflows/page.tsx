@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+// Next.js 15 정적 생성 비활성화
+export const dynamic = 'force-dynamic';
+
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Play,
@@ -35,7 +38,8 @@ interface Workflow {
   updatedAt: string;
 }
 
-export default function WorkflowsPage() {
+// 내부 콘텐츠 컴포넌트 (useSearchParams 사용)
+function WorkflowsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedTagId = searchParams.get('tag');
@@ -454,5 +458,23 @@ export default function WorkflowsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Suspense로 감싼 페이지 export (Next.js 15 호환)
+export default function WorkflowsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">워크플로우를 불러오는 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <WorkflowsContent />
+    </Suspense>
   );
 }

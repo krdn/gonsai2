@@ -1,0 +1,107 @@
+# Dependabot 설정 - 의존성 자동 업데이트
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # npm 의존성 (프로젝트 루트)
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Asia/Seoul'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'krdn'
+    labels:
+      - 'dependencies'
+      - 'npm'
+      - 'automated'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    groups:
+      # 개발 의존성 그룹화
+      dev-dependencies:
+        dependency-type: 'development'
+        patterns:
+          - '@types/*'
+          - 'eslint*'
+          - 'prettier*'
+          - 'typescript*'
+          - 'jest*'
+          - '@testing-library/*'
+      # React/Next.js 관련 그룹화
+      react-ecosystem:
+        patterns:
+          - 'react*'
+          - 'next*'
+          - '@next/*'
+      # Express/Backend 관련 그룹화
+      express-ecosystem:
+        patterns:
+          - 'express*'
+          - '@types/express*'
+    ignore:
+      # 주요 버전 업데이트는 수동으로 처리
+      - dependency-name: 'next'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+
+  # GitHub Actions 워크플로우 업데이트
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Asia/Seoul'
+    open-pull-requests-limit: 5
+    reviewers:
+      - 'krdn'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+      - 'automated'
+    commit-message:
+      prefix: 'ci(deps)'
+      include: 'scope'
+
+  # Docker 이미지 업데이트
+  - package-ecosystem: 'docker'
+    directory: '/apps/backend'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Asia/Seoul'
+    open-pull-requests-limit: 3
+    reviewers:
+      - 'krdn'
+    labels:
+      - 'dependencies'
+      - 'docker'
+      - 'automated'
+    commit-message:
+      prefix: 'chore(docker)'
+      include: 'scope'
+
+  - package-ecosystem: 'docker'
+    directory: '/apps/frontend'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Asia/Seoul'
+    open-pull-requests-limit: 3
+    reviewers:
+      - 'krdn'
+    labels:
+      - 'dependencies'
+      - 'docker'
+      - 'automated'
+    commit-message:
+      prefix: 'chore(docker)'
+      include: 'scope'
