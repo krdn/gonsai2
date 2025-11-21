@@ -15,8 +15,8 @@ beforeAll(() => {
 
 /**
  * 환경 변수 설정
+ * Note: Jest already sets NODE_ENV to 'test' automatically
  */
-process.env.NODE_ENV = 'test';
 
 /**
  * Mock matchMedia (CSS media queries)
@@ -60,5 +60,14 @@ global.ResizeObserver = class ResizeObserver {
 
 /**
  * Mock fetch API
+ * Note: Individual tests can override this mock with their own implementation
+ * or use jest.restoreAllMocks() to use the real fetch
  */
-global.fetch = jest.fn();
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(''),
+    status: 200,
+  } as Response)
+);

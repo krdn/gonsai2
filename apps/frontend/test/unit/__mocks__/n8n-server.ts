@@ -92,9 +92,7 @@ class MockN8nServer {
       id: 'wf-2',
       name: 'Test Workflow 2',
       active: false,
-      nodes: [
-        { id: 'node-1', type: 'n8n-nodes-base.start', position: [0, 0] },
-      ],
+      nodes: [{ id: 'node-1', type: 'n8n-nodes-base.start', position: [0, 0] }],
       connections: {},
       tags: [],
       createdAt: new Date().toISOString(),
@@ -143,7 +141,8 @@ class MockN8nServer {
     const workflow = this.workflows.get(req.params.id);
 
     if (!workflow) {
-      return res.status(404).json({ message: 'Workflow not found' });
+      res.status(404).json({ message: 'Workflow not found' });
+      return;
     }
 
     res.json(workflow);
@@ -176,7 +175,8 @@ class MockN8nServer {
     const workflow = this.workflows.get(req.params.id);
 
     if (!workflow) {
-      return res.status(404).json({ message: 'Workflow not found' });
+      res.status(404).json({ message: 'Workflow not found' });
+      return;
     }
 
     const updated = {
@@ -197,7 +197,8 @@ class MockN8nServer {
     const exists = this.workflows.has(req.params.id);
 
     if (!exists) {
-      return res.status(404).json({ message: 'Workflow not found' });
+      res.status(404).json({ message: 'Workflow not found' });
+      return;
     }
 
     this.workflows.delete(req.params.id);
@@ -212,12 +213,12 @@ class MockN8nServer {
 
     // Filter by workflowId
     if (req.query.workflowId) {
-      executions = executions.filter(e => e.workflowId === req.query.workflowId);
+      executions = executions.filter((e) => e.workflowId === req.query.workflowId);
     }
 
     // Filter by status
     if (req.query.status) {
-      executions = executions.filter(e => e.status === req.query.status);
+      executions = executions.filter((e) => e.status === req.query.status);
     }
 
     // Limit
@@ -234,7 +235,8 @@ class MockN8nServer {
     const execution = this.executions.get(req.params.id);
 
     if (!execution) {
-      return res.status(404).json({ message: 'Execution not found' });
+      res.status(404).json({ message: 'Execution not found' });
+      return;
     }
 
     res.json(execution);
@@ -247,7 +249,8 @@ class MockN8nServer {
     const workflow = this.workflows.get(req.params.id);
 
     if (!workflow) {
-      return res.status(404).json({ message: 'Workflow not found' });
+      res.status(404).json({ message: 'Workflow not found' });
+      return;
     }
 
     const executionId = `exec-${Date.now()}`;
@@ -281,7 +284,8 @@ class MockN8nServer {
     const execution = this.executions.get(req.params.id);
 
     if (!execution) {
-      return res.status(404).json({ message: 'Execution not found' });
+      res.status(404).json({ message: 'Execution not found' });
+      return;
     }
 
     const newExecutionId = `exec-${Date.now()}`;
