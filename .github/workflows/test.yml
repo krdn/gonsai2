@@ -25,7 +25,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Run unit tests
         run: npm run test:unit
@@ -76,7 +79,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Run integration tests
         run: npm run test:integration
@@ -107,7 +113,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Build application
         run: npm run build
@@ -153,7 +162,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Run all tests with coverage
         run: npm run test:coverage

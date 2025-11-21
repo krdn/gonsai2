@@ -28,7 +28,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Run ESLint
         run: npm run lint
@@ -55,7 +58,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Check formatting
         run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,md,yml,yaml}"
@@ -76,7 +82,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
 
       - name: Build Backend
         run: npm run build --workspace=apps/backend
