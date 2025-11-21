@@ -59,17 +59,13 @@ export function AINode({ data }: NodeProps<AINodeData>) {
           {data.parameters.model && (
             <div className="text-xs">
               <span className="text-gray-600">모델:</span>
-              <span className="ml-1 font-semibold text-purple-700">
-                {data.parameters.model}
-              </span>
+              <span className="ml-1 font-semibold text-purple-700">{data.parameters.model}</span>
             </div>
           )}
           {data.parameters.temperature !== undefined && (
             <div className="text-xs">
               <span className="text-gray-600">Temperature:</span>
-              <span className="ml-1 font-semibold">
-                {data.parameters.temperature}
-              </span>
+              <span className="ml-1 font-semibold">{data.parameters.temperature}</span>
             </div>
           )}
         </div>
@@ -80,13 +76,20 @@ export function AINode({ data }: NodeProps<AINodeData>) {
         <div className="mt-2 pt-2 border-t border-gray-200">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">상태:</span>
-            <span className={`font-semibold ${
-              data.executionStatus === 'success' ? 'text-green-600' :
-              data.executionStatus === 'error' ? 'text-red-600' :
-              'text-blue-600'
-            }`}>
-              {data.executionStatus === 'success' ? '성공' :
-               data.executionStatus === 'error' ? '실패' : '실행 중'}
+            <span
+              className={`font-semibold ${
+                data.executionStatus === 'success'
+                  ? 'text-green-600'
+                  : data.executionStatus === 'error'
+                    ? 'text-red-600'
+                    : 'text-blue-600'
+              }`}
+            >
+              {data.executionStatus === 'success'
+                ? '성공'
+                : data.executionStatus === 'error'
+                  ? '실패'
+                  : '실행 중'}
             </span>
           </div>
           {data.executionTime && (

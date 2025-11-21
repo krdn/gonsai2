@@ -370,11 +370,7 @@ class PerformanceBenchmark {
 
       // Query with indexes
       const afterStart = Date.now();
-      await executions
-        .find({ status: 'error' })
-        .sort({ startedAt: -1 })
-        .limit(100)
-        .toArray();
+      await executions.find({ status: 'error' }).sort({ startedAt: -1 }).limit(100).toArray();
       const afterTime = Date.now() - afterStart;
 
       this.addResult({
@@ -514,13 +510,10 @@ class PerformanceBenchmark {
    * Generate benchmark report
    */
   private generateReport(): BenchmarkReport {
-    const improvements = this.results.map(r => r.improvementPercentage);
-    const averageImprovement =
-      improvements.reduce((a, b) => a + b, 0) / improvements.length;
+    const improvements = this.results.map((r) => r.improvementPercentage);
+    const averageImprovement = improvements.reduce((a, b) => a + b, 0) / improvements.length;
 
-    const significantImprovements = this.results.filter(
-      r => r.improvementPercentage > 20
-    ).length;
+    const significantImprovements = this.results.filter((r) => r.improvementPercentage > 20).length;
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📈 Benchmark Summary');
@@ -538,7 +531,7 @@ class PerformanceBenchmark {
     topImprovements.forEach((result, index) => {
       console.log(
         `  ${index + 1}. ${result.metric}: ${result.improvementPercentage.toFixed(2)}% ` +
-        `(${result.before.toFixed(2)} → ${result.after.toFixed(2)} ${result.unit})`
+          `(${result.before.toFixed(2)} → ${result.after.toFixed(2)} ${result.unit})`
       );
     });
 

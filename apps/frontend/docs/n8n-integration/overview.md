@@ -93,9 +93,7 @@ export async function POST(request: NextRequest) {
 실시간 워크플로우 실행 상태 수신:
 
 ```typescript
-const ws = new WebSocket(
-  `${process.env.NEXT_PUBLIC_N8N_WEBSOCKET_URL}/execution/${executionId}`
-);
+const ws = new WebSocket(`${process.env.NEXT_PUBLIC_N8N_WEBSOCKET_URL}/execution/${executionId}`);
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
@@ -137,14 +135,14 @@ TypeScript 클라이언트 라이브러리:
 
 ```typescript
 class N8nApiClient {
-  async getWorkflows(): Promise<Workflow[]>
-  async getWorkflow(id: string): Promise<Workflow>
-  async createWorkflow(workflow: CreateWorkflowDto): Promise<Workflow>
-  async updateWorkflow(id: string, data: UpdateWorkflowDto): Promise<Workflow>
-  async deleteWorkflow(id: string): Promise<void>
-  async executeWorkflow(id: string, data?: any): Promise<Execution>
-  async getExecutions(filters?: ExecutionFilters): Promise<Execution[]>
-  async getExecution(id: string): Promise<Execution>
+  async getWorkflows(): Promise<Workflow[]>;
+  async getWorkflow(id: string): Promise<Workflow>;
+  async createWorkflow(workflow: CreateWorkflowDto): Promise<Workflow>;
+  async updateWorkflow(id: string, data: UpdateWorkflowDto): Promise<Workflow>;
+  async deleteWorkflow(id: string): Promise<void>;
+  async executeWorkflow(id: string, data?: any): Promise<Execution>;
+  async getExecutions(filters?: ExecutionFilters): Promise<Execution[]>;
+  async getExecution(id: string): Promise<Execution>;
 }
 ```
 
@@ -295,8 +293,7 @@ const { data } = useInfiniteQuery({
       limit: 20,
       offset: pageParam,
     }),
-  getNextPageParam: (lastPage, pages) =>
-    lastPage.length === 20 ? pages.length * 20 : undefined,
+  getNextPageParam: (lastPage, pages) => (lastPage.length === 20 ? pages.length * 20 : undefined),
 });
 ```
 
@@ -306,9 +303,7 @@ const { data } = useInfiniteQuery({
 // 여러 워크플로우 병렬 조회
 const workflowIds = ['1', '2', '3'];
 
-const workflows = await Promise.all(
-  workflowIds.map(id => n8nClient.getWorkflow(id))
-);
+const workflows = await Promise.all(workflowIds.map((id) => n8nClient.getWorkflow(id)));
 ```
 
 ### 4. WebSocket 연결 풀링
@@ -348,10 +343,7 @@ try {
 ### 재시도 로직
 
 ```typescript
-async function executeWithRetry(
-  workflowId: string,
-  maxRetries = 3
-): Promise<Execution> {
+async function executeWithRetry(workflowId: string, maxRetries = 3): Promise<Execution> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await n8nClient.executeWorkflow(workflowId);
@@ -359,7 +351,7 @@ async function executeWithRetry(
       if (attempt === maxRetries) throw error;
 
       const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -384,21 +376,17 @@ async function getWorkflowStats(workflowId: string): Promise<ExecutionStats> {
   const executions = await n8nClient.getExecutions({ workflowId });
 
   const total = executions.length;
-  const success = executions.filter(e => e.status === 'success').length;
-  const failed = executions.filter(e => e.status === 'error').length;
+  const success = executions.filter((e) => e.status === 'success').length;
+  const failed = executions.filter((e) => e.status === 'error').length;
 
   const successRate = total > 0 ? (success / total) * 100 : 0;
 
   const durations = executions
-    .filter(e => e.stoppedAt)
-    .map(e =>
-      new Date(e.stoppedAt!).getTime() - new Date(e.startedAt).getTime()
-    );
+    .filter((e) => e.stoppedAt)
+    .map((e) => new Date(e.stoppedAt!).getTime() - new Date(e.startedAt).getTime());
 
   const averageDuration =
-    durations.length > 0
-      ? durations.reduce((a, b) => a + b, 0) / durations.length
-      : 0;
+    durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
 
   return { total, success, failed, successRate, averageDuration };
 }
@@ -409,11 +397,7 @@ async function getWorkflowStats(workflowId: string): Promise<ExecutionStats> {
 ```typescript
 import * as Sentry from '@sentry/nextjs';
 
-export function logWorkflowError(
-  workflowId: string,
-  executionId: string,
-  error: any
-) {
+export function logWorkflowError(workflowId: string, executionId: string, error: any) {
   console.error(`Workflow ${workflowId} execution ${executionId} failed:`, error);
 
   Sentry.captureException(error, {

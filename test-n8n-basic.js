@@ -19,7 +19,7 @@ console.log(`${colors.cyan}=== n8n 기본 연결 테스트 ===${colors.reset}\n`
 // 1. 헬스체크
 console.log('1. n8n 헬스체크...');
 fetch('http://localhost:5678/healthz')
-  .then(res => {
+  .then((res) => {
     if (res.ok) {
       console.log(`   ${colors.green}✅ 헬스체크 성공 (HTTP ${res.status})${colors.reset}`);
       return testWorkflows();
@@ -28,7 +28,7 @@ fetch('http://localhost:5678/healthz')
       process.exit(1);
     }
   })
-  .catch(error => {
+  .catch((error) => {
     console.log(`   ${colors.red}❌ 연결 실패: ${error.message}${colors.reset}`);
     console.log(`\n${colors.yellow}💡 n8n 컨테이너가 실행 중인지 확인하세요:${colors.reset}`);
     console.log(`   docker ps | grep n8n\n`);
@@ -40,13 +40,13 @@ function testWorkflows() {
   console.log('\n2. 워크플로우 API 테스트...');
 
   fetch('http://localhost:5678/api/v1/workflows')
-    .then(res => res.json())
-    .then(data => {
+    .then((res) => res.json())
+    .then((data) => {
       console.log(`   ${colors.yellow}⚠️  API Key 필요${colors.reset}`);
       console.log(`   응답: ${JSON.stringify(data).slice(0, 100)}...`);
       showNextSteps();
     })
-    .catch(error => {
+    .catch((error) => {
       console.log(`   ${colors.red}❌ API 호출 실패: ${error.message}${colors.reset}`);
       showNextSteps();
     });

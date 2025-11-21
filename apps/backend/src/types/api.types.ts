@@ -58,7 +58,11 @@ export interface ExecuteWorkflowResponse {
 export interface N8nWebhookPayload {
   workflowId: string;
   executionId: string;
-  event: 'workflow.execute.success' | 'workflow.execute.failed' | 'node.execute.start' | 'node.execute.end';
+  event:
+    | 'workflow.execute.success'
+    | 'workflow.execute.failed'
+    | 'node.execute.start'
+    | 'node.execute.end';
   timestamp: string;
   data?: unknown;
   error?: {

@@ -76,10 +76,7 @@ function getNodeIdByName(nodes: N8nNode[], name: string): string {
 /**
  * 실행 상태에 따라 노드 스타일 업데이트
  */
-export function updateNodesWithExecutionStatus(
-  nodes: Node[],
-  executionData?: any
-): Node[] {
+export function updateNodesWithExecutionStatus(nodes: Node[], executionData?: any): Node[] {
   if (!executionData?.resultData?.runData) return nodes;
 
   return nodes.map((node) => {
@@ -109,10 +106,7 @@ export function updateNodesWithExecutionStatus(
 /**
  * 실행 경로를 하이라이트하기 위해 엣지 업데이트
  */
-export function updateEdgesWithExecutionPath(
-  edges: Edge[],
-  executionData?: any
-): Edge[] {
+export function updateEdgesWithExecutionPath(edges: Edge[], executionData?: any): Edge[] {
   if (!executionData?.resultData?.runData) return edges;
 
   const executedNodes = Object.keys(executionData.resultData.runData);

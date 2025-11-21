@@ -98,18 +98,12 @@ export class DashboardService {
         this.countActiveWorkflows(),
       ]);
 
-      const totalExecutions = allStatistics.reduce(
-        (sum, stat) => sum + stat.totalExecutions,
-        0
-      );
+      const totalExecutions = allStatistics.reduce((sum, stat) => sum + stat.totalExecutions, 0);
       const successfulExecutions = allStatistics.reduce(
         (sum, stat) => sum + stat.successfulExecutions,
         0
       );
-      const failedExecutions = allStatistics.reduce(
-        (sum, stat) => sum + stat.failedExecutions,
-        0
-      );
+      const failedExecutions = allStatistics.reduce((sum, stat) => sum + stat.failedExecutions, 0);
 
       return {
         totalExecutions,
@@ -201,7 +195,7 @@ export class DashboardService {
       const worker = true; // Bull 큐 워커 상태 확인 필요
 
       // 시스템 리소스
-      const cpuUsage = os.loadavg()[0] / os.cpus().length * 100;
+      const cpuUsage = (os.loadavg()[0] / os.cpus().length) * 100;
       const totalMemory = os.totalmem();
       const freeMemory = os.freemem();
       const memoryUsage = ((totalMemory - freeMemory) / totalMemory) * 100;
@@ -259,10 +253,7 @@ export class DashboardService {
 
       // 간단한 구현: 전체 통계에서 오류 데이터 추출
       const totalErrors = allStatistics.reduce((sum, stat) => sum + stat.failedExecutions, 0);
-      const totalExecutions = allStatistics.reduce(
-        (sum, stat) => sum + stat.totalExecutions,
-        0
-      );
+      const totalExecutions = allStatistics.reduce((sum, stat) => sum + stat.totalExecutions, 0);
       const errorRate = totalExecutions > 0 ? (totalErrors / totalExecutions) * 100 : 0;
 
       // 오류 타입 통계 (실제로는 오류 메시지 분석 필요)

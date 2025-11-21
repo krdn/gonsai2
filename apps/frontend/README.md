@@ -160,6 +160,7 @@ function MyComponent() {
 ```
 
 **주요 상태**:
+
 - `connected`: n8n 연결 상태
 - `workflows`: 워크플로우 캐시 (Map)
 - `selectedWorkflowId`: 선택된 워크플로우 ID
@@ -220,6 +221,7 @@ function ExecutionMonitor() {
 ```
 
 **지원 이벤트**:
+
 - `execution.started`: 실행 시작
 - `execution.finished`: 실행 완료
 - `execution.error`: 실행 오류
@@ -237,6 +239,7 @@ function ExecutionMonitor() {
 프로젝트는 shadcn/ui (Radix UI) 기반 컴포넌트를 사용합니다.
 
 **사용 가능한 컴포넌트**:
+
 - Dialog (모달)
 - DropdownMenu
 - Select (선택 메뉴)
@@ -244,6 +247,7 @@ function ExecutionMonitor() {
 - Toast (알림)
 
 **추가 컴포넌트 설치**:
+
 ```bash
 npx shadcn-ui@latest add button
 npx shadcn-ui@latest add card

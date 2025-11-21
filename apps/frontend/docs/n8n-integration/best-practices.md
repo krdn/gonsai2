@@ -34,6 +34,7 @@ graph TB
 ```
 
 **잘못된 예시**: 모든 것을 하나의 워크플로우에 넣기
+
 ```typescript
 // ❌ 너무 많은 책임
 const overloadedWorkflow = {
@@ -50,6 +51,7 @@ const overloadedWorkflow = {
 ```
 
 **올바른 예시**: 워크플로우 분리
+
 ```typescript
 // ✅ 명확한 책임
 const userCreationWorkflow = {
@@ -124,20 +126,10 @@ const namingConventions = {
 // 노드 명명 규칙
 const nodeNaming = {
   // 명확한 동사 사용
-  good: [
-    'Fetch User Data',
-    'Transform to JSON',
-    'Send to Slack',
-    'Update Database',
-  ],
+  good: ['Fetch User Data', 'Transform to JSON', 'Send to Slack', 'Update Database'],
 
   // 모호한 이름 지양
-  bad: [
-    'Node 1',
-    'HTTP',
-    'Function',
-    'Process',
-  ],
+  bad: ['Node 1', 'HTTP', 'Function', 'Process'],
 };
 ```
 
@@ -288,7 +280,7 @@ const secureConfig = {
 // ❌ 하드코딩된 크레덴셜
 const insecureConfig = {
   apiKey: 'sk_live_123456789', // 절대 금지!
-  password: 'mypassword123',   // 절대 금지!
+  password: 'mypassword123', // 절대 금지!
 };
 ```
 
@@ -306,27 +298,17 @@ export async function POST(request: NextRequest) {
     .update(body)
     .digest('hex');
 
-  if (!crypto.timingSafeEqual(
-    Buffer.from(signature || ''),
-    Buffer.from(expectedSignature)
-  )) {
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 401 }
-    );
+  if (!crypto.timingSafeEqual(Buffer.from(signature || ''), Buffer.from(expectedSignature))) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
   // IP 화이트리스트 검증
-  const clientIp = request.headers.get('x-forwarded-for') ||
-                   request.headers.get('x-real-ip');
+  const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip');
 
   const allowedIPs = process.env.ALLOWED_IPS?.split(',') || [];
 
   if (!allowedIPs.includes(clientIp || '')) {
-    return NextResponse.json(
-      { error: 'IP not allowed' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'IP not allowed' }, { status: 403 });
   }
 
   // 타임스탬프 검증 (리플레이 공격 방지)
@@ -334,11 +316,9 @@ export async function POST(request: NextRequest) {
   const timestamp = new Date(payload.timestamp).getTime();
   const now = Date.now();
 
-  if (Math.abs(now - timestamp) > 300000) { // 5분
-    return NextResponse.json(
-      { error: 'Request too old' },
-      { status: 400 }
-    );
+  if (Math.abs(now - timestamp) > 300000) {
+    // 5분
+    return NextResponse.json({ error: 'Request too old' }, { status: 400 });
   }
 
   // 요청 처리
@@ -408,11 +388,7 @@ class EncryptionService {
   decrypt(encryptedData: string): string {
     const { iv, data, authTag } = JSON.parse(encryptedData);
 
-    const decipher = crypto.createDecipheriv(
-      this.algorithm,
-      this.key,
-      Buffer.from(iv, 'hex')
-    );
+    const decipher = crypto.createDecipheriv(this.algorithm, this.key, Buffer.from(iv, 'hex'));
 
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
 
@@ -761,30 +737,35 @@ const nodeWithComments = {
 
 프로젝트 루트에 README 작성:
 
-```markdown
+````markdown
 # n8n 워크플로우 프로젝트
 
 ## 개요
+
 이 프로젝트는 사용자 관리, 데이터 동기화, 알림 자동화를 위한 n8n 워크플로우 모음입니다.
 
 ## 워크플로우 목록
 
 ### 사용자 관리
+
 - **user-registration**: 신규 사용자 등록 및 환영 이메일
 - **user-verification**: 이메일 인증 처리
 - **password-reset**: 비밀번호 재설정 플로우
 
 ### 데이터 동기화
+
 - **daily-sync**: 일일 데이터 동기화 (03:00 UTC)
 - **realtime-sync**: 실시간 데이터 동기화 (Webhook)
 
 ### 알림
+
 - **email-notifications**: 이메일 알림 전송
 - **slack-alerts**: Slack 알림 전송
 
 ## 환경 설정
 
 필요한 환경 변수:
+
 ```bash
 N8N_HOST=https://n8n.example.com
 N8N_API_KEY=your_api_key
@@ -793,15 +774,18 @@ REDIS_URL=redis://localhost:6379
 SENDGRID_API_KEY=your_sendgrid_key
 SLACK_WEBHOOK_URL=your_slack_webhook
 ```
+````
 
 ## 배포
 
 ### 개발 환경
+
 ```bash
 npm run dev
 ```
 
 ### 프로덕션 배포
+
 ```bash
 npm run build
 npm run start
@@ -821,8 +805,10 @@ npm run start
 4. Pull Request 생성
 
 ## 라이선스
+
 MIT
-```
+
+````
 
 ## 버전 관리
 
@@ -841,7 +827,7 @@ node_modules/
 .env.local
 *.log
 .n8n/
-```
+````
 
 ### 2. 워크플로우 버전 관리
 
@@ -856,18 +842,12 @@ const versionedWorkflow = {
       {
         version: '2.1.0',
         date: '2024-03-15',
-        changes: [
-          'Added email domain validation',
-          'Improved error handling',
-        ],
+        changes: ['Added email domain validation', 'Improved error handling'],
       },
       {
         version: '2.0.0',
         date: '2024-02-01',
-        changes: [
-          'Migrated to MongoDB from PostgreSQL',
-          'Added Slack notifications',
-        ],
+        changes: ['Migrated to MongoDB from PostgreSQL', 'Added Slack notifications'],
       },
     ],
     author: 'Team Name',
@@ -966,14 +946,12 @@ async function monitorWorkflows() {
 
     const stats = {
       total: executions.length,
-      success: executions.filter(e => e.status === 'success').length,
-      failed: executions.filter(e => e.status === 'error').length,
+      success: executions.filter((e) => e.status === 'success').length,
+      failed: executions.filter((e) => e.status === 'error').length,
       successRate: 0,
     };
 
-    stats.successRate = stats.total > 0
-      ? (stats.success / stats.total) * 100
-      : 0;
+    stats.successRate = stats.total > 0 ? (stats.success / stats.total) * 100 : 0;
 
     // 성공률이 95% 미만이면 알림
     if (stats.successRate < 95) {
@@ -1095,6 +1073,7 @@ app.get('/metrics', async (req, res) => {
 프로덕션 배포 전 확인 사항:
 
 ### 워크플로우 설계
+
 - [ ] 단일 책임 원칙 준수
 - [ ] 명확한 명명 규칙 적용
 - [ ] 적절한 에러 처리 구현
@@ -1102,6 +1081,7 @@ app.get('/metrics', async (req, res) => {
 - [ ] 문서화 완료
 
 ### 보안
+
 - [ ] 크레덴셜을 환경 변수로 관리
 - [ ] Webhook 서명 검증
 - [ ] Rate limiting 구현
@@ -1109,24 +1089,28 @@ app.get('/metrics', async (req, res) => {
 - [ ] IP 화이트리스트 설정 (필요 시)
 
 ### 성능
+
 - [ ] 병렬 실행 가능한 노드 식별
 - [ ] 배치 처리 구현
 - [ ] 캐싱 전략 적용
 - [ ] 실행 시간 최적화 (<5초 목표)
 
 ### 테스트
+
 - [ ] 단위 테스트 작성
 - [ ] 통합 테스트 완료
 - [ ] E2E 테스트 통과
 - [ ] 에러 시나리오 테스트
 
 ### 모니터링
+
 - [ ] 로깅 구현
 - [ ] 메트릭 수집 설정
 - [ ] 알림 채널 구성
 - [ ] 대시보드 생성
 
 ### 배포
+
 - [ ] Git에 워크플로우 커밋
 - [ ] 버전 정보 추가
 - [ ] 롤백 계획 수립

@@ -52,28 +52,29 @@ gonsai2/
 
 ### 루트 디렉토리
 
-| 파일 | 목적 | AI 친화도 |
-|------|------|----------|
-| `README.md` | 프로젝트 전체 개요 및 빠른 시작 가이드 | ⭐⭐⭐⭐⭐ |
-| `GITHUB_SETUP.md` | GitHub 저장소 연동 단계별 가이드 | ⭐⭐⭐⭐ |
-| `PROJECT_STRUCTURE.md` | 프로젝트 구조 상세 설명 (이 파일) | ⭐⭐⭐⭐⭐ |
-| `.env.example` | 환경 변수 템플릿 (절대 커밋 안 됨) | ⭐⭐⭐⭐⭐ |
-| `docker-compose.override.yml` | 기존 n8n/MongoDB 연동 설정 | ⭐⭐⭐⭐ |
-| `connection-test.log` | Docker 환경 상태 스냅샷 | ⭐⭐⭐ |
+| 파일                          | 목적                                   | AI 친화도  |
+| ----------------------------- | -------------------------------------- | ---------- |
+| `README.md`                   | 프로젝트 전체 개요 및 빠른 시작 가이드 | ⭐⭐⭐⭐⭐ |
+| `GITHUB_SETUP.md`             | GitHub 저장소 연동 단계별 가이드       | ⭐⭐⭐⭐   |
+| `PROJECT_STRUCTURE.md`        | 프로젝트 구조 상세 설명 (이 파일)      | ⭐⭐⭐⭐⭐ |
+| `.env.example`                | 환경 변수 템플릿 (절대 커밋 안 됨)     | ⭐⭐⭐⭐⭐ |
+| `docker-compose.override.yml` | 기존 n8n/MongoDB 연동 설정             | ⭐⭐⭐⭐   |
+| `connection-test.log`         | Docker 환경 상태 스냅샷                | ⭐⭐⭐     |
 
 ### .ai/ - AI 컨텍스트 디렉토리
 
 **목적**: AI가 프로젝트를 이해하고 효과적으로 작업할 수 있도록 구조화된 컨텍스트 제공
 
-| 파일 | 내용 | AI 활용 |
-|------|------|---------|
-| `context-map.json` | n8n 워크플로우 구조, 의존성, 실행 패턴 | 워크플로우 수정 전 의존성 확인 |
-| `error-patterns.json` | 오류 시그니처, 진단 단계, 자동 치유 액션 | 오류 자동 진단 및 복구 |
-| `n8n-templates/` | 검증된 워크플로우 JSON 템플릿 | 새 워크플로우 생성 시 참조 |
-| `workflow-docs/` | 워크플로우별 상세 Markdown 문서 | 워크플로우 이해 및 수정 |
-| `README.md` | AI 협업 패턴 및 사용 가이드 | AI 협업 방법론 |
+| 파일                  | 내용                                     | AI 활용                        |
+| --------------------- | ---------------------------------------- | ------------------------------ |
+| `context-map.json`    | n8n 워크플로우 구조, 의존성, 실행 패턴   | 워크플로우 수정 전 의존성 확인 |
+| `error-patterns.json` | 오류 시그니처, 진단 단계, 자동 치유 액션 | 오류 자동 진단 및 복구         |
+| `n8n-templates/`      | 검증된 워크플로우 JSON 템플릿            | 새 워크플로우 생성 시 참조     |
+| `workflow-docs/`      | 워크플로우별 상세 Markdown 문서          | 워크플로우 이해 및 수정        |
+| `README.md`           | AI 협업 패턴 및 사용 가이드              | AI 협업 방법론                 |
 
 **AI 최적화 특징**:
+
 - JSON 형식으로 구조화되어 프로그래밍 방식으로 파싱 가능
 - 모든 컨텍스트에 `@aiContext` 주석 포함
 - 오류 패턴은 정규표현식으로 매칭 가능
@@ -86,15 +87,16 @@ gonsai2/
 
 **목적**: n8n 워크플로우 플랫폼과의 타입 안전한 통합
 
-| 파일 | 역할 | 핵심 기능 |
-|------|------|----------|
-| `types.ts` | TypeScript 타입 정의 | 전체 n8n API 타입 |
-| `api-client.ts` | n8n REST API 클라이언트 | 워크플로우/실행 CRUD |
-| `webhook-handler.ts` | 웹훅 요청 처리 | 인증, 검증, 응답 |
-| `workflow-executor.ts` | 워크플로우 실행 관리 | 실행 및 완료 대기 |
-| `workflow-monitor.ts` | 실행 모니터링 | 메트릭 수집 및 분석 |
+| 파일                   | 역할                    | 핵심 기능            |
+| ---------------------- | ----------------------- | -------------------- |
+| `types.ts`             | TypeScript 타입 정의    | 전체 n8n API 타입    |
+| `api-client.ts`        | n8n REST API 클라이언트 | 워크플로우/실행 CRUD |
+| `webhook-handler.ts`   | 웹훅 요청 처리          | 인증, 검증, 응답     |
+| `workflow-executor.ts` | 워크플로우 실행 관리    | 실행 및 완료 대기    |
+| `workflow-monitor.ts`  | 실행 모니터링           | 메트릭 수집 및 분석  |
 
 **사용 예시**:
+
 ```typescript
 import { createN8nClient } from './features/n8n-integration/api-client';
 
@@ -106,14 +108,15 @@ const workflows = await client.workflows.getAll();
 
 **목적**: 여러 AI Agent 작업을 우선순위 기반으로 관리
 
-| 파일 | 역할 | 핵심 기능 |
-|------|------|----------|
-| `types.ts` | TypeScript 타입 정의 | AgentTask, AgentResult |
-| `agent-manager.ts` | Agent 생명주기 관리 | 생성, 상태 추적 |
-| `execution-queue.ts` | 우선순위 기반 큐 | 작업 스케줄링 |
-| `result-processor.ts` | 실행 결과 처리 | 결과 저장 및 분석 |
+| 파일                  | 역할                 | 핵심 기능              |
+| --------------------- | -------------------- | ---------------------- |
+| `types.ts`            | TypeScript 타입 정의 | AgentTask, AgentResult |
+| `agent-manager.ts`    | Agent 생명주기 관리  | 생성, 상태 추적        |
+| `execution-queue.ts`  | 우선순위 기반 큐     | 작업 스케줄링          |
+| `result-processor.ts` | 실행 결과 처리       | 결과 저장 및 분석      |
 
 **사용 예시**:
+
 ```typescript
 import { AgentManager, ExecutionQueue } from './features/agent-orchestration';
 
@@ -125,13 +128,14 @@ const task = await manager.createTask('workflow-id', { input: 'data' });
 
 **목적**: n8n 워크플로우 오류를 자동으로 진단하고 가능한 경우 자동 복구
 
-| 파일 | 역할 | 핵심 기능 |
-|------|------|----------|
-| `types.ts` | TypeScript 타입 정의 | ErrorPattern, DiagnosisResult |
-| `n8n-error-analyzer.ts` | n8n 특화 오류 분석 | 오류 패턴 매칭 |
-| `workflow-fixer.ts` | 워크플로우 자동 수정 | 안전한 자동 복구 |
+| 파일                    | 역할                 | 핵심 기능                     |
+| ----------------------- | -------------------- | ----------------------------- |
+| `types.ts`              | TypeScript 타입 정의 | ErrorPattern, DiagnosisResult |
+| `n8n-error-analyzer.ts` | n8n 특화 오류 분석   | 오류 패턴 매칭                |
+| `workflow-fixer.ts`     | 워크플로우 자동 수정 | 안전한 자동 복구              |
 
 **사용 예시**:
+
 ```typescript
 import { N8nErrorAnalyzer } from './features/error-healing';
 
@@ -156,19 +160,20 @@ features/error-healing/
 ```
 
 **의존성 규칙**:
+
 - 각 모듈은 독립적으로 사용 가능
 - 순환 의존성 없음
 - `.ai/` 디렉토리는 모든 모듈이 참조 가능 (읽기 전용)
 
 ## 📊 파일 통계
 
-| 카테고리 | 파일 수 | 총 라인 수 (예상) |
-|---------|---------|------------------|
-| TypeScript 소스 | 14 | ~2,000 |
-| Markdown 문서 | 7 | ~1,500 |
-| JSON 설정 | 2 | ~200 |
-| 기타 설정 | 4 | ~150 |
-| **합계** | **27** | **~3,850** |
+| 카테고리        | 파일 수 | 총 라인 수 (예상) |
+| --------------- | ------- | ----------------- |
+| TypeScript 소스 | 14      | ~2,000            |
+| Markdown 문서   | 7       | ~1,500            |
+| JSON 설정       | 2       | ~200              |
+| 기타 설정       | 4       | ~150              |
+| **합계**        | **27**  | **~3,850**        |
 
 ## 🔧 향후 확장 계획
 
@@ -248,12 +253,14 @@ gonsai2/
 ---
 
 **생성 정보**
+
 - 생성일: 2024-11-11
 - 생성 도구: Claude Code
 - 설계 원칙: Kent Beck's Augmented Coding
 - 목적: AI-Human 협업 최적화
 
 **다음 단계**
+
 1. 환경 변수 설정 (`.env` 파일)
 2. 패키지 초기화 (`package.json`, `tsconfig.json`)
 3. GitHub 저장소 생성 및 푸시

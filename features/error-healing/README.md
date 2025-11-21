@@ -111,6 +111,7 @@ npm install
 ```
 
 필수 패키지:
+
 - `cron`: 스케줄링
 - `mongodb`: 데이터 저장
 - `winston`: 로깅
@@ -122,6 +123,7 @@ npm run init:mongodb
 ```
 
 생성되는 컬렉션:
+
 - `analyzed_errors`: 분석된 오류
 - `workflow_fixes`: 수정 결과
 - `healing_history`: 복구 이력
@@ -236,12 +238,14 @@ claudeAnalysis.suggestedFixes.forEach((fix) => {
 **파일**: `services/error-analyzer.service.ts`
 
 **주요 메서드**:
+
 - `analyzeError(executionError)`: 단일 오류 분석
 - `analyzeMultipleErrors(errors)`: 여러 오류 배치 분석
 - `getRecentErrors(limit)`: 최근 오류 조회
 - `getErrorStatistics(timeRange)`: 오류 통계
 
 **오류 패턴 예시**:
+
 ```typescript
 {
   id: 'auth_01',
@@ -260,12 +264,14 @@ claudeAnalysis.suggestedFixes.forEach((fix) => {
 **파일**: `services/workflow-fixer.service.ts`
 
 **주요 메서드**:
+
 - `fixWorkflow(request)`: 워크플로우 수정
 - `backupWorkflow(workflowId)`: 워크플로우 백업
 - `rollbackWorkflow(workflowId, backup)`: 워크플로우 복원
 - `testWorkflow(workflowId, error)`: 수정 후 테스트
 
 **수정 전략 예시**:
+
 ```typescript
 {
   id: 'reconnect_nodes',
@@ -290,6 +296,7 @@ claudeAnalysis.suggestedFixes.forEach((fix) => {
 **파일**: `services/auto-healing.service.ts`
 
 **주요 메서드**:
+
 - `start()`: 자동 복구 시작
 - `stop()`: 자동 복구 중지
 - `healingCycle()`: 복구 사이클 실행
@@ -297,6 +304,7 @@ claudeAnalysis.suggestedFixes.forEach((fix) => {
 - `getHealingStatistics()`: 복구 통계
 
 **설정 옵션**:
+
 ```typescript
 {
   enabled: true,
@@ -315,11 +323,13 @@ claudeAnalysis.suggestedFixes.forEach((fix) => {
 **파일**: `services/claude-analyzer.service.ts`
 
 **주요 메서드**:
+
 - `analyzeWithClaude(request)`: Claude API로 오류 분석
 - `analyzeComplexError(analyzedError)`: 복잡한 오류 분석
 - `suggestOptimizations(workflowId, definition)`: 워크플로우 최적화 제안
 
 **응답 형식**:
+
 ```typescript
 {
   rootCause: '근본 원인',
@@ -351,7 +361,7 @@ import { autoHealingService } from '../../features/error-healing/services/auto-h
 // 서버 시작 시 자동 복구 시작
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  
+
   // 자동 복구 시작
   autoHealingService.start();
   console.log('Auto-healing service started');
@@ -466,6 +476,7 @@ export default router;
 ```
 
 **체크 항목**:
+
 1. n8n API 연결
 2. Redis 상태 및 메모리
 3. MongoDB 연결
@@ -544,10 +555,12 @@ db.workflow_fixes.aggregate([
 ### 자동 복구가 실행되지 않음
 
 **원인**:
+
 - Cron 스케줄이 잘못 설정됨
 - 서비스가 시작되지 않음
 
 **해결**:
+
 ```typescript
 // 서비스 상태 확인
 const isRunning = autoHealingService.isRunning();
@@ -561,11 +574,13 @@ autoHealingService.start();
 ### 오류가 자동으로 수정되지 않음
 
 **원인**:
+
 - 오류 심각도가 자동 수정 대상이 아님
 - 승인이 필요한 오류 유형
 - 패턴 매칭 실패
 
 **해결**:
+
 ```typescript
 // 오류 분석 결과 확인
 const analyzed = await errorAnalyzer.analyzeError(error);
@@ -582,10 +597,12 @@ console.log('Require Approval For:', config.requireApprovalFor);
 ### Claude API 오류
 
 **원인**:
+
 - API 키가 설정되지 않음
 - API 요청 한도 초과
 
 **해결**:
+
 ```bash
 # API 키 확인
 echo $ANTHROPIC_API_KEY
@@ -598,11 +615,13 @@ console.log('Claude configured:', isConfigured);
 ### 워크플로우 수정 실패
 
 **원인**:
+
 - n8n API 연결 실패
 - 워크플로우가 실행 중
 - 백업 실패
 
 **해결**:
+
 ```typescript
 // n8n 연결 확인
 const workflows = await n8nClient.getWorkflows();
@@ -620,10 +639,12 @@ console.log('Backup created:', backup.id);
 ### MongoDB 연결 오류
 
 **원인**:
+
 - MongoDB 서버가 실행되지 않음
 - 연결 문자열이 잘못됨
 
 **해결**:
+
 ```bash
 # MongoDB 상태 확인
 docker ps | grep mongodb
@@ -672,6 +693,7 @@ if (cache.has(cacheKey)) {
 ### 인덱스 최적화
 
 MongoDB 인덱스:
+
 ```javascript
 // analyzed_errors 컬렉션
 db.analyzed_errors.createIndex({ workflowId: 1, timestamp: -1 });
@@ -743,6 +765,7 @@ MIT License
 문제가 발생하면 GitHub Issues에 등록해주세요.
 
 **관련 문서**:
+
 - [Agent Orchestration](../agent-orchestration/ARCHITECTURE.md)
 - [n8n Integration](../n8n-integration/README.md)
 - [MongoDB Schema](../../infrastructure/mongodb/README.md)

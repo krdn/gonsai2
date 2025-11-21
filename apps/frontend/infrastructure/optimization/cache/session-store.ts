@@ -176,7 +176,7 @@ class SessionStore {
       const sessionIds = await client.smembers(userKey);
 
       if (sessionIds.length > 0) {
-        const keys = sessionIds.map(id => `${this.PREFIX}${id}`);
+        const keys = sessionIds.map((id) => `${this.PREFIX}${id}`);
         await client.del(...keys);
         await client.del(userKey);
 
@@ -204,7 +204,7 @@ class SessionStore {
       const sessions: Session[] = [];
 
       if (sessionIds.length > 0) {
-        const keys = sessionIds.map(id => `${this.PREFIX}${id}`);
+        const keys = sessionIds.map((id) => `${this.PREFIX}${id}`);
         const values = await client.mget(...keys);
 
         values.forEach((value, index) => {
@@ -366,7 +366,9 @@ class SessionStore {
   private static generateSessionId(): string {
     const random = randomBytes(32).toString('hex');
     const timestamp = Date.now().toString();
-    const hash = createHash('sha256').update(random + timestamp).digest('hex');
+    const hash = createHash('sha256')
+      .update(random + timestamp)
+      .digest('hex');
 
     return hash;
   }
@@ -374,7 +376,11 @@ class SessionStore {
   /**
    * Add session to user's session set
    */
-  private static async addUserSession(userId: string, sessionId: string, ttl: number): Promise<void> {
+  private static async addUserSession(
+    userId: string,
+    sessionId: string,
+    ttl: number
+  ): Promise<void> {
     const client = await RedisClient.getClient();
     const userKey = `${this.USER_PREFIX}${userId}`;
 

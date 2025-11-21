@@ -46,7 +46,6 @@ class DatabaseService {
 
       // 인덱스 생성
       await this.createIndexes();
-
     } catch (error) {
       log.error('MongoDB connection failed', error);
       throw error;
@@ -102,10 +101,7 @@ class DatabaseService {
       const usersCollection = this.getUsersCollection();
 
       // 이메일 유니크 인덱스
-      await usersCollection.createIndex(
-        { email: 1 },
-        { unique: true, name: 'email_unique' }
-      );
+      await usersCollection.createIndex({ email: 1 }, { unique: true, name: 'email_unique' });
 
       log.info('Database indexes created successfully');
     } catch (error) {

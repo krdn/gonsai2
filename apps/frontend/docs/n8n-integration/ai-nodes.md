@@ -573,13 +573,15 @@ const model = textLength < 500 ? 'gpt-3.5-turbo' : 'gpt-4';
 // 토큰 제한 동적 조정
 const maxTokens = Math.min(textLength * 2, 2000);
 
-return [{
-  json: {
-    model,
-    maxTokens,
-    prompt: $json.text,
+return [
+  {
+    json: {
+      model,
+      maxTokens,
+      prompt: $json.text,
+    },
   },
-}];
+];
 ```
 
 ### 응답 캐싱
@@ -592,10 +594,7 @@ if (!cache.aiResponses) {
   cache.aiResponses = {};
 }
 
-const queryHash = require('crypto')
-  .createHash('md5')
-  .update($json.query)
-  .digest('hex');
+const queryHash = require('crypto').createHash('md5').update($json.query).digest('hex');
 
 // 캐시 확인
 if (cache.aiResponses[queryHash]) {
@@ -672,9 +671,7 @@ if ($json.expectJson) {
 
 // 금지어 체크
 const bannedWords = ['inappropriate', 'offensive'];
-const hasBannedWords = bannedWords.some(word =>
-  aiResponse.toLowerCase().includes(word)
-);
+const hasBannedWords = bannedWords.some((word) => aiResponse.toLowerCase().includes(word));
 
 if (hasBannedWords) {
   throw new Error('Response contains banned content');

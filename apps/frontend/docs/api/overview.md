@@ -117,12 +117,14 @@ Content-Type: application/json
 목록 조회 API는 페이지네이션을 지원합니다:
 
 **쿼리 파라미터:**
+
 - `page`: 페이지 번호 (기본값: 1)
 - `limit`: 페이지당 항목 수 (기본값: 20, 최대: 100)
 - `sort`: 정렬 필드 (예: `createdAt`, `-createdAt`)
 - `filter`: 필터 조건 (JSON 문자열)
 
 **예시:**
+
 ```http
 GET /api/workflows?page=1&limit=20&sort=-createdAt&filter={"active":true}
 ```
@@ -146,6 +148,7 @@ GET /api/workflows?page=1&limit=20&sort=-createdAt&filter={"active":true}
 ### 성공 응답
 
 **단일 리소스:**
+
 ```json
 {
   "success": true,
@@ -158,6 +161,7 @@ GET /api/workflows?page=1&limit=20&sort=-createdAt&filter={"active":true}
 ```
 
 **목록 응답:**
+
 ```json
 {
   "success": true,
@@ -177,6 +181,7 @@ GET /api/workflows?page=1&limit=20&sort=-createdAt&filter={"active":true}
 ### 오류 응답
 
 **일반 오류:**
+
 ```json
 {
   "success": false,
@@ -191,6 +196,7 @@ GET /api/workflows?page=1&limit=20&sort=-createdAt&filter={"active":true}
 ```
 
 **유효성 검사 오류:**
+
 ```json
 {
   "success": false,
@@ -209,22 +215,22 @@ GET /api/workflows?page=1&limit=20&sort=-createdAt&filter={"active":true}
 
 ## HTTP 상태 코드
 
-| 코드 | 의미 | 설명 |
-|------|------|------|
-| 200 | OK | 요청 성공 |
-| 201 | Created | 리소스 생성 성공 |
-| 204 | No Content | 요청 성공 (응답 본문 없음) |
-| 400 | Bad Request | 잘못된 요청 |
-| 401 | Unauthorized | 인증 실패 |
-| 403 | Forbidden | 권한 없음 |
-| 404 | Not Found | 리소스를 찾을 수 없음 |
-| 409 | Conflict | 리소스 충돌 |
-| 422 | Unprocessable Entity | 유효성 검사 실패 |
-| 429 | Too Many Requests | Rate limit 초과 |
-| 500 | Internal Server Error | 서버 오류 |
-| 502 | Bad Gateway | n8n 연결 실패 |
-| 503 | Service Unavailable | 서비스 이용 불가 |
-| 504 | Gateway Timeout | n8n 응답 시간 초과 |
+| 코드 | 의미                  | 설명                       |
+| ---- | --------------------- | -------------------------- |
+| 200  | OK                    | 요청 성공                  |
+| 201  | Created               | 리소스 생성 성공           |
+| 204  | No Content            | 요청 성공 (응답 본문 없음) |
+| 400  | Bad Request           | 잘못된 요청                |
+| 401  | Unauthorized          | 인증 실패                  |
+| 403  | Forbidden             | 권한 없음                  |
+| 404  | Not Found             | 리소스를 찾을 수 없음      |
+| 409  | Conflict              | 리소스 충돌                |
+| 422  | Unprocessable Entity  | 유효성 검사 실패           |
+| 429  | Too Many Requests     | Rate limit 초과            |
+| 500  | Internal Server Error | 서버 오류                  |
+| 502  | Bad Gateway           | n8n 연결 실패              |
+| 503  | Service Unavailable   | 서비스 이용 불가           |
+| 504  | Gateway Timeout       | n8n 응답 시간 초과         |
 
 ## Rate Limiting
 
@@ -237,6 +243,7 @@ API 호출 제한:
   - `X-RateLimit-Reset`: 리셋 시간 (Unix timestamp)
 
 **Rate limit 초과 시:**
+
 ```json
 {
   "success": false,
@@ -253,13 +260,16 @@ API 호출 제한:
 ## CORS 설정
 
 허용된 도메인:
+
 - `http://localhost:3000` (개발)
 - `https://yourdomain.com` (프로덕션)
 
 **허용된 메서드:**
+
 - GET, POST, PUT, PATCH, DELETE, OPTIONS
 
 **허용된 헤더:**
+
 - Content-Type, Authorization, X-N8N-API-KEY, X-Webhook-Secret
 
 ## Webhook 이벤트
@@ -316,6 +326,7 @@ n8n 워크플로우에서 Frontend로 전송되는 이벤트:
 자세한 내용은 [에러 코드 문서](./error-codes)를 참조하세요.
 
 **주요 에러 코드:**
+
 - `AUTHENTICATION_FAILED` - 인증 실패
 - `WORKFLOW_NOT_FOUND` - 워크플로우를 찾을 수 없음
 - `EXECUTION_FAILED` - 워크플로우 실행 실패

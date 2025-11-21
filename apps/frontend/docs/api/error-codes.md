@@ -27,19 +27,19 @@ API에서 반환되는 에러 코드와 해결 방법을 설명합니다.
 
 ## HTTP 상태 코드 매핑
 
-| HTTP 코드 | 카테고리 | 설명 |
-|-----------|---------|------|
-| 400 | Client Error | 잘못된 요청 |
-| 401 | Authentication | 인증 실패 |
-| 403 | Authorization | 권한 없음 |
-| 404 | Not Found | 리소스를 찾을 수 없음 |
-| 409 | Conflict | 리소스 충돌 |
-| 422 | Validation | 유효성 검사 실패 |
-| 429 | Rate Limit | 요청 제한 초과 |
-| 500 | Server Error | 서버 내부 오류 |
-| 502 | Gateway Error | n8n 연결 실패 |
-| 503 | Service Unavailable | 서비스 이용 불가 |
-| 504 | Gateway Timeout | n8n 응답 시간 초과 |
+| HTTP 코드 | 카테고리            | 설명                  |
+| --------- | ------------------- | --------------------- |
+| 400       | Client Error        | 잘못된 요청           |
+| 401       | Authentication      | 인증 실패             |
+| 403       | Authorization       | 권한 없음             |
+| 404       | Not Found           | 리소스를 찾을 수 없음 |
+| 409       | Conflict            | 리소스 충돌           |
+| 422       | Validation          | 유효성 검사 실패      |
+| 429       | Rate Limit          | 요청 제한 초과        |
+| 500       | Server Error        | 서버 내부 오류        |
+| 502       | Gateway Error       | n8n 연결 실패         |
+| 503       | Service Unavailable | 서비스 이용 불가      |
+| 504       | Gateway Timeout     | n8n 응답 시간 초과    |
 
 ## 인증 에러 (4xx)
 
@@ -48,6 +48,7 @@ API에서 반환되는 에러 코드와 해결 방법을 설명합니다.
 **설명:** API 키 또는 JWT 토큰 인증 실패
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -59,11 +60,13 @@ API에서 반환되는 에러 코드와 해결 방법을 설명합니다.
 ```
 
 **해결 방법:**
+
 1. API 키가 올바른지 확인
 2. `X-N8N-API-KEY` 헤더가 포함되었는지 확인
 3. n8n에서 API 키를 재생성
 
 **예제:**
+
 ```typescript
 try {
   const response = await fetch('/api/workflows', {
@@ -88,6 +91,7 @@ try {
 **설명:** JWT 토큰이 만료됨
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -102,10 +106,12 @@ try {
 ```
 
 **해결 방법:**
+
 1. Refresh token을 사용하여 새 access token 발급
 2. 사용자에게 재로그인 요청
 
 **예제:**
+
 ```typescript
 async function refreshAccessToken() {
   const refreshToken = localStorage.getItem('refreshToken');
@@ -133,6 +139,7 @@ async function refreshAccessToken() {
 **설명:** 리소스에 대한 권한이 없음
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -148,6 +155,7 @@ async function refreshAccessToken() {
 ```
 
 **해결 방법:**
+
 1. 사용자 권한 확인
 2. 관리자에게 권한 요청
 
@@ -160,6 +168,7 @@ async function refreshAccessToken() {
 **설명:** 요청한 워크플로우를 찾을 수 없음
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -174,10 +183,12 @@ async function refreshAccessToken() {
 ```
 
 **해결 방법:**
+
 1. 워크플로우 ID가 올바른지 확인
 2. 워크플로우가 삭제되었는지 확인
 
 **예제:**
+
 ```typescript
 async function getWorkflowSafe(workflowId: string) {
   try {
@@ -199,6 +210,7 @@ async function getWorkflowSafe(workflowId: string) {
 **설명:** 요청한 실행을 찾을 수 없음
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -216,6 +228,7 @@ async function getWorkflowSafe(workflowId: string) {
 **설명:** 동일한 이름의 워크플로우가 이미 존재
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -231,6 +244,7 @@ async function getWorkflowSafe(workflowId: string) {
 ```
 
 **해결 방법:**
+
 1. 워크플로우 이름 변경
 2. 기존 워크플로우 업데이트
 
@@ -243,6 +257,7 @@ async function getWorkflowSafe(workflowId: string) {
 **설명:** 요청 데이터 유효성 검사 실패
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -261,10 +276,12 @@ async function getWorkflowSafe(workflowId: string) {
 ```
 
 **해결 방법:**
+
 1. 요청 데이터의 각 필드 확인
 2. 필수 필드가 모두 포함되었는지 확인
 
 **예제:**
+
 ```typescript
 function validateWorkflow(workflow: CreateWorkflowDto): string[] {
   const errors: string[] = [];
@@ -277,9 +294,7 @@ function validateWorkflow(workflow: CreateWorkflowDto): string[] {
     errors.push('At least one node is required');
   }
 
-  const hasStartNode = workflow.nodes.some(
-    node => node.type === 'n8n-nodes-base.start'
-  );
+  const hasStartNode = workflow.nodes.some((node) => node.type === 'n8n-nodes-base.start');
   if (!hasStartNode) {
     errors.push('Start node is required');
   }
@@ -295,6 +310,7 @@ function validateWorkflow(workflow: CreateWorkflowDto): string[] {
 **설명:** 워크플로우 구조가 유효하지 않음
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -320,6 +336,7 @@ function validateWorkflow(workflow: CreateWorkflowDto): string[] {
 **설명:** API 호출 제한 초과
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -337,23 +354,23 @@ function validateWorkflow(workflow: CreateWorkflowDto): string[] {
 ```
 
 **해결 방법:**
+
 1. `retryAfter` 초만큼 대기 후 재시도
 2. 요청 빈도 줄이기
 3. Rate limit 증가 요청
 
 **예제:**
+
 ```typescript
 async function fetchWithRetry(url: string, options: RequestInit = {}) {
   const response = await fetch(url, options);
 
   if (response.status === 429) {
-    const retryAfter = parseInt(
-      response.headers.get('X-RateLimit-Reset') || '60'
-    );
+    const retryAfter = parseInt(response.headers.get('X-RateLimit-Reset') || '60');
 
     console.log(`Rate limited. Retrying after ${retryAfter}s`);
 
-    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+    await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
 
     return fetch(url, options);
   }
@@ -371,6 +388,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}) {
 **설명:** 워크플로우 실행 중 오류 발생
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -389,24 +407,23 @@ async function fetchWithRetry(url: string, options: RequestInit = {}) {
 ```
 
 **해결 방법:**
+
 1. 에러 메시지 및 스택 트레이스 확인
 2. 실패한 노드 확인
 3. 워크플로우 로직 수정
 4. 재시도
 
 **예제:**
+
 ```typescript
-async function executeWorkflowWithRetry(
-  workflowId: string,
-  maxRetries = 3
-) {
+async function executeWorkflowWithRetry(workflowId: string, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await n8nClient.executeWorkflow(workflowId);
     } catch (error: any) {
       if (error.code === 'EXECUTION_FAILED' && attempt < maxRetries) {
         console.log(`Attempt ${attempt} failed, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
         continue;
       }
       throw error;
@@ -422,6 +439,7 @@ async function executeWorkflowWithRetry(
 **설명:** n8n 인스턴스에 연결할 수 없음
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -437,11 +455,13 @@ async function executeWorkflowWithRetry(
 ```
 
 **해결 방법:**
+
 1. n8n 서비스가 실행 중인지 확인
 2. n8n URL이 올바른지 확인
 3. 네트워크 연결 확인
 
 **예제:**
+
 ```bash
 # n8n 상태 확인
 curl http://localhost:5678/healthz
@@ -460,6 +480,7 @@ docker logs n8n
 **설명:** n8n 응답 시간 초과
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -475,11 +496,13 @@ docker logs n8n
 ```
 
 **해결 방법:**
+
 1. 타임아웃 값 증가
 2. 워크플로우 최적화
 3. n8n 서버 성능 확인
 
 **예제:**
+
 ```typescript
 const client = new N8nApiClient({
   baseUrl: process.env.NEXT_PUBLIC_N8N_API_URL!,
@@ -495,6 +518,7 @@ const client = new N8nApiClient({
 **설명:** 데이터베이스 오류
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -510,6 +534,7 @@ const client = new N8nApiClient({
 ```
 
 **해결 방법:**
+
 1. 데이터베이스 연결 확인
 2. 데이터베이스 서버 상태 확인
 3. 연결 풀 크기 조정
@@ -523,6 +548,7 @@ const client = new N8nApiClient({
 **설명:** Webhook 인증 실패
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -534,6 +560,7 @@ const client = new N8nApiClient({
 ```
 
 **해결 방법:**
+
 1. Webhook secret 확인
 2. n8n Webhook 노드 헤더 설정 확인
 
@@ -544,6 +571,7 @@ const client = new N8nApiClient({
 **설명:** Webhook HMAC 서명이 유효하지 않음
 
 **응답 예시:**
+
 ```json
 {
   "success": false,
@@ -555,6 +583,7 @@ const client = new N8nApiClient({
 ```
 
 **해결 방법:**
+
 1. Webhook secret이 일치하는지 확인
 2. 서명 생성 로직 확인
 
@@ -600,21 +629,11 @@ export function handleApiError(error: any): ApiError {
 
   // 타임아웃
   if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-    return new ApiError(
-      'N8N_TIMEOUT',
-      'Request timed out',
-      { error: error.message },
-      504
-    );
+    return new ApiError('N8N_TIMEOUT', 'Request timed out', { error: error.message }, 504);
   }
 
   // 기타 에러
-  return new ApiError(
-    'INTERNAL_ERROR',
-    error.message || 'An unexpected error occurred',
-    null,
-    500
-  );
+  return new ApiError('INTERNAL_ERROR', error.message || 'An unexpected error occurred', null, 500);
 }
 ```
 

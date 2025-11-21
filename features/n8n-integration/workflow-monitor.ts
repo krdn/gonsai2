@@ -11,10 +11,10 @@ export class WorkflowMonitor {
   async getMetrics(workflowId: string): Promise<ExecutionMetrics> {
     const executions = await this.client.executions.getAll({
       workflowId,
-      pageSize: 100
+      pageSize: 100,
     });
 
-    const successful = executions.data.filter(e => e.status === 'success').length;
+    const successful = executions.data.filter((e) => e.status === 'success').length;
     const total = executions.data.length;
 
     return {

@@ -30,49 +30,49 @@ const INDEXES: IndexDefinition[] = [
     collection: 'workflows',
     name: 'idx_workflows_active',
     keys: { active: 1, updatedAt: -1 },
-    options: { sparse: true }
+    options: { sparse: true },
   },
   {
     collection: 'workflows',
     name: 'idx_workflows_tags',
     keys: { tags: 1 },
-    options: { sparse: true }
+    options: { sparse: true },
   },
   {
     collection: 'workflows',
     name: 'idx_workflows_name',
-    keys: { name: 1 }
+    keys: { name: 1 },
   },
 
   // Execution collection indexes - CRITICAL for performance
   {
     collection: 'executions',
     name: 'idx_executions_workflow_status',
-    keys: { workflowId: 1, status: 1, startedAt: -1 }
+    keys: { workflowId: 1, status: 1, startedAt: -1 },
   },
   {
     collection: 'executions',
     name: 'idx_executions_status_started',
-    keys: { status: 1, startedAt: -1 }
+    keys: { status: 1, startedAt: -1 },
   },
   {
     collection: 'executions',
     name: 'idx_executions_finished',
     keys: { finishedAt: -1 },
-    options: { sparse: true }
+    options: { sparse: true },
   },
   {
     collection: 'executions',
     name: 'idx_executions_mode',
-    keys: { mode: 1, startedAt: -1 }
+    keys: { mode: 1, startedAt: -1 },
   },
   {
     collection: 'executions',
     name: 'idx_executions_error',
     keys: { status: 1, 'data.resultData.error': 1 },
     options: {
-      partialFilterExpression: { status: 'error' }
-    }
+      partialFilterExpression: { status: 'error' },
+    },
   },
 
   // TTL index for automatic cleanup of old executions (30 days)
@@ -84,16 +84,16 @@ const INDEXES: IndexDefinition[] = [
       expireAfterSeconds: 30 * 24 * 60 * 60, // 30 days
       partialFilterExpression: {
         status: { $in: ['success', 'error'] },
-        mode: { $ne: 'manual' }
-      }
-    }
+        mode: { $ne: 'manual' },
+      },
+    },
   },
 
   // Credentials collection indexes
   {
     collection: 'credentials',
     name: 'idx_credentials_type',
-    keys: { type: 1 }
+    keys: { type: 1 },
   },
 
   // Tags collection indexes
@@ -101,8 +101,8 @@ const INDEXES: IndexDefinition[] = [
     collection: 'tags',
     name: 'idx_tags_name',
     keys: { name: 1 },
-    options: { unique: true }
-  }
+    options: { unique: true },
+  },
 ];
 
 async function createIndexes(client: MongoClient): Promise<void> {
@@ -118,7 +118,7 @@ async function createIndexes(client: MongoClient): Promise<void> {
 
       // Check if index already exists
       const existingIndexes = await collection.indexes();
-      const exists = existingIndexes.some(idx => idx.name === indexDef.name);
+      const exists = existingIndexes.some((idx) => idx.name === indexDef.name);
 
       if (exists) {
         console.log(`  ⏭️  Skipped: ${indexDef.collection}.${indexDef.name} (already exists)`);
@@ -129,7 +129,7 @@ async function createIndexes(client: MongoClient): Promise<void> {
       // Create index
       await collection.createIndex(indexDef.keys, {
         name: indexDef.name,
-        ...indexDef.options
+        ...indexDef.options,
       });
 
       console.log(`  ✅ Created: ${indexDef.collection}.${indexDef.name}`);
@@ -200,7 +200,7 @@ async function optimizeQueries(client: MongoClient): Promise<void> {
   const indexStats = await executions.aggregate([{ $indexStats: {} }]).toArray();
 
   console.log('  📊 Index usage statistics:');
-  indexStats.forEach(stat => {
+  indexStats.forEach((stat) => {
     const usageCount = stat.accesses?.ops || 0;
     console.log(`     - ${stat.name}: ${usageCount.toLocaleString()} accesses`);
   });
@@ -220,7 +220,7 @@ async function cleanupOldData(client: MongoClient): Promise<void> {
     const result = await executions.deleteMany({
       finishedAt: { $lt: thirtyDaysAgo },
       status: { $in: ['success', 'error'] },
-      mode: { $ne: 'manual' }
+      mode: { $ne: 'manual' },
     });
 
     console.log(`  ✅ Deleted ${result.deletedCount.toLocaleString()} old executions\n`);
@@ -239,21 +239,21 @@ async function generateAggregationPipelines(client: MongoClient): Promise<void> 
   const successRatePipeline = [
     {
       $match: {
-        finishedAt: { $exists: true }
-      }
+        finishedAt: { $exists: true },
+      },
     },
     {
       $group: {
         _id: '$workflowId',
         total: { $sum: 1 },
         success: {
-          $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] },
         },
         error: {
-          $sum: { $cond: [{ $eq: ['$status', 'error'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'error'] }, 1, 0] },
         },
-        avgDuration: { $avg: '$duration' }
-      }
+        avgDuration: { $avg: '$duration' },
+      },
     },
     {
       $project: {
@@ -262,17 +262,17 @@ async function generateAggregationPipelines(client: MongoClient): Promise<void> 
         success: 1,
         error: 1,
         successRate: {
-          $multiply: [{ $divide: ['$success', '$total'] }, 100]
+          $multiply: [{ $divide: ['$success', '$total'] }, 100],
         },
-        avgDuration: 1
-      }
+        avgDuration: 1,
+      },
     },
     {
-      $sort: { total: -1 }
+      $sort: { total: -1 },
     },
     {
-      $limit: 10
-    }
+      $limit: 10,
+    },
   ];
 
   try {
@@ -282,8 +282,8 @@ async function generateAggregationPipelines(client: MongoClient): Promise<void> 
     results.forEach((result, index) => {
       console.log(
         `     ${index + 1}. Workflow ${result._id}: ${result.total} executions, ` +
-        `${result.successRate.toFixed(1)}% success, ` +
-        `avg ${result.avgDuration ? (result.avgDuration / 1000).toFixed(2) : 'N/A'}s`
+          `${result.successRate.toFixed(1)}% success, ` +
+          `avg ${result.avgDuration ? (result.avgDuration / 1000).toFixed(2) : 'N/A'}s`
       );
     });
     console.log('');

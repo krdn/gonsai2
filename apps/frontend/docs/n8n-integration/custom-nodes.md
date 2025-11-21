@@ -149,7 +149,7 @@ export class MyCustomNode implements INodeType {
             method: 'GET',
             url: `${apiUrl}/resource/${resourceId}`,
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
+              Authorization: `Bearer ${apiKey}`,
             },
             json: true,
           });
@@ -428,7 +428,7 @@ export class MyPollingTrigger implements INodeType {
 
     // 마지막 폴링 시간 가져오기
     const workflowStaticData = this.getWorkflowStaticData('node');
-    const lastPollTime = workflowStaticData.lastPollTime as number || 0;
+    const lastPollTime = (workflowStaticData.lastPollTime as number) || 0;
 
     // API에서 새 데이터 가져오기
     const response = await this.helpers.request({
@@ -514,13 +514,9 @@ describe('MyCustomNode', () => {
   });
 
   test('should handle errors', async () => {
-    (mockExecuteFunctions.helpers.request as jest.Mock).mockRejectedValue(
-      new Error('API Error')
-    );
+    (mockExecuteFunctions.helpers.request as jest.Mock).mockRejectedValue(new Error('API Error'));
 
-    await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow(
-      'API Error'
-    );
+    await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('API Error');
   });
 });
 ```
@@ -553,17 +549,11 @@ describe('MyCustomNode', () => {
     "lintfix": "eslint nodes credentials --fix",
     "prepublishOnly": "npm run build"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/MyCustomNodeApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/MyCustomNode/MyCustomNode.node.js"
-    ]
+    "credentials": ["dist/credentials/MyCustomNodeApi.credentials.js"],
+    "nodes": ["dist/nodes/MyCustomNode/MyCustomNode.node.js"]
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

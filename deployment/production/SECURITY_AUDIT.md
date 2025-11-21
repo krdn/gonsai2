@@ -27,14 +27,14 @@ gonsai2 프로덕션 환경 보안 검토 및 강화 조치
 
 ### 위협 모델
 
-| 위협 | 영향도 | 가능성 | 완화 조치 |
-|------|--------|--------|-----------|
-| SQL Injection | 높음 | 낮음 | Parameterized queries, ORM |
-| XSS | 중간 | 중간 | CSP headers, 입력 검증 |
-| CSRF | 중간 | 낮음 | CSRF tokens, SameSite cookies |
-| 무차별 대입 공격 | 높음 | 높음 | Rate limiting, Account lockout |
-| DDoS | 높음 | 중간 | Rate limiting, CDN |
-| 데이터 유출 | 높음 | 낮음 | 암호화, 접근 제어 |
+| 위협             | 영향도 | 가능성 | 완화 조치                      |
+| ---------------- | ------ | ------ | ------------------------------ |
+| SQL Injection    | 높음   | 낮음   | Parameterized queries, ORM     |
+| XSS              | 중간   | 중간   | CSP headers, 입력 검증         |
+| CSRF             | 중간   | 낮음   | CSRF tokens, SameSite cookies  |
+| 무차별 대입 공격 | 높음   | 높음   | Rate limiting, Account lockout |
+| DDoS             | 높음   | 중간   | Rate limiting, CDN             |
+| 데이터 유출      | 높음   | 낮음   | 암호화, 접근 제어              |
 
 ---
 
@@ -48,12 +48,14 @@ gonsai2 프로덕션 환경 보안 검토 및 강화 조치
 # docker-compose.yml
 n8n:
   environment:
-    - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}  # 자격증명 암호화
+    - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY} # 자격증명 암호화
     - N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_JWT_SECRET}
 ```
 
 **보안 조치**:
+
 1. **암호화 키 보호**:
+
    ```bash
    # .env.production에만 저장
    # git에 커밋하지 않음 (.gitignore)
@@ -85,7 +87,9 @@ JWT_REFRESH_EXPIRES_IN=30d
 ```
 
 **보안 조치**:
+
 1. **강력한 시크릿**:
+
    ```bash
    # 최소 32바이트 랜덤 생성
    openssl rand -hex 32
@@ -111,21 +115,21 @@ mongodb:
     - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
   command: mongod --auth --bind_ip_all
   ports:
-    - "127.0.0.1:27017:27017"  # localhost만 바인딩
+    - '127.0.0.1:27017:27017' # localhost만 바인딩
 ```
 
 **보안 조치**:
+
 1. **인증 활성화**: `--auth` 플래그
 2. **네트워크 격리**: localhost 바인딩
 3. **역할 기반 접근 제어** (RBAC):
+
    ```javascript
    // MongoDB 초기화 스크립트
    db.createUser({
-     user: "gonsai2_app",
-     pwd: "strong_password",
-     roles: [
-       { role: "readWrite", db: "gonsai2" }
-     ]
+     user: 'gonsai2_app',
+     pwd: 'strong_password',
+     roles: [{ role: 'readWrite', db: 'gonsai2' }],
    });
    ```
 
@@ -146,6 +150,7 @@ postgres:
 ```
 
 **보안 조치**:
+
 1. **비밀번호 인증**: `scram-sha-256`
 2. **네트워크 격리**: 내부 네트워크만
 3. **최소 권한**: n8n 사용자는 n8n DB만 접근
@@ -159,12 +164,14 @@ postgres:
 **구현 상태**: ✅ 완료
 
 1. **n8n 자격증명**:
+
    ```yaml
    N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
    # 모든 자격증명은 AES-256-GCM으로 암호화
    ```
 
 2. **민감 정보 암호화**:
+
    ```typescript
    // Frontend 암호화 유틸리티
    ENCRYPTION_KEY=${ENCRYPTION_KEY}
@@ -185,6 +192,7 @@ postgres:
 **구현 상태**: ✅ 완료
 
 1. **SSL/TLS**:
+
    ```nginx
    ssl_protocols TLSv1.2 TLSv1.3;
    ssl_prefer_server_ciphers on;
@@ -192,6 +200,7 @@ postgres:
    ```
 
 2. **HSTS**:
+
    ```nginx
    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
    ```
@@ -213,6 +222,7 @@ postgres:
 **권장 추가 조치**:
 
 1. **HashiCorp Vault 통합**:
+
    ```bash
    # 환경 변수를 Vault에서 가져오기
    export VAULT_ADDR=https://vault.yourdomain.com
@@ -243,6 +253,7 @@ CORS_ORIGIN=https://yourdomain.com,https://www.yourdomain.com
 ```
 
 **프론트엔드 구현**:
+
 ```typescript
 // Next.js API Route
 export async function middleware(req: NextRequest) {
@@ -256,6 +267,7 @@ export async function middleware(req: NextRequest) {
 ```
 
 **n8n CORS**:
+
 ```yaml
 n8n:
   environment:
@@ -267,6 +279,7 @@ n8n:
 **구현 상태**: ✅ 완료
 
 **Nginx Level**:
+
 ```nginx
 # nginx.conf
 limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
@@ -285,6 +298,7 @@ location /webhook {
 ```
 
 **애플리케이션 Level** (권장 추가):
+
 ```typescript
 // middleware/rate-limit.ts
 import rateLimit from 'express-rate-limit';
@@ -301,6 +315,7 @@ export const apiLimiter = rateLimit({
 ### 방화벽 규칙
 
 **권장 설정** (UFW 예시):
+
 ```bash
 # 기본 정책
 sudo ufw default deny incoming
@@ -318,6 +333,7 @@ sudo ufw enable
 ```
 
 **Docker와 UFW 통합**:
+
 ```bash
 # /etc/ufw/after.rules에 추가
 # Docker 네트워크 허용
@@ -327,6 +343,7 @@ sudo ufw enable
 ### IP 화이트리스트
 
 **구현 예시**:
+
 ```nginx
 # nginx/conf.d/n8n.conf
 location /metrics {
@@ -380,12 +397,14 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 ```
 
 **React/Next.js 자동 보호**:
+
 - JSX는 자동으로 이스케이프
 - `dangerouslySetInnerHTML` 사용 금지
 
 ### SQL Injection 방지
 
 **ORM 사용**:
+
 ```typescript
 // Mongoose (MongoDB)
 const workflow = await Workflow.findById(workflowId);
@@ -393,13 +412,14 @@ const workflow = await Workflow.findById(workflowId);
 
 // TypeORM (PostgreSQL - n8n 내부)
 const execution = await executionRepository.findOne({
-  where: { id: executionId }
+  where: { id: executionId },
 });
 ```
 
 ### CSRF 방지
 
 **권장 구현**:
+
 ```typescript
 // middleware/csrf.ts
 import { csrf } from 'next-csrf';
@@ -416,11 +436,10 @@ export async function POST(req: Request) {
 ```
 
 **SameSite Cookies**:
+
 ```typescript
 // Cookie 설정
-res.setHeader('Set-Cookie', [
-  `token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/`
-]);
+res.setHeader('Set-Cookie', [`token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/`]);
 ```
 
 ### 보안 헤더
@@ -444,12 +463,13 @@ add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 **구현 상태**: ✅ 부분 완료
 
 **현재 설정**:
+
 ```yaml
 # docker-compose.yml
 services:
   gonsai2-app:
-    user: "1000:1000"  # 권장 추가
-    read_only: true    # 권장 추가
+    user: '1000:1000' # 권장 추가
+    read_only: true # 권장 추가
     tmpfs:
       - /tmp
     cap_drop:
@@ -459,13 +479,16 @@ services:
 ```
 
 **권장 강화**:
+
 1. **비root 실행**:
+
    ```dockerfile
    # Dockerfile
    USER node
    ```
 
 2. **읽기 전용 파일시스템**:
+
    ```yaml
    read_only: true
    tmpfs:
@@ -478,7 +501,7 @@ services:
    cap_drop:
      - ALL
    cap_add:
-     - NET_BIND_SERVICE  # 필요한 것만
+     - NET_BIND_SERVICE # 필요한 것만
    ```
 
 ### 시크릿 관리
@@ -486,6 +509,7 @@ services:
 **현재**: 환경 변수
 
 **권장 개선**:
+
 ```yaml
 # Docker Swarm Secrets
 secrets:
@@ -520,6 +544,7 @@ promtail:
 ```
 
 **권장 추가**:
+
 ```bash
 # 감사 로그 저장 및 분석
 # - 인증 실패
@@ -530,6 +555,7 @@ promtail:
 ### 취약점 스캔
 
 **권장 도구**:
+
 ```bash
 # Docker 이미지 스캔
 docker scan gonsai2-app:latest
@@ -593,12 +619,14 @@ dependency-check --project gonsai2 --scan ./
 ### 즉시 조치 필요
 
 1. **강력한 비밀번호 설정**:
+
    ```bash
    # 모든 .env 파일에서 'changeme', 'password' 등 제거
    # 최소 16자, 대소문자/숫자/특수문자 포함
    ```
 
 2. **방화벽 활성화**:
+
    ```bash
    sudo ufw enable
    sudo ufw status
@@ -613,12 +641,14 @@ dependency-check --project gonsai2 --scan ./
 ### 단기 개선 (1주일 내)
 
 1. **Fail2Ban 설치**:
+
    ```bash
    sudo apt install fail2ban
    sudo systemctl enable fail2ban
    ```
 
 2. **입력 검증 라이브러리 추가**:
+
    ```bash
    npm install zod
    # 모든 API 엔드포인트에 검증 추가
@@ -658,6 +688,7 @@ dependency-check --project gonsai2 --scan ./
 ### 취약점 신고
 
 책임감 있는 공개 (Responsible Disclosure):
+
 1. security@yourdomain.com으로 이메일
 2. 암호화 권장 (PGP 키: [URL])
 3. 90일 이내 패치 약속

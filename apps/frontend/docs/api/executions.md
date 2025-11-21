@@ -9,12 +9,12 @@ title: 실행 API
 
 ## 엔드포인트 목록
 
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| GET | `/api/v1/executions` | 실행 목록 조회 |
-| GET | `/api/v1/executions/:id` | 실행 상세 조회 |
-| DELETE | `/api/v1/executions/:id` | 실행 이력 삭제 |
-| POST | `/api/v1/executions/:id/retry` | 실패한 실행 재시도 |
+| 메서드 | 엔드포인트                     | 설명               |
+| ------ | ------------------------------ | ------------------ |
+| GET    | `/api/v1/executions`           | 실행 목록 조회     |
+| GET    | `/api/v1/executions/:id`       | 실행 상세 조회     |
+| DELETE | `/api/v1/executions/:id`       | 실행 이력 삭제     |
+| POST   | `/api/v1/executions/:id/retry` | 실패한 실행 재시도 |
 
 ## 실행 데이터 구조
 
@@ -75,12 +75,12 @@ GET /api/v1/executions
 
 **쿼리 파라미터:**
 
-| 파라미터 | 타입 | 설명 | 기본값 |
-|---------|------|------|--------|
-| `workflowId` | string | 워크플로우 ID 필터 | - |
-| `status` | string | 상태 필터 (success, error 등) | - |
-| `limit` | number | 반환할 최대 개수 | 20 |
-| `cursor` | string | 페이지네이션 커서 | - |
+| 파라미터     | 타입   | 설명                          | 기본값 |
+| ------------ | ------ | ----------------------------- | ------ |
+| `workflowId` | string | 워크플로우 ID 필터            | -      |
+| `status`     | string | 상태 필터 (success, error 등) | -      |
+| `limit`      | number | 반환할 최대 개수              | 20     |
+| `cursor`     | string | 페이지네이션 커서             | -      |
 
 **요청 예시:**
 
@@ -165,9 +165,9 @@ GET /api/v1/executions/:id
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 실행 ID |
+| 파라미터 | 타입   | 설명    |
+| -------- | ------ | ------- |
+| `id`     | string | 실행 ID |
 
 **요청 예시:**
 
@@ -225,15 +225,11 @@ curl -X GET \
 const execution = await n8nClient.getExecution('exec-123');
 
 console.log(`Status: ${execution.status}`);
-console.log(`Duration: ${
-  new Date(execution.stoppedAt!) - new Date(execution.startedAt)
-}ms`);
+console.log(`Duration: ${new Date(execution.stoppedAt!) - new Date(execution.startedAt)}ms`);
 
 // 각 노드의 실행 결과 확인
 if (execution.data?.resultData?.runData) {
-  for (const [nodeName, runs] of Object.entries(
-    execution.data.resultData.runData
-  )) {
+  for (const [nodeName, runs] of Object.entries(execution.data.resultData.runData)) {
     console.log(`${nodeName}: ${runs[0].executionTime}ms`);
   }
 }
@@ -249,9 +245,9 @@ DELETE /api/v1/executions/:id
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 실행 ID |
+| 파라미터 | 타입   | 설명    |
+| -------- | ------ | ------- |
+| `id`     | string | 실행 ID |
 
 **요청 예시:**
 
@@ -288,9 +284,9 @@ POST /api/v1/executions/:id/retry
 
 **경로 파라미터:**
 
-| 파라미터 | 타입 | 설명 |
-|---------|------|------|
-| `id` | string | 재시도할 실행 ID |
+| 파라미터 | 타입   | 설명             |
+| -------- | ------ | ---------------- |
+| `id`     | string | 재시도할 실행 ID |
 
 **요청 예시:**
 
@@ -591,11 +587,8 @@ interface ExecutionFilters {
   mode?: ExecutionMode;
 }
 
-function filterExecutions(
-  executions: Execution[],
-  filters: ExecutionFilters
-): Execution[] {
-  return executions.filter(execution => {
+function filterExecutions(executions: Execution[], filters: ExecutionFilters): Execution[] {
+  return executions.filter((execution) => {
     if (filters.workflowId && execution.workflowId !== filters.workflowId) {
       return false;
     }
@@ -632,8 +625,7 @@ function sortExecutions(
 
     switch (sortBy) {
       case 'startedAt':
-        comparison =
-          new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime();
+        comparison = new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime();
         break;
 
       case 'duration':
@@ -659,10 +651,7 @@ function sortExecutions(
 ## 실행 데이터 내보내기
 
 ```typescript
-async function exportExecutions(
-  workflowId: string,
-  format: 'json' | 'csv'
-): Promise<Blob> {
+async function exportExecutions(workflowId: string, format: 'json' | 'csv'): Promise<Blob> {
   const executions = await n8nClient.getExecutions({
     workflowId,
     limit: 1000,
@@ -675,10 +664,9 @@ async function exportExecutions(
 
   // CSV 형식
   const headers = ['ID', 'Status', 'Started At', 'Stopped At', 'Duration'];
-  const rows = executions.results.map(execution => {
+  const rows = executions.results.map((execution) => {
     const duration = execution.stoppedAt
-      ? new Date(execution.stoppedAt).getTime() -
-        new Date(execution.startedAt).getTime()
+      ? new Date(execution.stoppedAt).getTime() - new Date(execution.startedAt).getTime()
       : 0;
 
     return [
@@ -690,7 +678,7 @@ async function exportExecutions(
     ];
   });
 
-  const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+  const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
 
   return new Blob([csv], { type: 'text/csv' });
 }
@@ -714,6 +702,7 @@ async function handleExport(workflowId: string, format: 'json' | 'csv') {
 ### 일반적인 에러
 
 **404 Not Found:**
+
 ```json
 {
   "code": "EXECUTION_NOT_FOUND",
@@ -722,6 +711,7 @@ async function handleExport(workflowId: string, format: 'json' | 'csv') {
 ```
 
 **400 Bad Request:**
+
 ```json
 {
   "code": "CANNOT_RETRY_SUCCESS",

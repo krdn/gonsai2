@@ -37,6 +37,7 @@ graph LR
 가장 간단한 형태의 워크플로우:
 
 **구조:**
+
 ```
 Start → HTTP Request → Set → Response
 ```
@@ -44,10 +45,12 @@ Start → HTTP Request → Set → Response
 **노드 설정:**
 
 #### Start 노드
+
 - 자동으로 추가됨
 - 수동 실행 시 트리거
 
 #### HTTP Request 노드
+
 ```json
 {
   "method": "GET",
@@ -59,6 +62,7 @@ Start → HTTP Request → Set → Response
 ```
 
 #### Set 노드
+
 ```json
 {
   "keepOnlySet": true,
@@ -131,6 +135,7 @@ const created = await n8nClient.createWorkflow(workflow);
 정기적으로 실행되는 워크플로우:
 
 **구조:**
+
 ```
 Schedule Trigger → Fetch Data → Process → Save to DB
 ```
@@ -234,6 +239,7 @@ const scheduledWorkflow = {
 외부 이벤트에 반응하는 워크플로우:
 
 **구조:**
+
 ```
 Webhook → Validate → Process → Respond
 ```
@@ -355,6 +361,7 @@ const webhookWorkflow = {
 ### IF 노드를 사용한 분기
 
 **구조:**
+
 ```
        ┌─ True Path ─┐
 Input → IF             → Merge
@@ -387,6 +394,7 @@ Input → IF             → Merge
 ### Switch 노드를 사용한 다중 분기
 
 **구조:**
+
 ```
          ┌─ Case 1 ─┐
          ├─ Case 2 ─┤
@@ -637,6 +645,7 @@ Fetch 1000 items → Split (10개씩) → Process Batch → Loop
 ```
 
 **Merge 모드:**
+
 - `append` - 모든 데이터 추가
 - `keep-key-matches` - 키가 일치하는 항목만
 - `merge-by-index` - 인덱스로 병합

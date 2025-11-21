@@ -180,6 +180,7 @@ console.log(`Finished: ${execution.stoppedAt}`);
 모든 워크플로우를 조회합니다.
 
 **Parameters:**
+
 ```typescript
 interface GetWorkflowsOptions {
   filter?: {
@@ -196,6 +197,7 @@ interface GetWorkflowsOptions {
 ```
 
 **Example:**
+
 ```typescript
 const activeWorkflows = await client.getWorkflows({
   filter: { active: true },
@@ -209,6 +211,7 @@ const activeWorkflows = await client.getWorkflows({
 특정 워크플로우를 ID로 조회합니다.
 
 **Example:**
+
 ```typescript
 const workflow = await client.getWorkflow('abc123');
 console.log(workflow.name);
@@ -219,6 +222,7 @@ console.log(workflow.name);
 새 워크플로우를 생성합니다.
 
 **Parameters:**
+
 ```typescript
 interface CreateWorkflowData {
   name: string;
@@ -231,6 +235,7 @@ interface CreateWorkflowData {
 ```
 
 **Example:**
+
 ```typescript
 const workflow = await client.createWorkflow({
   name: 'Data Sync Workflow',
@@ -256,6 +261,7 @@ const workflow = await client.createWorkflow({
 기존 워크플로우를 수정합니다.
 
 **Example:**
+
 ```typescript
 const updated = await client.updateWorkflow('abc123', {
   name: 'Updated Workflow Name',
@@ -268,6 +274,7 @@ const updated = await client.updateWorkflow('abc123', {
 워크플로우를 삭제합니다.
 
 **Example:**
+
 ```typescript
 await client.deleteWorkflow('abc123');
 ```
@@ -277,6 +284,7 @@ await client.deleteWorkflow('abc123');
 워크플로우를 실행합니다.
 
 **Example:**
+
 ```typescript
 const execution = await client.executeWorkflow('abc123', {
   userId: '12345',
@@ -293,6 +301,7 @@ console.log(`Started execution: ${execution.id}`);
 실행 내역을 조회합니다.
 
 **Parameters:**
+
 ```typescript
 interface GetExecutionsOptions {
   workflowId?: string;
@@ -305,6 +314,7 @@ interface GetExecutionsOptions {
 ```
 
 **Example:**
+
 ```typescript
 const recentExecutions = await client.getExecutions({
   workflowId: 'abc123',
@@ -319,6 +329,7 @@ const recentExecutions = await client.getExecutions({
 특정 실행 내역을 조회합니다.
 
 **Example:**
+
 ```typescript
 const execution = await client.getExecution('exec-123');
 
@@ -332,6 +343,7 @@ if (execution.status === 'error') {
 실행 중인 워크플로우를 중지합니다.
 
 **Example:**
+
 ```typescript
 await client.stopExecution('exec-123');
 ```
@@ -341,6 +353,7 @@ await client.stopExecution('exec-123');
 실패한 실행을 재시도합니다.
 
 **Example:**
+
 ```typescript
 const retried = await client.retryExecution('exec-123');
 console.log(`Retry execution ID: ${retried.id}`);
@@ -353,6 +366,7 @@ console.log(`Retry execution ID: ${retried.id}`);
 모든 인증 정보를 조회합니다.
 
 **Example:**
+
 ```typescript
 const credentials = await client.getCredentials();
 ```
@@ -362,6 +376,7 @@ const credentials = await client.getCredentials();
 새 인증 정보를 생성합니다.
 
 **Example:**
+
 ```typescript
 const credential = await client.createCredential({
   name: 'My API Key',
@@ -470,9 +485,11 @@ export function handleApiError(error: any): {
     },
   };
 
-  return errorMap[error.code] || {
-    message: error.message,
-  };
+  return (
+    errorMap[error.code] || {
+      message: error.message,
+    }
+  );
 }
 
 // 사용
@@ -666,9 +683,7 @@ export class ClientRateLimiter {
 const limiter = new ClientRateLimiter(5, 200);
 
 const workflows = await Promise.all(
-  workflowIds.map(id =>
-    limiter.execute(() => client.getWorkflow(id))
-  )
+  workflowIds.map((id) => limiter.execute(() => client.getWorkflow(id)))
 );
 ```
 
@@ -825,8 +840,7 @@ export function useCreateWorkflow() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateWorkflowData) =>
-      getN8nClient().createWorkflow(data),
+    mutationFn: (data: CreateWorkflowData) => getN8nClient().createWorkflow(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
     },
@@ -898,10 +912,7 @@ export function useExecution(id: string) {
     refetchInterval: (query) => {
       const execution = query.state.data;
 
-      if (
-        execution?.status === 'running' ||
-        execution?.status === 'waiting'
-      ) {
+      if (execution?.status === 'running' || execution?.status === 'waiting') {
         return 2000; // 2초마다 폴링
       }
 
@@ -973,7 +984,7 @@ export async function batchGetWorkflows(
 }
 
 // 사용
-const workflowIds = ['id1', 'id2', 'id3', /* ... */];
+const workflowIds = ['id1', 'id2', 'id3' /* ... */];
 const workflows = await batchGetWorkflows(workflowIds, 5);
 ```
 
@@ -1016,9 +1027,7 @@ export class N8nApiClient {
     (config: RequestConfig) => RequestConfig | Promise<RequestConfig>
   > = [];
 
-  private responseInterceptors: Array<
-    (response: any) => any | Promise<any>
-  > = [];
+  private responseInterceptors: Array<(response: any) => any | Promise<any>> = [];
 
   addRequestInterceptor(
     interceptor: (config: RequestConfig) => RequestConfig | Promise<RequestConfig>
@@ -1026,15 +1035,11 @@ export class N8nApiClient {
     this.requestInterceptors.push(interceptor);
   }
 
-  addResponseInterceptor(
-    interceptor: (response: any) => any | Promise<any>
-  ) {
+  addResponseInterceptor(interceptor: (response: any) => any | Promise<any>) {
     this.responseInterceptors.push(interceptor);
   }
 
-  private async executeRequestInterceptors(
-    config: RequestConfig
-  ): Promise<RequestConfig> {
+  private async executeRequestInterceptors(config: RequestConfig): Promise<RequestConfig> {
     let modifiedConfig = config;
 
     for (const interceptor of this.requestInterceptors) {
@@ -1130,9 +1135,7 @@ export class ConnectionPool {
 // 사용
 const pool = new ConnectionPool(10);
 
-const workflow = await pool.execute((client) =>
-  client.getWorkflow('workflow-id')
-);
+const workflow = await pool.execute((client) => client.getWorkflow('workflow-id'));
 ```
 
 ---
@@ -1242,10 +1245,7 @@ describe('N8nApiClient', () => {
       });
 
       // 2개 요청은 즉시 실행
-      await Promise.all([
-        client.getWorkflows(),
-        client.getWorkflows(),
-      ]);
+      await Promise.all([client.getWorkflows(), client.getWorkflows()]);
 
       expect(global.fetch).toHaveBeenCalledTimes(2);
 
@@ -1299,10 +1299,7 @@ describe('N8nApiClient Integration', () => {
     // 3. 실행 완료 대기
     let executionStatus = await client.getExecution(execution.id);
 
-    while (
-      executionStatus.status === 'running' ||
-      executionStatus.status === 'waiting'
-    ) {
+    while (executionStatus.status === 'running' || executionStatus.status === 'waiting') {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       executionStatus = await client.getExecution(execution.id);
     }
@@ -1341,9 +1338,7 @@ vi.mock('@/lib/n8n/client', () => ({
 }));
 
 // 테스트에서
-mockN8nClient.getWorkflows.mockResolvedValue([
-  { id: '1', name: 'Test Workflow', active: true },
-]);
+mockN8nClient.getWorkflows.mockResolvedValue([{ id: '1', name: 'Test Workflow', active: true }]);
 ```
 
 ---

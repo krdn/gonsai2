@@ -323,7 +323,8 @@ jobs:
   send-notification:
     name: Send Notification
     runs-on: ubuntu-latest
-    needs: [check-n8n-api, verify-workflows, check-database, check-disk-usage, check-memory, auto-fix]
+    needs:
+      [check-n8n-api, verify-workflows, check-database, check-disk-usage, check-memory, auto-fix]
     if: always()
     steps:
       - name: Generate health report

@@ -93,8 +93,8 @@ function setupEventListeners(wsClient: N8nWebSocketClient): void {
     console.log(`   상태: ${execution.status}`);
 
     if (execution.finishedAt) {
-      const duration = new Date(execution.finishedAt).getTime() -
-                      new Date(execution.startedAt).getTime();
+      const duration =
+        new Date(execution.finishedAt).getTime() - new Date(execution.startedAt).getTime();
       console.log(`   실행 시간: ${duration}ms`);
     }
 
@@ -117,12 +117,17 @@ function setupEventListeners(wsClient: N8nWebSocketClient): void {
 /**
  * 워크플로우 실행 트리거 (테스트용)
  */
-async function triggerTestWorkflow(restClient: ReturnType<typeof createN8nClient>): Promise<string | null> {
+async function triggerTestWorkflow(
+  restClient: ReturnType<typeof createN8nClient>
+): Promise<string | null> {
   try {
     // 활성화된 워크플로우 목록 조회
     const workflows = await restClient.workflows.getAll({ active: true });
-    const workflowList = Array.isArray(workflows.data) ? workflows.data :
-                        workflows.data ? [workflows.data] : [];
+    const workflowList = Array.isArray(workflows.data)
+      ? workflows.data
+      : workflows.data
+        ? [workflows.data]
+        : [];
 
     if (workflowList.length === 0) {
       log('warning', '활성화된 워크플로우가 없습니다');
@@ -148,7 +153,6 @@ async function triggerTestWorkflow(restClient: ReturnType<typeof createN8nClient
 
     log('success', `실행 시작됨: ${execution.id}`);
     return execution.id;
-
   } catch (error) {
     log('error', `워크플로우 실행 실패: ${error instanceof Error ? error.message : error}`);
     return null;
@@ -232,7 +236,9 @@ async function runWebSocketTest(): Promise<void> {
     const countEvent = () => {
       eventCount++;
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      process.stdout.write(`\r${colors.cyan}경과 시간: ${elapsed}초 | 수신 이벤트: ${eventCount}개${colors.reset}`);
+      process.stdout.write(
+        `\r${colors.cyan}경과 시간: ${elapsed}초 | 수신 이벤트: ${eventCount}개${colors.reset}`
+      );
     };
 
     // 모든 이벤트에 대해 카운터 증가

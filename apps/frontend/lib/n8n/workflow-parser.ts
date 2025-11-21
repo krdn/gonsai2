@@ -68,7 +68,7 @@ class WorkflowParser {
   private static countNodeTypes(nodes: WorkflowNode[]): Map<string, number> {
     const counts = new Map<string, number>();
 
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       const baseType = node.type.split('.').pop() || node.type;
       counts.set(baseType, (counts.get(baseType) || 0) + 1);
     });
@@ -82,19 +82,17 @@ class WorkflowParser {
   private static findStartNodes(workflow: Workflow): string[] {
     const hasIncoming = new Set<string>();
 
-    Object.values(workflow.connections).forEach(connections => {
-      Object.values(connections).forEach(connectionList => {
-        connectionList.forEach(list => {
-          list.forEach(conn => {
+    Object.values(workflow.connections).forEach((connections) => {
+      Object.values(connections).forEach((connectionList) => {
+        connectionList.forEach((list) => {
+          list.forEach((conn) => {
             hasIncoming.add(conn.node);
           });
         });
       });
     });
 
-    return workflow.nodes
-      .filter(node => !hasIncoming.has(node.id))
-      .map(node => node.id);
+    return workflow.nodes.filter((node) => !hasIncoming.has(node.id)).map((node) => node.id);
   }
 
   /**
@@ -103,9 +101,7 @@ class WorkflowParser {
   private static findEndNodes(workflow: Workflow): string[] {
     const hasOutgoing = new Set(Object.keys(workflow.connections));
 
-    return workflow.nodes
-      .filter(node => !hasOutgoing.has(node.id))
-      .map(node => node.id);
+    return workflow.nodes.filter((node) => !hasOutgoing.has(node.id)).map((node) => node.id);
   }
 
   /**
@@ -116,9 +112,9 @@ class WorkflowParser {
   ): number {
     let count = 0;
 
-    Object.values(connections).forEach(nodeConnections => {
-      Object.values(nodeConnections).forEach(connectionList => {
-        connectionList.forEach(list => {
+    Object.values(connections).forEach((nodeConnections) => {
+      Object.values(nodeConnections).forEach((connectionList) => {
+        connectionList.forEach((list) => {
           count += list.length;
         });
       });
@@ -137,9 +133,9 @@ class WorkflowParser {
 
     // Detect branches (nodes with multiple outgoing connections)
     let branchCount = 0;
-    Object.values(workflow.connections).forEach(nodeConnections => {
-      Object.values(nodeConnections).forEach(connectionList => {
-        connectionList.forEach(list => {
+    Object.values(workflow.connections).forEach((nodeConnections) => {
+      Object.values(nodeConnections).forEach((connectionList) => {
+        connectionList.forEach((list) => {
           if (list.length > 1) {
             branchCount += list.length - 1;
           }
@@ -151,12 +147,7 @@ class WorkflowParser {
     const loopCount = this.detectLoops(workflow);
 
     // Complexity formula: weighted sum
-    return (
-      nodeCount * 1 +
-      connectionCount * 0.5 +
-      branchCount * 2 +
-      loopCount * 3
-    );
+    return nodeCount * 1 + connectionCount * 0.5 + branchCount * 2 + loopCount * 3;
   }
 
   /**
@@ -173,9 +164,9 @@ class WorkflowParser {
 
       const nodeConnections = workflow.connections[nodeId];
       if (nodeConnections) {
-        Object.values(nodeConnections).forEach(connectionList => {
-          connectionList.forEach(list => {
-            list.forEach(conn => {
+        Object.values(nodeConnections).forEach((connectionList) => {
+          connectionList.forEach((list) => {
+            list.forEach((conn) => {
               if (!visited.has(conn.node)) {
                 dfs(conn.node);
               } else if (recursionStack.has(conn.node)) {
@@ -190,7 +181,7 @@ class WorkflowParser {
     };
 
     const startNodes = this.findStartNodes(workflow);
-    startNodes.forEach(nodeId => {
+    startNodes.forEach((nodeId) => {
       if (!visited.has(nodeId)) {
         dfs(nodeId);
       }
@@ -219,7 +210,7 @@ class WorkflowParser {
 
     let totalDuration = 0;
 
-    workflow.nodes.forEach(node => {
+    workflow.nodes.forEach((node) => {
       const baseType = node.type.split('.').pop() || 'default';
       const duration = nodeTypeDurations[baseType] || nodeTypeDurations.default;
 
@@ -253,30 +244,30 @@ class WorkflowParser {
 
     // Check for disconnected nodes
     const connectedNodes = new Set<string>();
-    Object.keys(workflow.connections).forEach(nodeId => connectedNodes.add(nodeId));
-    Object.values(workflow.connections).forEach(nodeConnections => {
-      Object.values(nodeConnections).forEach(connectionList => {
-        connectionList.forEach(list => {
-          list.forEach(conn => connectedNodes.add(conn.node));
+    Object.keys(workflow.connections).forEach((nodeId) => connectedNodes.add(nodeId));
+    Object.values(workflow.connections).forEach((nodeConnections) => {
+      Object.values(nodeConnections).forEach((connectionList) => {
+        connectionList.forEach((list) => {
+          list.forEach((conn) => connectedNodes.add(conn.node));
         });
       });
     });
 
-    const disconnected = workflow.nodes.filter(node => !connectedNodes.has(node.id));
+    const disconnected = workflow.nodes.filter((node) => !connectedNodes.has(node.id));
     if (disconnected.length > 0 && workflow.nodes.length > 1) {
-      errors.push(`Disconnected nodes found: ${disconnected.map(n => n.id).join(', ')}`);
+      errors.push(`Disconnected nodes found: ${disconnected.map((n) => n.id).join(', ')}`);
     }
 
     // Check for invalid connections
-    const nodeIds = new Set(workflow.nodes.map(n => n.id));
+    const nodeIds = new Set(workflow.nodes.map((n) => n.id));
     Object.entries(workflow.connections).forEach(([sourceId, connections]) => {
       if (!nodeIds.has(sourceId)) {
         errors.push(`Connection source node not found: ${sourceId}`);
       }
 
-      Object.values(connections).forEach(connectionList => {
-        connectionList.forEach(list => {
-          list.forEach(conn => {
+      Object.values(connections).forEach((connectionList) => {
+        connectionList.forEach((list) => {
+          list.forEach((conn) => {
             if (!nodeIds.has(conn.node)) {
               errors.push(`Connection target node not found: ${conn.node}`);
             }

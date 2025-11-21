@@ -60,14 +60,7 @@ export default defineConfig({
     coverage: {
       provider: 'c8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'test/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/mockData',
-        '**/.next',
-      ],
+      exclude: ['node_modules/', 'test/', '**/*.d.ts', '**/*.config.*', '**/mockData', '**/.next'],
       thresholds: {
         lines: 80,
         functions: 80,
@@ -277,9 +270,7 @@ describe('N8nApiClient', () => {
       });
 
       await expect(client.getWorkflow('invalid-id')).rejects.toThrow(ApiError);
-      await expect(client.getWorkflow('invalid-id')).rejects.toThrow(
-        'Workflow not found'
-      );
+      await expect(client.getWorkflow('invalid-id')).rejects.toThrow('Workflow not found');
     });
 
     it('should handle network errors', async () => {
@@ -517,8 +508,7 @@ describe('Workflow Execution Flow', () => {
     const maxAttempts = 30;
 
     while (
-      (executionStatus.status === 'running' ||
-        executionStatus.status === 'waiting') &&
+      (executionStatus.status === 'running' || executionStatus.status === 'waiting') &&
       attempts < maxAttempts
     ) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -669,9 +659,7 @@ test.describe('Workflows', () => {
     await page.click('button:has-text("저장")');
 
     // 성공 메시지 확인
-    await expect(page.locator('[role="status"]')).toContainText(
-      '워크플로우가 생성되었습니다'
-    );
+    await expect(page.locator('[role="status"]')).toContainText('워크플로우가 생성되었습니다');
 
     // 워크플로우 목록에서 확인
     await page.goto('/workflows');
@@ -688,17 +676,13 @@ test.describe('Workflows', () => {
     await workflowCard.locator('button:has-text("실행")').click();
 
     // 실행 성공 메시지 확인
-    await expect(page.locator('[role="status"]')).toContainText(
-      '워크플로우가 실행되었습니다'
-    );
+    await expect(page.locator('[role="status"]')).toContainText('워크플로우가 실행되었습니다');
 
     // 실행 내역 페이지로 이동
     await page.click('a:has-text("실행 내역")');
 
     // 실행 내역 확인
-    await expect(
-      page.locator('[data-testid="execution-row"]').first()
-    ).toBeVisible();
+    await expect(page.locator('[data-testid="execution-row"]').first()).toBeVisible();
   });
 
   test('should delete a workflow', async ({ page }) => {
@@ -706,9 +690,7 @@ test.describe('Workflows', () => {
 
     // 첫 번째 워크플로우 카드
     const workflowCard = page.locator('[data-testid="workflow-card"]').first();
-    const workflowName = await workflowCard
-      .locator('h3')
-      .textContent();
+    const workflowName = await workflowCard.locator('h3').textContent();
 
     // 더보기 메뉴 클릭
     await workflowCard.locator('[aria-label="More options"]').click();
@@ -720,9 +702,7 @@ test.describe('Workflows', () => {
     await page.click('button:has-text("확인")');
 
     // 삭제 성공 메시지 확인
-    await expect(page.locator('[role="status"]')).toContainText(
-      '워크플로우가 삭제되었습니다'
-    );
+    await expect(page.locator('[role="status"]')).toContainText('워크플로우가 삭제되었습니다');
 
     // 워크플로우가 목록에서 사라졌는지 확인
     await expect(page.locator(`text=${workflowName}`)).not.toBeVisible();
@@ -975,9 +955,7 @@ describe('N8nApiClient with MSW', () => {
   it('should handle 404 errors', async () => {
     const client = getN8nClient();
 
-    await expect(client.getWorkflow('invalid')).rejects.toThrow(
-      'Workflow not found'
-    );
+    await expect(client.getWorkflow('invalid')).rejects.toThrow('Workflow not found');
   });
 
   it('should handle rate limit errors', async () => {
@@ -1144,19 +1122,13 @@ export default defineConfig({
   test: {
     coverage: {
       thresholds: {
-        lines: 80,        // 라인 커버리지 80%
-        functions: 80,    // 함수 커버리지 80%
-        branches: 80,     // 분기 커버리지 80%
-        statements: 80,   // 구문 커버리지 80%
+        lines: 80, // 라인 커버리지 80%
+        functions: 80, // 함수 커버리지 80%
+        branches: 80, // 분기 커버리지 80%
+        statements: 80, // 구문 커버리지 80%
       },
       // 특정 파일/폴더 제외
-      exclude: [
-        'node_modules/',
-        'test/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/mockData',
-      ],
+      exclude: ['node_modules/', 'test/', '**/*.d.ts', '**/*.config.*', '**/mockData'],
     },
   },
 });

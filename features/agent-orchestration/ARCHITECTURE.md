@@ -59,6 +59,7 @@ n8n 워크플로우 기반 AI Agent 실행 엔진의 전체 아키텍처와 사�
 **역할**: 고수준 Agent 관리 및 실행 조정
 
 **주요 메서드**:
+
 - `loadWorkflows()`: 워크플로우 목록 로드
 - `getWorkflow(id)`: 특정 워크플로우 조회
 - `identifyAINodes(id)`: AI 노드 식별
@@ -76,7 +77,7 @@ n8n 워크플로우 기반 AI Agent 실행 엔진의 전체 아키텍처와 사�
 **우선순위 설정**:
 
 | Priority | Bull Priority | Attempts | Backoff Strategy |
-|----------|---------------|----------|------------------|
+| -------- | ------------- | -------- | ---------------- |
 | urgent   | 1             | 5        | Exponential (2s) |
 | high     | 2             | 3        | Exponential (5s) |
 | normal   | 5             | 2        | Fixed (10s)      |
@@ -89,6 +90,7 @@ n8n 워크플로우 기반 AI Agent 실행 엔진의 전체 아키텍처와 사�
 **역할**: n8n REST API 통합
 
 **주요 메서드**:
+
 - `getWorkflows()`: 워크플로우 목록
 - `executeWorkflow(id, data)`: 워크플로우 실행
 - `getExecution(id)`: 실행 상태 조회
@@ -136,8 +138,8 @@ const result = await agentManager.executeAndWait({
   priority: 'urgent',
   inputData: { query: 'Process immediately' },
   options: {
-    timeout: 60000,        // 1분 타임아웃
-    waitForExecution: true // 완료 대기
+    timeout: 60000, // 1분 타임아웃
+    waitForExecution: true, // 완료 대기
   },
 });
 
@@ -256,20 +258,22 @@ redis-cli
 
 ```javascript
 // 최근 실행 기록
-db.executions.find().sort({ createdAt: -1 }).limit(10)
+db.executions.find().sort({ createdAt: -1 }).limit(10);
 
 // 실패한 실행
-db.executions.find({ status: 'failed' })
+db.executions.find({ status: 'failed' });
 
 // 실행 시간 통계
 db.executions.aggregate([
   { $match: { status: 'success' } },
-  { $group: {
-    _id: '$workflowId',
-    avgTime: { $avg: '$executionTime' },
-    count: { $sum: 1 }
-  }}
-])
+  {
+    $group: {
+      _id: '$workflowId',
+      avgTime: { $avg: '$executionTime' },
+      count: { $sum: 1 },
+    },
+  },
+]);
 ```
 
 ## 문제 해결

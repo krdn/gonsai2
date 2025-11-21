@@ -109,14 +109,10 @@ test.describe('Workflow Execution Flow', () => {
       await expect(firstExecution).toBeVisible();
 
       // Check for status badge
-      await expect(
-        firstExecution.locator('[data-testid="execution-status-badge"]')
-      ).toBeVisible();
+      await expect(firstExecution.locator('[data-testid="execution-status-badge"]')).toBeVisible();
 
       // Check for execution time
-      await expect(
-        firstExecution.locator('[data-testid="execution-time"]')
-      ).toBeVisible();
+      await expect(firstExecution.locator('[data-testid="execution-time"]')).toBeVisible();
     }
   });
 
@@ -140,9 +136,7 @@ test.describe('Workflow Execution Flow', () => {
     const count = await executions.count();
 
     for (let i = 0; i < count; i++) {
-      const statusBadge = executions
-        .nth(i)
-        .locator('[data-testid="execution-status-badge"]');
+      const statusBadge = executions.nth(i).locator('[data-testid="execution-status-badge"]');
       await expect(statusBadge).toContainText(/success/i);
     }
   });
@@ -162,20 +156,12 @@ test.describe('Workflow Execution Flow', () => {
       await executions.first().click();
 
       // Verify execution details page
-      await expect(
-        page.locator('[data-testid="execution-details"]')
-      ).toBeVisible();
+      await expect(page.locator('[data-testid="execution-details"]')).toBeVisible();
 
       // Check for execution metadata
-      await expect(
-        page.locator('[data-testid="execution-id"]')
-      ).toBeVisible();
-      await expect(
-        page.locator('[data-testid="execution-workflow"]')
-      ).toBeVisible();
-      await expect(
-        page.locator('[data-testid="execution-duration"]')
-      ).toBeVisible();
+      await expect(page.locator('[data-testid="execution-id"]')).toBeVisible();
+      await expect(page.locator('[data-testid="execution-workflow"]')).toBeVisible();
+      await expect(page.locator('[data-testid="execution-duration"]')).toBeVisible();
     }
   });
 
@@ -237,9 +223,7 @@ test.describe('Workflow Execution Flow', () => {
 
     if (await pagination.isVisible()) {
       // Get current page number
-      const currentPage = page.locator(
-        '[data-testid="current-page"]'
-      );
+      const currentPage = page.locator('[data-testid="current-page"]');
       const initialPage = await currentPage.textContent();
 
       // Click next page
@@ -256,9 +240,7 @@ test.describe('Workflow Execution Flow', () => {
 });
 
 test.describe('Workflow Real-time Updates', () => {
-  test('should receive real-time execution updates via WebSocket', async ({
-    page,
-  }) => {
+  test('should receive real-time execution updates via WebSocket', async ({ page }) => {
     await page.goto('/workflows');
 
     // Create and execute workflow
@@ -285,9 +267,7 @@ test.describe('Workflow Real-time Updates', () => {
     // Wait for execution updates via WebSocket
     await page.waitForFunction(
       () => {
-        const status = document.querySelector(
-          '[data-testid="execution-status"]'
-        );
+        const status = document.querySelector('[data-testid="execution-status"]');
         return status?.textContent?.match(/success|error|completed/i);
       },
       { timeout: 30000 }
@@ -313,9 +293,7 @@ test.describe('Workflow Accessibility', () => {
     await page.goto('/workflows');
 
     // Check for ARIA labels on key elements
-    await expect(
-      page.locator('[aria-label="Create new workflow"]')
-    ).toBeVisible();
+    await expect(page.locator('[aria-label="Create new workflow"]')).toBeVisible();
     await expect(page.locator('[aria-label="Search workflows"]')).toBeVisible();
   });
 });

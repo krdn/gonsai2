@@ -349,10 +349,7 @@ export class N8nErrorAnalyzer {
   /**
    * 근본 원인 분석
    */
-  private analyzeRootCause(
-    executionError: N8nExecutionError,
-    patterns: ErrorPattern[]
-  ): string {
+  private analyzeRootCause(executionError: N8nExecutionError, patterns: ErrorPattern[]): string {
     if (patterns.length === 0) {
       return `노드 ${executionError.nodeName}에서 알 수 없는 오류 발생`;
     }

@@ -35,14 +35,14 @@ Complete performance optimization system for n8n workflow management with Redis 
 
 Based on benchmark results with typical workloads:
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Workflow list load | 450ms | 12ms | **97.3%** |
-| Workflow details | 120ms | 3ms | **97.5%** |
-| Execution history | 280ms | 8ms | **97.1%** |
-| API response time | 65ms | 5ms | **92.3%** |
-| Cache hit rate | 0% | 95%+ | **N/A** |
-| Database queries | 85ms | 15ms | **82.4%** |
+| Metric             | Before | After | Improvement |
+| ------------------ | ------ | ----- | ----------- |
+| Workflow list load | 450ms  | 12ms  | **97.3%**   |
+| Workflow details   | 120ms  | 3ms   | **97.5%**   |
+| Execution history  | 280ms  | 8ms   | **97.1%**   |
+| API response time  | 65ms   | 5ms   | **92.3%**   |
+| Cache hit rate     | 0%     | 95%+  | **N/A**     |
+| Database queries   | 85ms   | 15ms  | **82.4%**   |
 
 ---
 
@@ -159,6 +159,7 @@ ts-node infrastructure/optimization/config/optimize-database.ts
 Apply settings from `infrastructure/optimization/config/n8n-optimization.json` to your `docker-compose.yml` or `.env` file.
 
 Key settings:
+
 ```yaml
 EXECUTIONS_MODE=queue
 QUEUE_BULL_REDIS_HOST=redis
@@ -225,6 +226,7 @@ const hitRate = await WorkflowCache.getHitRate();
 **Purpose**: Cache execution results to reduce database queries for completed executions.
 
 **TTL**:
+
 - Success: 1 hour
 - Error: 30 minutes
 - Running: 5 minutes
@@ -243,7 +245,7 @@ await ExecutionCache.set(executionId, {
   workflowId,
   status: 'success',
   startedAt: new Date().toISOString(),
-  duration: 1234
+  duration: 1234,
 });
 
 // Get executions by workflow
@@ -300,7 +302,7 @@ import SessionStore from '@/infrastructure/optimization/cache/session-store';
 const sessionId = await SessionStore.create({
   userId: 'user123',
   email: 'user@example.com',
-  role: 'admin'
+  role: 'admin',
 });
 
 // Get session
@@ -308,7 +310,7 @@ const session = await SessionStore.get(sessionId);
 
 // Update session
 await SessionStore.update(sessionId, {
-  lastPage: '/workflows'
+  lastPage: '/workflows',
 });
 
 // Destroy session
@@ -339,7 +341,7 @@ services:
     image: docker.n8n.io/n8nio/n8n:latest
     command: worker --concurrency=5
     deploy:
-      replicas: 3  # Scale to 3 workers
+      replicas: 3 # Scale to 3 workers
 ```
 
 ### 2. Parallel Execution
@@ -471,16 +473,13 @@ ts-node infrastructure/optimization/config/optimize-database.ts
 **Before** (slow):
 
 ```javascript
-db.executions.find({ status: 'error' })
+db.executions.find({ status: 'error' });
 ```
 
 **After** (fast with index):
 
 ```javascript
-db.executions
-  .find({ status: 'error' })
-  .sort({ startedAt: -1 })
-  .limit(100)
+db.executions.find({ status: 'error' }).sort({ startedAt: -1 }).limit(100);
 ```
 
 ### 4. Aggregation Pipelines
@@ -490,16 +489,20 @@ db.executions
 ```javascript
 db.executions.aggregate([
   { $match: { finishedAt: { $exists: true } } },
-  { $group: {
+  {
+    $group: {
       _id: '$workflowId',
       total: { $sum: 1 },
       success: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } },
-      avgDuration: { $avg: '$duration' }
-  }},
-  { $project: {
-      successRate: { $multiply: [{ $divide: ['$success', '$total'] }, 100] }
-  }}
-])
+      avgDuration: { $avg: '$duration' },
+    },
+  },
+  {
+    $project: {
+      successRate: { $multiply: [{ $divide: ['$success', '$total'] }, 100] },
+    },
+  },
+]);
 ```
 
 ---
@@ -569,7 +572,7 @@ import { calculateVirtualList } from '@/infrastructure/optimization/config/front
 const { startIndex, endIndex, offsetY } = calculateVirtualList(scrollTop, totalItems, {
   itemHeight: 60,
   containerHeight: 800,
-  overscan: 3
+  overscan: 3,
 });
 
 // Render only visible items
@@ -583,10 +586,7 @@ const visibleItems = items.slice(startIndex, endIndex + 1);
 ```typescript
 import { requestDeduplicator } from '@/infrastructure/optimization/config/frontend-optimization';
 
-const workflows = await requestDeduplicator.dedupe(
-  'workflows-list',
-  () => fetchWorkflows()
-);
+const workflows = await requestDeduplicator.dedupe('workflows-list', () => fetchWorkflows());
 ```
 
 ### 6. Local Storage Caching
@@ -615,20 +615,13 @@ const preferences = CachedStorage.get('user-preferences');
 import PerformanceTracker from '@/infrastructure/optimization/monitoring/performance-tracker';
 
 // Track workflow execution
-await PerformanceTracker.trackExecution(
-  workflowId,
-  executionId,
-  duration,
-  { status: 'success', nodes: 5 }
-);
+await PerformanceTracker.trackExecution(workflowId, executionId, duration, {
+  status: 'success',
+  nodes: 5,
+});
 
 // Track API calls
-await PerformanceTracker.trackApiCall(
-  '/api/v1/workflows',
-  'GET',
-  responseTime,
-  200
-);
+await PerformanceTracker.trackApiCall('/api/v1/workflows', 'GET', responseTime, 200);
 
 // Track memory
 await PerformanceTracker.trackMemory();
@@ -643,7 +636,7 @@ await PerformanceTracker.trackCache('workflow-cache', hits, misses);
 
 ```typescript
 const report = await PerformanceTracker.generateReport(
-  Date.now() - 24 * 60 * 60 * 1000,  // Last 24 hours
+  Date.now() - 24 * 60 * 60 * 1000, // Last 24 hours
   Date.now()
 );
 
@@ -815,15 +808,15 @@ CACHE_SESSION_TTL=604800
 
 ```typescript
 // Workflow cache
-WorkflowCache.WORKFLOW_TTL = 600;  // 10 minutes
-WorkflowCache.LIST_TTL = 300;      // 5 minutes
+WorkflowCache.WORKFLOW_TTL = 600; // 10 minutes
+WorkflowCache.LIST_TTL = 300; // 5 minutes
 
 // Execution cache
-ExecutionCache.TTL_SUCCESS = 7200;  // 2 hours
-ExecutionCache.TTL_ERROR = 3600;    // 1 hour
+ExecutionCache.TTL_SUCCESS = 7200; // 2 hours
+ExecutionCache.TTL_ERROR = 3600; // 1 hour
 
 // API cache
-ApiCache.DEFAULT_TTL = 600;  // 10 minutes
+ApiCache.DEFAULT_TTL = 600; // 10 minutes
 ```
 
 ---
@@ -916,11 +909,11 @@ mongosh --eval "db.system.profile.find().sort({ts:-1}).limit(5)"
 services:
   n8n-worker:
     deploy:
-      replicas: 5  # Increase from 3
+      replicas: 5 # Increase from 3
 
-# Increase concurrency per worker
+    # Increase concurrency per worker
     environment:
-      - N8N_CONCURRENCY_PRODUCTION_LIMIT=15  # Increase from 10
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=15 # Increase from 10
 ```
 
 ### 6. Frontend Still Slow
@@ -989,10 +982,13 @@ if (process.env.NODE_ENV === 'production') {
   PerformanceTracker.startAutoTracking(60000);
 
   // Generate daily reports
-  setInterval(async () => {
-    const report = await PerformanceTracker.generateReport();
-    // Send to monitoring service
-  }, 24 * 60 * 60 * 1000);
+  setInterval(
+    async () => {
+      const report = await PerformanceTracker.generateReport();
+      // Send to monitoring service
+    },
+    24 * 60 * 60 * 1000
+  );
 }
 ```
 
@@ -1007,8 +1003,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G  # Based on actual usage
-          cpus: "2.0"
+          memory: 2G # Based on actual usage
+          cpus: '2.0'
 ```
 
 ### 4. Gradual Rollout

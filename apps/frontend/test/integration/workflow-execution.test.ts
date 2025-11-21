@@ -220,7 +220,7 @@ describe('Workflow Execution Integration', () => {
       const execResult = await client.executeWorkflow(testWorkflowId);
 
       // Wait for execution to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get execution details
       const execution = await client.getExecution(execResult.executionId);
@@ -236,7 +236,7 @@ describe('Workflow Execution Integration', () => {
       await client.executeWorkflow(testWorkflowId);
 
       // Wait for executions to complete
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // List executions
       const executions = await client.getExecutions({
@@ -244,7 +244,7 @@ describe('Workflow Execution Integration', () => {
       });
 
       expect(executions.length).toBeGreaterThanOrEqual(2);
-      executions.forEach(exec => {
+      executions.forEach((exec) => {
         expect(exec.workflowId).toBe(testWorkflowId);
       });
     });
@@ -254,7 +254,7 @@ describe('Workflow Execution Integration', () => {
       await client.executeWorkflow(testWorkflowId);
 
       // Wait for execution to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get successful executions
       const successExecutions = await client.getExecutions({
@@ -262,7 +262,7 @@ describe('Workflow Execution Integration', () => {
         status: 'success',
       });
 
-      successExecutions.forEach(exec => {
+      successExecutions.forEach((exec) => {
         expect(exec.status).toBe('success');
       });
     });

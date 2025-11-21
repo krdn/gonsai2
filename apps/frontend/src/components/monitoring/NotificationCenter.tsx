@@ -110,10 +110,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
 
           {/* Panel */}
           <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg border border-gray-200 shadow-2xl z-50 max-h-[600px] flex flex-col">
@@ -138,9 +135,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
                   </button>
                 </div>
               </div>
-              <div className="text-sm text-gray-500 mt-1">
-                {notifications.length}개의 알림
-              </div>
+              <div className="text-sm text-gray-500 mt-1">{notifications.length}개의 알림</div>
             </div>
 
             {/* Notification List */}
@@ -163,9 +158,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
                           <div className="text-sm font-semibold text-gray-900 mb-1">
                             {notification.title}
                           </div>
-                          <div className="text-sm text-gray-700 mb-2">
-                            {notification.message}
-                          </div>
+                          <div className="text-sm text-gray-700 mb-2">{notification.message}</div>
                           <div className="flex items-center justify-between">
                             <div className="text-xs text-gray-500">
                               {formatDistanceToNow(new Date(notification.timestamp), {

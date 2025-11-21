@@ -10,11 +10,7 @@ export const metadata: Metadata = {
   description: 'AI-powered workflow automation platform',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <body className={inter.className}>

@@ -46,13 +46,20 @@ export function TriggerNode({ data }: NodeProps<TriggerNodeData>) {
         <div className="mt-2 pt-2 border-t border-gray-200">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">상태:</span>
-            <span className={`font-semibold ${
-              data.executionStatus === 'success' ? 'text-green-600' :
-              data.executionStatus === 'error' ? 'text-red-600' :
-              'text-blue-600'
-            }`}>
-              {data.executionStatus === 'success' ? '성공' :
-               data.executionStatus === 'error' ? '실패' : '실행 중'}
+            <span
+              className={`font-semibold ${
+                data.executionStatus === 'success'
+                  ? 'text-green-600'
+                  : data.executionStatus === 'error'
+                    ? 'text-red-600'
+                    : 'text-blue-600'
+              }`}
+            >
+              {data.executionStatus === 'success'
+                ? '성공'
+                : data.executionStatus === 'error'
+                  ? '실패'
+                  : '실행 중'}
             </span>
           </div>
           {data.executionTime && (

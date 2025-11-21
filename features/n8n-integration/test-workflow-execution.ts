@@ -50,8 +50,8 @@ function logSection(title: string): void {
  * 워크플로우 실행 결과 출력
  */
 function printExecutionResult(execution: WorkflowExecution): void {
-  const statusIcon = execution.status === 'success' ? '✅' :
-                     execution.status === 'error' ? '❌' : '⏳';
+  const statusIcon =
+    execution.status === 'success' ? '✅' : execution.status === 'error' ? '❌' : '⏳';
 
   console.log(`\n${colors.cyan}실행 결과:${colors.reset}`);
   console.log(`   상태: ${statusIcon} ${execution.status}`);
@@ -61,8 +61,8 @@ function printExecutionResult(execution: WorkflowExecution): void {
   console.log(`   시작 시간: ${new Date(execution.startedAt).toLocaleString('ko-KR')}`);
 
   if (execution.finishedAt) {
-    const duration = new Date(execution.finishedAt).getTime() -
-                    new Date(execution.startedAt).getTime();
+    const duration =
+      new Date(execution.finishedAt).getTime() - new Date(execution.startedAt).getTime();
     console.log(`   종료 시간: ${new Date(execution.finishedAt).toLocaleString('ko-KR')}`);
     console.log(`   실행 시간: ${colors.cyan}${duration}ms${colors.reset}`);
   }
@@ -135,12 +135,17 @@ async function runWorkflowTest(): Promise<void> {
     logSection('1. 워크플로우 목록 조회');
 
     const workflows = await client.workflows.getAll({ active: true });
-    const workflowList = Array.isArray(workflows.data) ? workflows.data :
-                        workflows.data ? [workflows.data] : [];
+    const workflowList = Array.isArray(workflows.data)
+      ? workflows.data
+      : workflows.data
+        ? [workflows.data]
+        : [];
 
     if (workflowList.length === 0) {
       log('warning', '활성화된 워크플로우가 없습니다');
-      console.log(`\n${colors.yellow}n8n UI에서 워크플로우를 생성하고 활성화하세요:${colors.reset}`);
+      console.log(
+        `\n${colors.yellow}n8n UI에서 워크플로우를 생성하고 활성화하세요:${colors.reset}`
+      );
       console.log(`   http://localhost:5678`);
       process.exit(0);
     }
@@ -150,8 +155,8 @@ async function runWorkflowTest(): Promise<void> {
     // 워크플로우 목록 출력
     console.log(`\n${colors.cyan}활성 워크플로우:${colors.reset}`);
     workflowList.forEach((wf: any, index: number) => {
-      const trigger = wf.nodes?.find((n: any) =>
-        n.type.includes('trigger') || n.type.includes('webhook')
+      const trigger = wf.nodes?.find(
+        (n: any) => n.type.includes('trigger') || n.type.includes('webhook')
       );
       const triggerType = trigger ? trigger.type.split('.').pop() : '알 수 없음';
 
@@ -177,16 +182,19 @@ async function runWorkflowTest(): Promise<void> {
       log('info', `지정된 워크플로우: ${selectedWorkflow.name}`);
     } else {
       // 첫 번째 수동 실행 가능한 워크플로우 선택
-      selectedWorkflow = workflowList.find((wf: any) => {
-        const hasManualTrigger = wf.nodes?.some((n: any) =>
-          n.type.includes('manualTrigger') || !n.type.includes('trigger')
-        );
-        return hasManualTrigger;
-      }) || workflowList[0];
+      selectedWorkflow =
+        workflowList.find((wf: any) => {
+          const hasManualTrigger = wf.nodes?.some(
+            (n: any) => n.type.includes('manualTrigger') || !n.type.includes('trigger')
+          );
+          return hasManualTrigger;
+        }) || workflowList[0];
 
       log('info', `자동 선택: ${selectedWorkflow.name}`);
       console.log(`\n${colors.yellow}💡 Tip: 특정 워크플로우 실행하려면:${colors.reset}`);
-      console.log(`   npx ts-node features/n8n-integration/test-workflow-execution.ts <workflow-id>`);
+      console.log(
+        `   npx ts-node features/n8n-integration/test-workflow-execution.ts <workflow-id>`
+      );
     }
 
     // 3. 워크플로우 실행
@@ -209,10 +217,7 @@ async function runWorkflowTest(): Promise<void> {
     console.log(`\n${colors.cyan}입력 데이터:${colors.reset}`);
     console.log(JSON.stringify(testData, null, 2));
 
-    const execution = await client.executions.execute(
-      selectedWorkflow.id,
-      testData
-    );
+    const execution = await client.executions.execute(selectedWorkflow.id, testData);
 
     log('success', `실행 시작됨: ${execution.id}`);
 
@@ -232,13 +237,10 @@ async function runWorkflowTest(): Promise<void> {
     }, 1000);
 
     try {
-      const completedExecution = await client.executions.waitForCompletion(
-        execution.id,
-        {
-          maxWaitMs: 60000,      // 60초
-          pollIntervalMs: 2000,  // 2초마다 확인
-        }
-      );
+      const completedExecution = await client.executions.waitForCompletion(execution.id, {
+        maxWaitMs: 60000, // 60초
+        pollIntervalMs: 2000, // 2초마다 확인
+      });
 
       clearInterval(pollInterval);
       process.stdout.write('\r' + ' '.repeat(50) + '\r'); // 진행 표시 지우기
@@ -261,17 +263,18 @@ async function runWorkflowTest(): Promise<void> {
       logSection('6. 결과 검증');
 
       const isSuccess = completedExecution.status === 'success';
-      const hasOutput = completedExecution.data?.resultData?.runData &&
-                       Object.keys(completedExecution.data.resultData.runData).length > 0;
+      const hasOutput =
+        completedExecution.data?.resultData?.runData &&
+        Object.keys(completedExecution.data.resultData.runData).length > 0;
 
-      log(isSuccess ? 'success' : 'error',
-          `실행 상태: ${completedExecution.status}`);
-      log(hasOutput ? 'success' : 'warning',
-          `출력 데이터: ${hasOutput ? '있음' : '없음'}`);
+      log(isSuccess ? 'success' : 'error', `실행 상태: ${completedExecution.status}`);
+      log(hasOutput ? 'success' : 'warning', `출력 데이터: ${hasOutput ? '있음' : '없음'}`);
 
       if (!isSuccess) {
         console.log(`\n${colors.yellow}워크플로우 디버깅:${colors.reset}`);
-        console.log(`1. n8n UI에서 워크플로우 열기: http://localhost:5678/workflow/${selectedWorkflow.id}`);
+        console.log(
+          `1. n8n UI에서 워크플로우 열기: http://localhost:5678/workflow/${selectedWorkflow.id}`
+        );
         console.log(`2. 실행 내역 확인: http://localhost:5678/executions`);
         console.log(`3. 각 노드의 입력/출력 데이터 확인`);
       }
@@ -281,11 +284,12 @@ async function runWorkflowTest(): Promise<void> {
 
       console.log(`워크플로우: ${colors.magenta}${selectedWorkflow.name}${colors.reset}`);
       console.log(`실행 ID: ${colors.cyan}${execution.id}${colors.reset}`);
-      console.log(`상태: ${isSuccess ? colors.green : colors.red}${completedExecution.status}${colors.reset}`);
+      console.log(
+        `상태: ${isSuccess ? colors.green : colors.red}${completedExecution.status}${colors.reset}`
+      );
       console.log(`실행 시간: ${totalTime}ms`);
 
       process.exit(isSuccess ? 0 : 1);
-
     } catch (error) {
       clearInterval(pollInterval);
       process.stdout.write('\r' + ' '.repeat(50) + '\r');
@@ -299,7 +303,6 @@ async function runWorkflowTest(): Promise<void> {
 
       throw error;
     }
-
   } catch (error) {
     log('error', `테스트 실패: ${error instanceof Error ? error.message : error}`);
 

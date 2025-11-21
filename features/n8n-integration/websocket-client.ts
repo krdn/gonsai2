@@ -271,9 +271,7 @@ export class N8nWebSocketClient extends EventEmitter {
  * @aiContext
  * Convenience factory for creating WebSocket clients.
  */
-export function createWebSocketClient(
-  config?: Partial<N8nWebSocketConfig>
-): N8nWebSocketClient {
+export function createWebSocketClient(config?: Partial<N8nWebSocketConfig>): N8nWebSocketClient {
   return new N8nWebSocketClient({
     baseUrl: config?.baseUrl ?? process.env.N8N_API_URL ?? '',
     sessionId: config?.sessionId ?? crypto.randomUUID(),

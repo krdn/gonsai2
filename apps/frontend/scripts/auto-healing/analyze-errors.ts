@@ -89,83 +89,83 @@ interface PriorityFix {
 
 const ERROR_CATEGORIES: Record<string, ErrorCategory> = {
   // MongoDB 관련
-  'MongoNetworkError': {
+  MongoNetworkError: {
     category: 'database',
     subcategory: 'connection',
     severity: 'critical',
-    description: 'MongoDB 네트워크 연결 오류'
+    description: 'MongoDB 네트워크 연결 오류',
   },
-  'MongoServerError': {
+  MongoServerError: {
     category: 'database',
     subcategory: 'query',
     severity: 'high',
-    description: 'MongoDB 서버 오류'
+    description: 'MongoDB 서버 오류',
   },
-  'MongoTimeoutError': {
+  MongoTimeoutError: {
     category: 'database',
     subcategory: 'performance',
     severity: 'high',
-    description: 'MongoDB 타임아웃'
+    description: 'MongoDB 타임아웃',
   },
 
   // HTTP 관련
-  'ECONNREFUSED': {
+  ECONNREFUSED: {
     category: 'network',
     subcategory: 'connection_refused',
     severity: 'high',
-    description: 'HTTP 연결 거부'
+    description: 'HTTP 연결 거부',
   },
-  'ETIMEDOUT': {
+  ETIMEDOUT: {
     category: 'network',
     subcategory: 'timeout',
     severity: 'medium',
-    description: 'HTTP 타임아웃'
+    description: 'HTTP 타임아웃',
   },
-  'ENOTFOUND': {
+  ENOTFOUND: {
     category: 'network',
     subcategory: 'dns',
     severity: 'high',
-    description: 'DNS 조회 실패'
+    description: 'DNS 조회 실패',
   },
 
   // 인증 관련
-  'Unauthorized': {
+  Unauthorized: {
     category: 'authentication',
     subcategory: 'credentials',
     severity: 'high',
-    description: '인증 실패'
+    description: '인증 실패',
   },
-  'Forbidden': {
+  Forbidden: {
     category: 'authentication',
     subcategory: 'permissions',
     severity: 'high',
-    description: '권한 부족'
+    description: '권한 부족',
   },
   'Invalid credentials': {
     category: 'authentication',
     subcategory: 'credentials',
     severity: 'high',
-    description: '잘못된 자격 증명'
+    description: '잘못된 자격 증명',
   },
 
   // 데이터 관련
-  'ValidationError': {
+  ValidationError: {
     category: 'data',
     subcategory: 'validation',
     severity: 'medium',
-    description: '데이터 검증 실패'
+    description: '데이터 검증 실패',
   },
-  'TypeError': {
+  TypeError: {
     category: 'data',
     subcategory: 'type',
     severity: 'medium',
-    description: '타입 오류'
+    description: '타입 오류',
   },
   'JSON parse error': {
     category: 'data',
     subcategory: 'parsing',
     severity: 'medium',
-    description: 'JSON 파싱 오류'
+    description: 'JSON 파싱 오류',
   },
 
   // 워크플로우 관련
@@ -173,13 +173,13 @@ const ERROR_CATEGORIES: Record<string, ErrorCategory> = {
     category: 'workflow',
     subcategory: 'structure',
     severity: 'high',
-    description: '노드를 찾을 수 없음'
+    description: '노드를 찾을 수 없음',
   },
   'Missing parameter': {
     category: 'workflow',
     subcategory: 'configuration',
     severity: 'medium',
-    description: '필수 파라미터 누락'
+    description: '필수 파라미터 누락',
   },
 
   // 리소스 관련
@@ -187,13 +187,13 @@ const ERROR_CATEGORIES: Record<string, ErrorCategory> = {
     category: 'resources',
     subcategory: 'memory',
     severity: 'critical',
-    description: '메모리 부족'
+    description: '메모리 부족',
   },
   'Disk full': {
     category: 'resources',
     subcategory: 'disk',
     severity: 'critical',
-    description: '디스크 공간 부족'
+    description: '디스크 공간 부족',
   },
 
   // 기타
@@ -201,8 +201,8 @@ const ERROR_CATEGORIES: Record<string, ErrorCategory> = {
     category: 'unknown',
     subcategory: 'general',
     severity: 'low',
-    description: '알 수 없는 오류'
-  }
+    description: '알 수 없는 오류',
+  },
 };
 
 // ============================================================================
@@ -226,7 +226,7 @@ function categorizeError(errorMessage: string): ErrorCategory {
       category: 'database',
       subcategory: 'general',
       severity: 'high',
-      description: 'Database related error'
+      description: 'Database related error',
     };
   }
 
@@ -235,7 +235,7 @@ function categorizeError(errorMessage: string): ErrorCategory {
       category: 'network',
       subcategory: 'general',
       severity: 'high',
-      description: 'Network related error'
+      description: 'Network related error',
     };
   }
 
@@ -244,7 +244,7 @@ function categorizeError(errorMessage: string): ErrorCategory {
       category: 'authentication',
       subcategory: 'general',
       severity: 'high',
-      description: 'Authentication related error'
+      description: 'Authentication related error',
     };
   }
 
@@ -253,7 +253,7 @@ function categorizeError(errorMessage: string): ErrorCategory {
       category: 'data',
       subcategory: 'general',
       severity: 'medium',
-      description: 'Data related error'
+      description: 'Data related error',
     };
   }
 
@@ -262,7 +262,7 @@ function categorizeError(errorMessage: string): ErrorCategory {
       category: 'workflow',
       subcategory: 'general',
       severity: 'medium',
-      description: 'Workflow related error'
+      description: 'Workflow related error',
     };
   }
 
@@ -271,7 +271,7 @@ function categorizeError(errorMessage: string): ErrorCategory {
       category: 'resources',
       subcategory: 'general',
       severity: 'critical',
-      description: 'Resource related error'
+      description: 'Resource related error',
     };
   }
 
@@ -298,7 +298,7 @@ function calculateImpactScore(
     critical: 30,
     high: 20,
     medium: 10,
-    low: 5
+    low: 5,
   };
   const severityScore = severityScores[severity] || 0;
 
@@ -359,34 +359,21 @@ function estimateEffort(
  */
 function canAutoFix(category: ErrorCategory): boolean {
   // 자동 수정 가능한 카테고리
-  const autoFixable = [
-    'workflow',
-    'configuration',
-    'data'
-  ];
+  const autoFixable = ['workflow', 'configuration', 'data'];
 
   // 자동 수정 불가능한 서브카테고리
-  const nonAutoFixable = [
-    'permissions',
-    'memory',
-    'disk'
-  ];
+  const nonAutoFixable = ['permissions', 'memory', 'disk'];
 
-  return (
-    autoFixable.includes(category.category) &&
-    !nonAutoFixable.includes(category.subcategory)
-  );
+  return autoFixable.includes(category.category) && !nonAutoFixable.includes(category.subcategory);
 }
 
 /**
  * 수정 권장사항 생성
  */
-function generateRecommendation(
-  errorPattern: string,
-  category: ErrorCategory
-): string {
+function generateRecommendation(errorPattern: string, category: ErrorCategory): string {
   const recommendations: Record<string, string> = {
-    'database:connection': 'MongoDB 연결 설정을 확인하고 재시작하세요. 네트워크 연결 및 방화벽 설정을 점검하세요.',
+    'database:connection':
+      'MongoDB 연결 설정을 확인하고 재시작하세요. 네트워크 연결 및 방화벽 설정을 점검하세요.',
     'database:query': 'MongoDB 쿼리 성능을 확인하고 인덱스를 최적화하세요.',
     'database:performance': 'MongoDB 타임아웃 설정을 늘리거나 쿼리 성능을 개선하세요.',
     'network:connection_refused': '대상 서비스가 실행 중인지 확인하고 네트워크 연결을 점검하세요.',
@@ -400,7 +387,7 @@ function generateRecommendation(
     'workflow:structure': '워크플로우 구조를 확인하고 누락된 노드를 추가하세요.',
     'workflow:configuration': '노드 설정에서 필수 파라미터를 입력하세요.',
     'resources:memory': '메모리 사용량을 확인하고 서버 리소스를 늘리세요.',
-    'resources:disk': '디스크 공간을 확보하세요.'
+    'resources:disk': '디스크 공간을 확보하세요.',
   };
 
   const key = `${category.category}:${category.subcategory}`;
@@ -427,40 +414,41 @@ async function analyzeErrors(errorLogPath: string): Promise<AnalysisResult> {
         high_count: 0,
         medium_count: 0,
         low_count: 0,
-        analysis_timestamp: new Date().toISOString()
+        analysis_timestamp: new Date().toISOString(),
       },
       categorized_errors: [],
       priority_fixes: [],
-      recommendations: ['No errors detected. System is healthy.']
+      recommendations: ['No errors detected. System is healthy.'],
     };
   }
 
   // 모든 패턴 수집
-  const allPatterns = new Map<string, {
-    pattern: ErrorPattern;
-    first_seen: string;
-    last_seen: string;
-  }>();
+  const allPatterns = new Map<
+    string,
+    {
+      pattern: ErrorPattern;
+      first_seen: string;
+      last_seen: string;
+    }
+  >();
 
-  errorLogs.forEach(log => {
-    log.patterns.forEach(pattern => {
+  errorLogs.forEach((log) => {
+    log.patterns.forEach((pattern) => {
       const existing = allPatterns.get(pattern.error);
       if (existing) {
         // 기존 패턴 업데이트
         existing.pattern.count += pattern.count;
         existing.pattern.workflows = [
-          ...new Set([...existing.pattern.workflows, ...pattern.workflows])
+          ...new Set([...existing.pattern.workflows, ...pattern.workflows]),
         ];
-        existing.pattern.nodes = [
-          ...new Set([...existing.pattern.nodes, ...pattern.nodes])
-        ];
+        existing.pattern.nodes = [...new Set([...existing.pattern.nodes, ...pattern.nodes])];
         existing.last_seen = log.timestamp;
       } else {
         // 새 패턴 추가
         allPatterns.set(pattern.error, {
           pattern: { ...pattern },
           first_seen: log.timestamp,
-          last_seen: log.timestamp
+          last_seen: log.timestamp,
         });
       }
     });
@@ -489,7 +477,7 @@ async function analyzeErrors(errorLogPath: string): Promise<AnalysisResult> {
       affected_nodes: data.pattern.nodes,
       impact_score: impactScore,
       first_seen: data.first_seen,
-      last_seen: data.last_seen
+      last_seen: data.last_seen,
     });
 
     // 심각도별 카운트
@@ -513,20 +501,18 @@ async function analyzeErrors(errorLogPath: string): Promise<AnalysisResult> {
   categorizedErrors.sort((a, b) => b.impact_score - a.impact_score);
 
   // 우선순위 수정 목록 생성 (상위 10개)
-  const priorityFixes: PriorityFix[] = categorizedErrors
-    .slice(0, 10)
-    .map((error, index) => ({
-      rank: index + 1,
-      error_pattern: error.pattern,
-      category: error.category.category,
-      severity: error.category.severity,
-      frequency: error.frequency,
-      impact_score: error.impact_score,
-      fix_type: determineFixType(error.category),
-      estimated_effort: estimateEffort(error.category, error.affected_workflows.length),
-      automated_fix_available: canAutoFix(error.category),
-      recommendation: generateRecommendation(error.pattern, error.category)
-    }));
+  const priorityFixes: PriorityFix[] = categorizedErrors.slice(0, 10).map((error, index) => ({
+    rank: index + 1,
+    error_pattern: error.pattern,
+    category: error.category.category,
+    severity: error.category.severity,
+    frequency: error.frequency,
+    impact_score: error.impact_score,
+    fix_type: determineFixType(error.category),
+    estimated_effort: estimateEffort(error.category, error.affected_workflows.length),
+    automated_fix_available: canAutoFix(error.category),
+    recommendation: generateRecommendation(error.pattern, error.category),
+  }));
 
   // 전체 권장사항 생성
   const recommendations: string[] = [];
@@ -544,16 +530,14 @@ async function analyzeErrors(errorLogPath: string): Promise<AnalysisResult> {
   }
 
   // 자동 수정 가능한 항목
-  const autoFixableCount = priorityFixes.filter(f => f.automated_fix_available).length;
+  const autoFixableCount = priorityFixes.filter((f) => f.automated_fix_available).length;
   if (autoFixableCount > 0) {
-    recommendations.push(
-      `✅ ${autoFixableCount}개의 오류는 자동 수정이 가능합니다.`
-    );
+    recommendations.push(`✅ ${autoFixableCount}개의 오류는 자동 수정이 가능합니다.`);
   }
 
   // 카테고리별 통계
   const categoryStats = new Map<string, number>();
-  categorizedErrors.forEach(error => {
+  categorizedErrors.forEach((error) => {
     const count = categoryStats.get(error.category.category) || 0;
     categoryStats.set(error.category.category, count + 1);
   });
@@ -571,11 +555,11 @@ async function analyzeErrors(errorLogPath: string): Promise<AnalysisResult> {
       high_count: highCount,
       medium_count: mediumCount,
       low_count: lowCount,
-      analysis_timestamp: new Date().toISOString()
+      analysis_timestamp: new Date().toISOString(),
     },
     categorized_errors: categorizedErrors,
     priority_fixes: priorityFixes,
-    recommendations
+    recommendations,
   };
 
   return result;
@@ -617,9 +601,11 @@ async function main() {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎯 Top Priority Fixes');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    result.priority_fixes.slice(0, 5).forEach(fix => {
+    result.priority_fixes.slice(0, 5).forEach((fix) => {
       console.log(`\n${fix.rank}. ${fix.error_pattern}`);
-      console.log(`   Severity: ${fix.severity} | Frequency: ${fix.frequency} | Impact: ${fix.impact_score}`);
+      console.log(
+        `   Severity: ${fix.severity} | Frequency: ${fix.frequency} | Impact: ${fix.impact_score}`
+      );
       console.log(`   Fix Type: ${fix.fix_type} | Effort: ${fix.estimated_effort}`);
       console.log(`   Auto-fix: ${fix.automated_fix_available ? '✅ Yes' : '❌ No'}`);
       console.log(`   → ${fix.recommendation}`);
@@ -628,7 +614,7 @@ async function main() {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('💡 Recommendations');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    result.recommendations.forEach(rec => {
+    result.recommendations.forEach((rec) => {
       console.log(`• ${rec}`);
     });
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

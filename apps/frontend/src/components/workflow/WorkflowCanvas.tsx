@@ -14,7 +14,11 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import { nodeTypes } from './nodes';
-import { convertWorkflowToFlow, updateNodesWithExecutionStatus, updateEdgesWithExecutionPath } from '@/lib/workflow-utils';
+import {
+  convertWorkflowToFlow,
+  updateNodesWithExecutionStatus,
+  updateEdgesWithExecutionPath,
+} from '@/lib/workflow-utils';
 import type { N8nWorkflow, WorkflowExecution } from '@/types/workflow';
 
 interface WorkflowCanvasProps {
@@ -104,43 +108,63 @@ export function WorkflowCanvas({
         />
 
         {/* Workflow info panel */}
-        <Panel position="top-left" className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3">
+        <Panel
+          position="top-left"
+          className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3"
+        >
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-gray-900">{workflow.name}</h3>
             <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span className={`inline-block w-2 h-2 rounded-full ${
-                workflow.active ? 'bg-green-500' : 'bg-gray-400'
-              }`} />
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${
+                  workflow.active ? 'bg-green-500' : 'bg-gray-400'
+                }`}
+              />
               <span>{workflow.active ? '활성화' : '비활성화'}</span>
             </div>
-            <div className="text-xs text-gray-500">
-              노드: {workflow.nodes.length}개
-            </div>
+            <div className="text-xs text-gray-500">노드: {workflow.nodes.length}개</div>
           </div>
         </Panel>
 
         {/* Execution status panel */}
         {executionData && (
-          <Panel position="top-right" className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3">
+          <Panel
+            position="top-right"
+            className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3"
+          >
             <div className="space-y-1">
               <div className="text-xs font-semibold text-gray-700">실행 상태</div>
               <div className="flex items-center gap-2">
-                <span className={`inline-block w-2 h-2 rounded-full ${
-                  executionData.status === 'success' ? 'bg-green-500' :
-                  executionData.status === 'error' ? 'bg-red-500' :
-                  executionData.status === 'running' ? 'bg-blue-500 animate-pulse' :
-                  'bg-gray-400'
-                }`} />
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    executionData.status === 'success'
+                      ? 'bg-green-500'
+                      : executionData.status === 'error'
+                        ? 'bg-red-500'
+                        : executionData.status === 'running'
+                          ? 'bg-blue-500 animate-pulse'
+                          : 'bg-gray-400'
+                  }`}
+                />
                 <span className="text-xs font-semibold">
-                  {executionData.status === 'success' ? '성공' :
-                   executionData.status === 'error' ? '실패' :
-                   executionData.status === 'running' ? '실행 중' :
-                   executionData.status}
+                  {executionData.status === 'success'
+                    ? '성공'
+                    : executionData.status === 'error'
+                      ? '실패'
+                      : executionData.status === 'running'
+                        ? '실행 중'
+                        : executionData.status}
                 </span>
               </div>
               {executionData.stoppedAt && executionData.startedAt && (
                 <div className="text-xs text-gray-600">
-                  실행 시간: {Math.round((new Date(executionData.stoppedAt).getTime() - new Date(executionData.startedAt).getTime()) / 1000)}초
+                  실행 시간:{' '}
+                  {Math.round(
+                    (new Date(executionData.stoppedAt).getTime() -
+                      new Date(executionData.startedAt).getTime()) /
+                      1000
+                  )}
+                  초
                 </div>
               )}
             </div>

@@ -89,7 +89,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
     ports:
-      - "3001:3000"
+      - '3001:3000'
     deploy:
       resources:
         limits:
@@ -102,7 +102,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
     ports:
-      - "3002:3000"
+      - '3002:3000'
     deploy:
       resources:
         limits:
@@ -115,7 +115,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
     ports:
-      - "3003:3000"
+      - '3003:3000'
     deploy:
       resources:
         limits:
@@ -125,8 +125,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
@@ -221,7 +221,7 @@ metadata:
   labels:
     app: nextjs
 spec:
-  replicas: 3  # 초기 인스턴스 수
+  replicas: 3 # 초기 인스턴스 수
   selector:
     matchLabels:
       app: nextjs
@@ -231,42 +231,42 @@ spec:
         app: nextjs
     spec:
       containers:
-      - name: nextjs
-        image: your-registry/nextjs-app:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: MONGODB_URI
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: mongodb-uri
-        - name: REDIS_URL
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: redis-url
-        resources:
-          requests:
-            cpu: 500m
-            memory: 512Mi
-          limits:
-            cpu: 1000m
-            memory: 1Gi
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: nextjs
+          image: your-registry/nextjs-app:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-uri
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-url
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 
 ---
 apiVersion: v1
@@ -277,9 +277,9 @@ spec:
   selector:
     app: nextjs
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
   type: LoadBalancer
 
 ---
@@ -295,34 +295,34 @@ spec:
   minReplicas: 3
   maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 300
       policies:
-      - type: Percent
-        value: 50
-        periodSeconds: 60
+        - type: Percent
+          value: 50
+          periodSeconds: 60
     scaleUp:
       stabilizationWindowSeconds: 0
       policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 30
-      - type: Pods
-        value: 2
-        periodSeconds: 30
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
 ```
 
 ### 2. n8n 워크플로우 스케일링
@@ -344,7 +344,7 @@ services:
       - DB_POSTGRESDB_HOST=postgres
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
     ports:
-      - "5678:5678"
+      - '5678:5678'
     depends_on:
       - postgres
       - redis
@@ -420,7 +420,7 @@ kind: Deployment
 metadata:
   name: n8n-worker
 spec:
-  replicas: 5  # Worker 수
+  replicas: 5 # Worker 수
   selector:
     matchLabels:
       app: n8n-worker
@@ -430,26 +430,26 @@ spec:
         app: n8n-worker
     spec:
       containers:
-      - name: n8n-worker
-        image: n8nio/n8n:latest
-        command: ["n8n", "worker"]
-        env:
-        - name: EXECUTIONS_MODE
-          value: "queue"
-        - name: QUEUE_BULL_REDIS_HOST
-          value: redis-service
-        - name: N8N_ENCRYPTION_KEY
-          valueFrom:
-            secretKeyRef:
-              name: n8n-secrets
-              key: encryption-key
-        resources:
-          requests:
-            cpu: 500m
-            memory: 1Gi
-          limits:
-            cpu: 2000m
-            memory: 2Gi
+        - name: n8n-worker
+          image: n8nio/n8n:latest
+          command: ['n8n', 'worker']
+          env:
+            - name: EXECUTIONS_MODE
+              value: 'queue'
+            - name: QUEUE_BULL_REDIS_HOST
+              value: redis-service
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-secrets
+                  key: encryption-key
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
 
 ---
 apiVersion: autoscaling/v2
@@ -464,20 +464,20 @@ spec:
   minReplicas: 3
   maxReplicas: 20
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 75
-  # 큐 길이 기반 스케일링 (커스텀 메트릭)
-  - type: Pods
-    pods:
-      metric:
-        name: queue_length
-      target:
-        type: AverageValue
-        averageValue: "10"
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+    # 큐 길이 기반 스케일링 (커스텀 메트릭)
+    - type: Pods
+      pods:
+        metric:
+          name: queue_length
+        target:
+          type: AverageValue
+          averageValue: '10'
 ```
 
 ### 3. MongoDB 레플리카 세트
@@ -491,7 +491,7 @@ services:
     image: mongo:7
     command: mongod --replSet rs0 --bind_ip_all
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo-primary-data:/data/db
     environment:
@@ -502,7 +502,7 @@ services:
     image: mongo:7
     command: mongod --replSet rs0 --bind_ip_all
     ports:
-      - "27018:27017"
+      - '27018:27017'
     volumes:
       - mongo-secondary-1-data:/data/db
     environment:
@@ -515,7 +515,7 @@ services:
     image: mongo:7
     command: mongod --replSet rs0 --bind_ip_all
     ports:
-      - "27019:27017"
+      - '27019:27017'
     volumes:
       - mongo-secondary-2-data:/data/db
     environment:
@@ -586,7 +586,7 @@ services:
     image: redis:7-alpine
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-master-data:/data
 
@@ -594,7 +594,7 @@ services:
     image: redis:7-alpine
     command: redis-server --appendonly yes --replicaof redis-master 6379 --masterauth ${REDIS_PASSWORD} --requirepass ${REDIS_PASSWORD}
     ports:
-      - "6380:6379"
+      - '6380:6379'
     volumes:
       - redis-replica-1-data:/data
     depends_on:
@@ -604,7 +604,7 @@ services:
     image: redis:7-alpine
     command: redis-server --appendonly yes --replicaof redis-master 6379 --masterauth ${REDIS_PASSWORD} --requirepass ${REDIS_PASSWORD}
     ports:
-      - "6381:6379"
+      - '6381:6379'
     volumes:
       - redis-replica-2-data:/data
     depends_on:
@@ -814,8 +814,7 @@ export async function createScalingPolicy() {
       TargetTrackingConfiguration: {
         PredefinedMetricSpecification: {
           PredefinedMetricType: 'ALBRequestCountPerTarget',
-          ResourceLabel:
-            'app/nextjs-lb/xxx/targetgroup/nextjs-tg/yyy',
+          ResourceLabel: 'app/nextjs-lb/xxx/targetgroup/nextjs-tg/yyy',
         },
         TargetValue: 1000.0,
       },
@@ -927,7 +926,7 @@ export const options = {
   ],
   thresholds: {
     http_req_duration: ['p(95)<500'], // 95% 요청이 500ms 이하
-    http_req_failed: ['rate<0.01'],   // 에러율 1% 미만
+    http_req_failed: ['rate<0.01'], // 에러율 1% 미만
   },
 };
 
@@ -979,16 +978,13 @@ import { logger } from '@/lib/logging/logger';
 
 export class BottleneckDetector {
   private thresholds = {
-    database: 100,    // 100ms
-    api: 200,         // 200ms
-    cache: 10,        // 10ms
-    rendering: 50,    // 50ms
+    database: 100, // 100ms
+    api: 200, // 200ms
+    cache: 10, // 10ms
+    rendering: 50, // 50ms
   };
 
-  async measureDatabaseQuery<T>(
-    operation: string,
-    fn: () => Promise<T>
-  ): Promise<T> {
+  async measureDatabaseQuery<T>(operation: string, fn: () => Promise<T>): Promise<T> {
     const start = performance.now();
 
     try {
@@ -1009,10 +1005,7 @@ export class BottleneckDetector {
     }
   }
 
-  async measureApiCall<T>(
-    endpoint: string,
-    fn: () => Promise<T>
-  ): Promise<T> {
+  async measureApiCall<T>(endpoint: string, fn: () => Promise<T>): Promise<T> {
     const start = performance.now();
 
     try {
@@ -1037,12 +1030,9 @@ export class BottleneckDetector {
 // 사용 예시
 const detector = new BottleneckDetector();
 
-const workflows = await detector.measureDatabaseQuery(
-  'getWorkflows',
-  async () => {
-    return await db.collection('workflows').find({}).toArray();
-  }
-);
+const workflows = await detector.measureDatabaseQuery('getWorkflows', async () => {
+  return await db.collection('workflows').find({}).toArray();
+});
 ```
 
 ## 캐싱 전략
@@ -1295,15 +1285,13 @@ const options: MongoClientOptions = {
   compressors: ['zlib'],
 };
 
-export const mongoClient = new MongoClient(
-  process.env.MONGODB_URI!,
-  options
-);
+export const mongoClient = new MongoClient(process.env.MONGODB_URI!, options);
 ```
 
 ## 스케일링 체크리스트
 
 ### 수평 스케일링
+
 - [ ] 로드 밸런서 설정 (Nginx/AWS ELB)
 - [ ] 애플리케이션 인스턴스 복제
 - [ ] 세션 관리 (Redis 또는 JWT)
@@ -1312,18 +1300,21 @@ export const mongoClient = new MongoClient(
 - [ ] 캐시 클러스터 (Redis Cluster)
 
 ### 수직 스케일링
+
 - [ ] CPU/메모리 증설
 - [ ] Node.js 힙 크기 조정
 - [ ] 데이터베이스 인스턴스 업그레이드
 - [ ] 네트워크 대역폭 증설
 
 ### 자동 스케일링
+
 - [ ] HPA (Horizontal Pod Autoscaler) 설정
 - [ ] 메트릭 기반 스케일링 정책
 - [ ] 스케일 업/다운 임계값 정의
 - [ ] 쿨다운 기간 설정
 
 ### 성능 최적화
+
 - [ ] CDN 설정
 - [ ] 다층 캐시 구현
 - [ ] 데이터베이스 인덱스 최적화

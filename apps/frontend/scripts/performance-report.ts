@@ -73,7 +73,6 @@ async function generatePerformanceReport(options: ReportOptions = {}) {
         console.log(markdown);
       }
     }
-
   } catch (error: any) {
     console.error('❌ Error generating performance report:', error.message);
     process.exit(1);
@@ -147,7 +146,9 @@ function displayConsoleReport(report: any): void {
   }
 
   if (report.api.p95 > 1000) {
-    recommendations.push('  ⚠️  P95 API response time is high (>1s), consider caching or optimization');
+    recommendations.push(
+      '  ⚠️  P95 API response time is high (>1s), consider caching or optimization'
+    );
   }
 
   if (report.cache.hitRate < 70) {
@@ -161,7 +162,7 @@ function displayConsoleReport(report: any): void {
   if (recommendations.length === 0) {
     console.log('  ✅ Performance is within acceptable ranges\n');
   } else {
-    recommendations.forEach(rec => console.log(rec));
+    recommendations.forEach((rec) => console.log(rec));
     console.log('');
   }
 
