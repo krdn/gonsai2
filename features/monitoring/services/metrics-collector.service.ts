@@ -138,8 +138,7 @@ export class MetricsCollectorService {
     const totalTokens = promptTokens + completionTokens;
     const costs = AI_MODEL_COSTS[model] || { input: 0, output: 0 };
 
-    const cost =
-      (promptTokens / 1000) * costs.input + (completionTokens / 1000) * costs.output;
+    const cost = (promptTokens / 1000) * costs.input + (completionTokens / 1000) * costs.output;
 
     return {
       model,
@@ -205,10 +204,7 @@ export class MetricsCollectorService {
       const totalDuration = metrics.reduce((sum, m) => sum + m.duration, 0);
       const averageDuration = totalDuration / totalExecutions;
 
-      const totalAITokens = metrics.reduce(
-        (sum, m) => sum + (m.aiTokenUsage?.totalTokens || 0),
-        0
-      );
+      const totalAITokens = metrics.reduce((sum, m) => sum + (m.aiTokenUsage?.totalTokens || 0), 0);
 
       const totalCost = metrics.reduce((sum, m) => sum + (m.aiTokenUsage?.cost || 0), 0);
 
@@ -444,11 +440,7 @@ export class MetricsCollectorService {
         throw new Error('Metrics collection not initialized');
       }
 
-      return await this.metricsCollection
-        .find()
-        .sort({ startedAt: -1 })
-        .limit(limit)
-        .toArray();
+      return await this.metricsCollection.find().sort({ startedAt: -1 }).limit(limit).toArray();
     } catch (error) {
       log.error('Failed to get recent metrics', error);
       throw error;

@@ -6,11 +6,7 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type {
-  N8nWorkflow,
-  WorkflowExecution,
-  WorkflowStatistics,
-} from '@/types/workflow';
+import type { N8nWorkflow, WorkflowExecution, WorkflowStatistics } from '@/types/workflow';
 
 interface WorkflowState {
   // n8n 연결 상태
@@ -52,10 +48,7 @@ interface WorkflowActions {
   addToQueue: (executionId: string) => void;
   removeFromQueue: (executionId: string) => void;
   addRunningExecution: (execution: WorkflowExecution) => void;
-  updateRunningExecution: (
-    executionId: string,
-    execution: Partial<WorkflowExecution>
-  ) => void;
+  updateRunningExecution: (executionId: string, execution: Partial<WorkflowExecution>) => void;
   removeRunningExecution: (executionId: string) => void;
 
   // 실시간 업데이트

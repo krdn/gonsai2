@@ -126,13 +126,14 @@ const MAX_RETRY_ATTEMPTS = 3;
 const API_BASE_URL = 'https://api.example.com';
 
 // ❌ 나쁜 예
-interface user_profile {  // PascalCase 사용
-  ID: string;            // camelCase 사용
+interface user_profile {
+  // PascalCase 사용
+  ID: string; // camelCase 사용
 }
 
 const UserProfile = {}; // camelCase 사용
 function ExecuteWorkflow() {} // camelCase 사용
-const max_retry = 3;    // UPPER_SNAKE_CASE 사용
+const max_retry = 3; // UPPER_SNAKE_CASE 사용
 ```
 
 #### 타입 정의
@@ -146,7 +147,7 @@ function getWorkflow(id: string): Promise<Workflow> {
 
 // 제네릭 타입 활용
 function fetchData<T>(url: string): Promise<T> {
-  return fetch(url).then(res => res.json());
+  return fetch(url).then((res) => res.json());
 }
 
 // Union 타입으로 가능한 값 제한
@@ -160,7 +161,7 @@ function processData(data: any) {
 
 // 암묵적 any
 function getData(url) {
-  return fetch(url).then(res => res.json());
+  return fetch(url).then((res) => res.json());
 }
 ```
 
@@ -336,11 +337,7 @@ export function Button({ children }) {
 ```json
 // .eslintrc.json
 {
-  "extends": [
-    "next/core-web-vitals",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
+  "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended", "prettier"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/explicit-function-return-type": "warn",
@@ -618,8 +615,9 @@ git push origin feature/add-workflow-export
 
 #### 리뷰 코멘트 작성
 
-```markdown
+````markdown
 <!-- ✅ 좋은 코멘트 -->
+
 이 함수가 매우 길어서 이해하기 어렵습니다. 다음과 같이 분리하면 어떨까요?
 
 ```typescript
@@ -629,10 +627,13 @@ function validateWorkflow(workflow: Workflow) {
   validateConnections(workflow.connections);
 }
 ```
+````
 
 <!-- ❌ 나쁜 코멘트 -->
+
 코드가 별로입니다.
-```
+
+````
 
 #### 리뷰 승인 기준
 
@@ -650,7 +651,7 @@ function validateWorkflow(workflow: Workflow) {
 2. 라벨 추가
 3. 프로젝트/마일스톤 연결
 4. Draft → Ready for review
-```
+````
 
 #### 피드백 대응
 

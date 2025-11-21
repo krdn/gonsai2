@@ -88,7 +88,9 @@ export function WorkflowStats({ statistics, className = '' }: WorkflowStatsProps
             <div>
               <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
                 <span>성공 / 실패 비율</span>
-                <span className="font-semibold">{successRate}% / {errorRate}%</span>
+                <span className="font-semibold">
+                  {successRate}% / {errorRate}%
+                </span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
@@ -135,8 +137,12 @@ export function WorkflowStats({ statistics, className = '' }: WorkflowStatsProps
             <div className="text-sm font-semibold text-indigo-900">성능 지표</div>
             <div className="text-xs text-indigo-700">
               {parseFloat(successRate) >= 90 && '🎉 우수: 매우 안정적인 워크플로우입니다'}
-              {parseFloat(successRate) >= 70 && parseFloat(successRate) < 90 && '✅ 양호: 전반적으로 잘 작동하고 있습니다'}
-              {parseFloat(successRate) >= 50 && parseFloat(successRate) < 70 && '⚠️ 주의: 일부 개선이 필요합니다'}
+              {parseFloat(successRate) >= 70 &&
+                parseFloat(successRate) < 90 &&
+                '✅ 양호: 전반적으로 잘 작동하고 있습니다'}
+              {parseFloat(successRate) >= 50 &&
+                parseFloat(successRate) < 70 &&
+                '⚠️ 주의: 일부 개선이 필요합니다'}
               {parseFloat(successRate) < 50 && '❌ 개선 필요: 오류율이 높습니다'}
             </div>
           </div>

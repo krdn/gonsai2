@@ -113,7 +113,7 @@ async function generateFixWithClaude(
   console.log(`\n🤖 Generating fix for: ${fix.error_pattern}`);
 
   const anthropic = new Anthropic({
-    apiKey: ANTHROPIC_API_KEY
+    apiKey: ANTHROPIC_API_KEY,
   });
 
   const prompt = `You are an expert n8n workflow automation engineer. Analyze the following error and generate a fix.
@@ -162,19 +162,17 @@ Format your response as JSON:
       messages: [
         {
           role: 'user',
-          content: prompt
-        }
-      ]
+          content: prompt,
+        },
+      ],
     });
 
     // 응답 파싱
-    const responseText = message.content[0].type === 'text'
-      ? message.content[0].text
-      : '';
+    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
 
     // JSON 추출 (코드 블록에서)
-    const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) ||
-                     responseText.match(/\{[\s\S]*\}/);
+    const jsonMatch =
+      responseText.match(/```json\n([\s\S]*?)\n```/) || responseText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
       console.error('❌ Failed to extract JSON from Claude response');
@@ -191,7 +189,7 @@ Format your response as JSON:
       changes: fixData.changes,
       test_plan: fixData.test_plan,
       rollback_plan: fixData.rollback_plan,
-      estimated_impact: fixData.estimated_impact
+      estimated_impact: fixData.estimated_impact,
     };
 
     console.log(`✅ Fix generated successfully`);
@@ -216,8 +214,8 @@ async function fetchWorkflow(workflowId: string): Promise<any> {
 
   const response = await fetch(`${N8N_URL}/api/v1/workflows/${workflowId}`, {
     headers: {
-      'X-N8N-API-KEY': N8N_API_KEY
-    }
+      'X-N8N-API-KEY': N8N_API_KEY,
+    },
   });
 
   if (!response.ok) {
@@ -236,9 +234,9 @@ async function updateWorkflow(workflowId: string, workflow: any): Promise<void> 
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-N8N-API-KEY': N8N_API_KEY
+      'X-N8N-API-KEY': N8N_API_KEY,
     },
-    body: JSON.stringify(workflow)
+    body: JSON.stringify(workflow),
   });
 
   if (!response.ok) {
@@ -255,10 +253,7 @@ async function applyWorkflowFix(change: Change, backupDir: string): Promise<void
   try {
     // 현재 워크플로우 백업
     const originalWorkflow = await fetchWorkflow(workflowId);
-    const backupPath = path.join(
-      backupDir,
-      `workflow_${workflowId}_${Date.now()}.json`
-    );
+    const backupPath = path.join(backupDir, `workflow_${workflowId}_${Date.now()}.json`);
     fs.writeFileSync(backupPath, JSON.stringify(originalWorkflow, null, 2));
     console.log(`  💾 Backup created: ${backupPath}`);
 
@@ -287,10 +282,7 @@ async function applyConfigurationFix(change: Change, backupDir: string): Promise
   try {
     // 백업 생성
     if (fs.existsSync(configPath)) {
-      const backupPath = path.join(
-        backupDir,
-        `config_${path.basename(configPath)}_${Date.now()}`
-      );
+      const backupPath = path.join(backupDir, `config_${path.basename(configPath)}_${Date.now()}`);
       fs.copyFileSync(configPath, backupPath);
       console.log(`  💾 Backup created: ${backupPath}`);
     }
@@ -323,10 +315,7 @@ async function applyCodeFix(change: Change, backupDir: string): Promise<void> {
   try {
     // 백업 생성
     if (fs.existsSync(codePath)) {
-      const backupPath = path.join(
-        backupDir,
-        `code_${path.basename(codePath)}_${Date.now()}`
-      );
+      const backupPath = path.join(backupDir, `code_${path.basename(codePath)}_${Date.now()}`);
       fs.copyFileSync(codePath, backupPath);
       console.log(`  💾 Backup created: ${backupPath}`);
     }
@@ -402,7 +391,7 @@ async function generateFixes(analysisPath: string): Promise<FixGenerationResult>
       successful_fixes: 0,
       failed_fixes: 0,
       fixes: [],
-      errors: []
+      errors: [],
     };
   }
 
@@ -418,9 +407,7 @@ async function generateFixes(analysisPath: string): Promise<FixGenerationResult>
   let failCount = 0;
 
   // 자동 수정 가능한 항목만 처리 (최대 5개)
-  const autoFixable = analysis.priority_fixes
-    .filter(f => f.automated_fix_available)
-    .slice(0, 5);
+  const autoFixable = analysis.priority_fixes.filter((f) => f.automated_fix_available).slice(0, 5);
 
   console.log(`\n📊 Processing ${autoFixable.length} auto-fixable errors...`);
 
@@ -430,7 +417,7 @@ Total Errors: ${analysis.summary.total_errors}
 Critical: ${analysis.summary.critical_count}
 High: ${analysis.summary.high_count}
 
-Affected Workflows: ${[...new Set(analysis.categorized_errors.flatMap(e => e.affected_workflows))].join(', ')}
+Affected Workflows: ${[...new Set(analysis.categorized_errors.flatMap((e) => e.affected_workflows))].join(', ')}
   `.trim();
 
   for (const priorityFix of autoFixable) {
@@ -462,7 +449,7 @@ Affected Workflows: ${[...new Set(analysis.categorized_errors.flatMap(e => e.aff
     }
 
     // API rate limiting 방지를 위한 대기
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
   const result: FixGenerationResult = {
@@ -471,7 +458,7 @@ Affected Workflows: ${[...new Set(analysis.categorized_errors.flatMap(e => e.aff
     successful_fixes: successCount,
     failed_fixes: failCount,
     fixes,
-    errors
+    errors,
   };
 
   return result;
@@ -509,7 +496,7 @@ async function main() {
 
     if (result.errors.length > 0) {
       console.log('\n❌ Errors:');
-      result.errors.forEach(err => console.log(`  - ${err}`));
+      result.errors.forEach((err) => console.log(`  - ${err}`));
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

@@ -63,6 +63,7 @@ apps/frontend/
 **Location**: `src/stores/workflow-store.ts`
 
 **State**:
+
 - `connected`: n8n/backend 연결 상태
 - `workflows`: 워크플로우 캐시 (Map<string, N8nWorkflow>)
 - `selectedWorkflowId`: 현재 선택된 워크플로우
@@ -72,6 +73,7 @@ apps/frontend/
 - `statistics`: 워크플로우 통계 (Map<string, WorkflowStatistics>)
 
 **Selectors**:
+
 - `useSelectedWorkflow()`: 선택된 워크플로우 반환
 - `useWorkflowList()`: 전체 워크플로우 배열 반환
 - `useRunningExecutionsList()`: 실행 중인 작업 배열 반환
@@ -81,12 +83,14 @@ apps/frontend/
 **Location**: `src/lib/websocket.ts`
 
 **Features**:
+
 - 자동 재연결 (exponential backoff)
 - Heartbeat ping (30초마다)
 - 이벤트 기반 pub/sub 시스템
 - Zustand 스토어 자동 업데이트
 
 **Events**:
+
 - `execution.started`: 실행 시작
 - `execution.finished`: 실행 완료
 - `execution.error`: 실행 오류
@@ -96,6 +100,7 @@ apps/frontend/
 - `connection.established/lost`: WebSocket 연결 상태
 
 **Usage**:
+
 ```typescript
 const wsClient = getWebSocketClient();
 const unsubscribe = wsClient.on('execution.started', (data) => {
@@ -108,6 +113,7 @@ const unsubscribe = wsClient.on('execution.started', (data) => {
 **Location**: `src/lib/api-client.ts`
 
 **Endpoints**:
+
 - Workflows: CRUD, activate/deactivate
 - Executions: execute, retry, stop, list
 - Statistics: per-workflow stats
@@ -115,6 +121,7 @@ const unsubscribe = wsClient.on('execution.started', (data) => {
 - Monitoring: dashboard, realtime, health, alerts
 
 **Usage**:
+
 ```typescript
 import { apiClient } from '@/lib/api-client';
 
@@ -127,12 +134,14 @@ const result = await apiClient.executeWorkflow({ workflowId: 'xxx' });
 **Location**: `src/lib/query-client.ts`
 
 **Configuration**:
+
 - staleTime: 60초
 - gcTime: 5분
 - retry: 1회
 - refetchOnWindowFocus: false
 
 **Usage with API Client**:
+
 ```typescript
 const { data, isLoading } = useQuery({
   queryKey: ['workflows'],
@@ -145,6 +154,7 @@ const { data, isLoading } = useQuery({
 **Location**: `src/types/workflow.ts`
 
 **Key Types**:
+
 - `N8nWorkflow`: 워크플로우 정의
 - `N8nNode`: 워크플로우 노드
 - `N8nConnections`: 노드 간 연결
@@ -159,6 +169,7 @@ const { data, isLoading } = useQuery({
 ### Environment Variables
 
 `.env.local`:
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_WS_URL=ws://localhost:4000
@@ -168,6 +179,7 @@ NEXT_PUBLIC_N8N_URL=http://localhost:5678
 ### Next.js Config
 
 **Key Settings**:
+
 - reactStrictMode: true
 - swcMinify: true
 - Rewrites: `/api/backend/:path*` → backend API proxy
@@ -176,6 +188,7 @@ NEXT_PUBLIC_N8N_URL=http://localhost:5678
 ### Tailwind CSS
 
 **Theme**:
+
 - Dark mode: class-based
 - Color system: CSS custom properties (hsl)
 - Border radius: CSS variable `--radius`
@@ -184,23 +197,28 @@ NEXT_PUBLIC_N8N_URL=http://localhost:5678
 ## Development Workflow
 
 ### 1. Start Development Server
+
 ```bash
 cd apps/frontend
 npm run dev
 ```
+
 → http://localhost:3000
 
 ### 2. Type Check
+
 ```bash
 npm run type-check
 ```
 
 ### 3. Lint
+
 ```bash
 npm run lint
 ```
 
 ### 4. Build
+
 ```bash
 npm run build
 npm start
@@ -213,6 +231,7 @@ npm start
 **Base URL**: `http://localhost:4000`
 
 **API Routes** (Next.js proxy):
+
 ```
 Frontend: /api/backend/:path*
 ↓
@@ -281,11 +300,13 @@ Backend: /api/:path*
 ## Deployment
 
 ### Vercel (Recommended)
+
 ```bash
 vercel deploy
 ```
 
 ### Docker
+
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app

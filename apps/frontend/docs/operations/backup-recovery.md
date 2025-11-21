@@ -154,10 +154,7 @@ export class MongoDBBackupService {
 
       // 변경사항 저장
       await fs.mkdir(backupPath, { recursive: true });
-      await fs.writeFile(
-        path.join(backupPath, 'oplog.json'),
-        JSON.stringify(changes, null, 2)
-      );
+      await fs.writeFile(path.join(backupPath, 'oplog.json'), JSON.stringify(changes, null, 2));
 
       await this.saveMetadata(backupPath, {
         type: 'incremental',
@@ -176,9 +173,7 @@ export class MongoDBBackupService {
   }
 
   // 스냅샷 백업 (특정 컬렉션만)
-  async createCollectionSnapshot(
-    collectionName: string
-  ): Promise<string> {
+  async createCollectionSnapshot(collectionName: string): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupName = `mongodb-${collectionName}-${timestamp}`;
     const backupPath = path.join(this.config.outputDir, backupName);
@@ -221,16 +216,15 @@ export class MongoDBBackupService {
   private async compressBackup(backupPath: string): Promise<void> {
     const archivePath = `${backupPath}.tar.gz`;
 
-    await execAsync(`tar -czf ${archivePath} -C ${path.dirname(backupPath)} ${path.basename(backupPath)}`);
+    await execAsync(
+      `tar -czf ${archivePath} -C ${path.dirname(backupPath)} ${path.basename(backupPath)}`
+    );
     await fs.rm(backupPath, { recursive: true });
 
     console.log(`Backup compressed: ${archivePath}`);
   }
 
-  private async saveMetadata(
-    backupPath: string,
-    metadata: Record<string, any>
-  ): Promise<void> {
+  private async saveMetadata(backupPath: string, metadata: Record<string, any>): Promise<void> {
     const metadataPath = path.join(backupPath, 'metadata.json');
 
     await fs.mkdir(backupPath, { recursive: true });
@@ -414,7 +408,7 @@ export class N8nWorkflowBackupService {
         {
           timestamp: new Date().toISOString(),
           totalWorkflows: workflows.length,
-          activeWorkflows: workflows.filter(w => w.active).length,
+          activeWorkflows: workflows.filter((w) => w.active).length,
         },
         null,
         2
@@ -473,10 +467,7 @@ export class N8nWorkflowBackupService {
 }
 
 // 사용 예시
-const n8nBackup = new N8nWorkflowBackupService(
-  n8nClient,
-  '/backups/n8n'
-);
+const n8nBackup = new N8nWorkflowBackupService(n8nClient, '/backups/n8n');
 
 await n8nBackup.backupAllWorkflows();
 await n8nBackup.backupCredentials();
@@ -514,16 +505,13 @@ export class RedisBackupService {
       saving = info.includes('rdb_bgsave_in_progress:1');
 
       if (saving) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
     // RDB 파일 복사
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.join(
-      this.backupDir,
-      `redis-snapshot-${timestamp}.rdb`
-    );
+    const backupPath = path.join(this.backupDir, `redis-snapshot-${timestamp}.rdb`);
 
     // Redis 설정에서 RDB 파일 위치 확인
     const config = await this.redis.config('GET', 'dir');
@@ -542,10 +530,7 @@ export class RedisBackupService {
     console.log('Backing up Redis AOF...');
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.join(
-      this.backupDir,
-      `redis-aof-${timestamp}.aof`
-    );
+    const backupPath = path.join(this.backupDir, `redis-aof-${timestamp}.aof`);
 
     // AOF 파일 위치 확인
     const config = await this.redis.config('GET', 'dir');
@@ -564,10 +549,7 @@ export class RedisBackupService {
     console.log('Creating Redis logical backup...');
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.join(
-      this.backupDir,
-      `redis-logical-${timestamp}.json`
-    );
+    const backupPath = path.join(this.backupDir, `redis-logical-${timestamp}.json`);
 
     const backup: Record<string, any> = {};
 
@@ -654,13 +636,7 @@ export class FileStorageBackupService {
     await fs.mkdir(backupPath, { recursive: true });
 
     // rsync로 변경된 파일만 복사
-    const command = [
-      'rsync',
-      '-avz',
-      '--delete',
-      `${this.sourceDir}/`,
-      `${backupPath}/`,
-    ].join(' ');
+    const command = ['rsync', '-avz', '--delete', `${this.sourceDir}/`, `${backupPath}/`].join(' ');
 
     const { stdout, stderr } = await execAsync(command);
 
@@ -698,10 +674,7 @@ export class FileStorageBackupService {
 }
 
 // 사용 예시
-const fileBackup = new FileStorageBackupService(
-  '/var/app/uploads',
-  '/backups/files'
-);
+const fileBackup = new FileStorageBackupService('/var/app/uploads', '/backups/files');
 
 await fileBackup.createIncrementalBackup();
 ```
@@ -734,15 +707,9 @@ export class BackupScheduler {
       retention: 30,
     });
 
-    this.n8nBackup = new N8nWorkflowBackupService(
-      n8nClient,
-      '/backups/n8n'
-    );
+    this.n8nBackup = new N8nWorkflowBackupService(n8nClient, '/backups/n8n');
 
-    this.redisBackup = new RedisBackupService(
-      redis,
-      '/backups/redis'
-    );
+    this.redisBackup = new RedisBackupService(redis, '/backups/redis');
 
     this.cloudBackup = new CloudBackupService();
   }
@@ -768,9 +735,7 @@ export class BackupScheduler {
 
       try {
         const lastBackup = await this.getLastBackupTime();
-        const backupPath = await this.mongoBackup.createIncrementalBackup(
-          lastBackup
-        );
+        const backupPath = await this.mongoBackup.createIncrementalBackup(lastBackup);
         await this.cloudBackup.uploadToMultipleLocations(backupPath);
 
         logger.info('MongoDB incremental backup completed');
@@ -959,10 +924,7 @@ export class MongoDBRestoreService {
   }
 
   // 특정 컬렉션만 복구
-  async restoreCollection(
-    backupPath: string,
-    collectionName: string
-  ): Promise<void> {
+  async restoreCollection(backupPath: string, collectionName: string): Promise<void> {
     console.log(`Restoring collection: ${collectionName}`);
 
     const jsonFile = path.join(backupPath, `${collectionName}.json`);
@@ -991,10 +953,7 @@ export class MongoDBRestoreService {
   }
 
   // PITR (Point-in-Time Recovery)
-  async restoreToPointInTime(
-    backupPath: string,
-    targetTime: Date
-  ): Promise<void> {
+  async restoreToPointInTime(backupPath: string, targetTime: Date): Promise<void> {
     console.log(`Restoring to point in time: ${targetTime}`);
 
     // 1. 가장 가까운 전체 백업 복구
@@ -1007,10 +966,7 @@ export class MongoDBRestoreService {
 }
 
 // 사용 예시
-const restoreService = new MongoDBRestoreService(
-  process.env.MONGODB_URI!,
-  'n8n_frontend'
-);
+const restoreService = new MongoDBRestoreService(process.env.MONGODB_URI!, 'n8n_frontend');
 
 // 전체 백업 복구
 await restoreService.restoreFromFullBackup('/backups/mongodb/mongodb-full-2024-01-15');
@@ -1052,9 +1008,7 @@ export class N8nWorkflowRestoreService {
     for (const workflow of workflows) {
       try {
         // 기존 워크플로우 확인
-        const existing = await this.n8nClient
-          .getWorkflow(workflow.id)
-          .catch(() => null);
+        const existing = await this.n8nClient.getWorkflow(workflow.id).catch(() => null);
 
         if (existing) {
           // 업데이트
@@ -1079,9 +1033,7 @@ export class N8nWorkflowRestoreService {
 
     console.log(`Restoring workflow: ${workflow.name}`);
 
-    const existing = await this.n8nClient
-      .getWorkflow(workflow.id)
-      .catch(() => null);
+    const existing = await this.n8nClient.getWorkflow(workflow.id).catch(() => null);
 
     if (existing) {
       await this.n8nClient.updateWorkflow(workflow.id, workflow);
@@ -1210,16 +1162,16 @@ await restoreService.restoreFromLogicalBackup('/backups/redis/redis-logical-2024
 const disasterRecoveryObjectives = {
   // Recovery Time Objective (복구 시간 목표)
   rto: {
-    critical: '1 hour',      // 핵심 서비스
-    important: '4 hours',    // 중요 서비스
-    normal: '24 hours',      // 일반 서비스
+    critical: '1 hour', // 핵심 서비스
+    important: '4 hours', // 중요 서비스
+    normal: '24 hours', // 일반 서비스
   },
 
   // Recovery Point Objective (복구 시점 목표)
   rpo: {
-    critical: '15 minutes',  // 최대 15분 데이터 손실 허용
-    important: '1 hour',     // 최대 1시간 데이터 손실 허용
-    normal: '24 hours',      // 최대 24시간 데이터 손실 허용
+    critical: '15 minutes', // 최대 15분 데이터 손실 허용
+    important: '1 hour', // 최대 1시간 데이터 손실 허용
+    normal: '24 hours', // 최대 24시간 데이터 손실 허용
   },
 };
 ```
@@ -1230,17 +1182,20 @@ const disasterRecoveryObjectives = {
 ## 재해 발생 시 복구 절차
 
 ### Phase 1: 평가 및 알림 (0-15분)
+
 1. 장애 범위 확인
 2. 운영팀에 알림
 3. 백업 상태 확인
 4. 복구 전략 결정
 
 ### Phase 2: 긴급 조치 (15-30분)
+
 1. 트래픽을 유지보수 페이지로 리디렉션
 2. 사용자에게 공지
 3. 영향받은 서비스 격리
 
 ### Phase 3: 데이터 복구 (30분-2시간)
+
 1. 최신 백업 확인
 2. MongoDB 복구
 3. Redis 복구
@@ -1248,18 +1203,21 @@ const disasterRecoveryObjectives = {
 5. 파일 스토리지 복구
 
 ### Phase 4: 서비스 재시작 (2-3시간)
+
 1. 데이터베이스 연결 확인
 2. 애플리케이션 재시작
 3. 헬스체크 실행
 4. 기능 테스트
 
 ### Phase 5: 검증 및 모니터링 (3-4시간)
+
 1. 전체 시스템 검증
 2. 데이터 무결성 확인
 3. 모니터링 강화
 4. 사용자 접근 허용
 
 ### Phase 6: 사후 분석
+
 1. 장애 원인 분석
 2. 복구 절차 문서화
 3. 개선 사항 도출
@@ -1394,6 +1352,7 @@ export async function GET() {
 ## 백업 체크리스트
 
 ### 백업 설정
+
 - [ ] MongoDB 전체 백업 스케줄 설정 (일일)
 - [ ] MongoDB 증분 백업 스케줄 설정 (6시간마다)
 - [ ] n8n 워크플로우 백업 스케줄 설정 (일일)
@@ -1401,6 +1360,7 @@ export async function GET() {
 - [ ] 파일 스토리지 백업 스케줄 설정
 
 ### 클라우드 저장소
+
 - [ ] AWS S3 버킷 생성 및 권한 설정
 - [ ] Google Cloud Storage 버킷 설정
 - [ ] 멀티 리전 복제 활성화
@@ -1408,6 +1368,7 @@ export async function GET() {
 - [ ] 수명 주기 정책 설정
 
 ### 복구 계획
+
 - [ ] 재해 복구 계획 문서화
 - [ ] RTO/RPO 목표 정의
 - [ ] 복구 절차 테스트
@@ -1415,6 +1376,7 @@ export async function GET() {
 - [ ] 비상 연락망 구축
 
 ### 검증
+
 - [ ] 백업 자동 검증 설정
 - [ ] 월간 복구 테스트 수행
 - [ ] 백업 무결성 확인

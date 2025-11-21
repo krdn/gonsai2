@@ -49,7 +49,8 @@ class ErrorAnalyzer {
       pattern: /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNRESET/i,
       category: ErrorCategory.NETWORK,
       severity: ErrorSeverity.HIGH,
-      suggestion: 'Check network connectivity and target service availability. Verify firewall rules and DNS resolution.',
+      suggestion:
+        'Check network connectivity and target service availability. Verify firewall rules and DNS resolution.',
       isRetryable: true,
       estimatedImpact: 'high' as const,
     },
@@ -57,7 +58,8 @@ class ErrorAnalyzer {
       pattern: /socket hang up|connect timeout/i,
       category: ErrorCategory.NETWORK,
       severity: ErrorSeverity.MEDIUM,
-      suggestion: 'Connection was interrupted. Consider increasing timeout values or checking network stability.',
+      suggestion:
+        'Connection was interrupted. Consider increasing timeout values or checking network stability.',
       isRetryable: true,
       estimatedImpact: 'medium' as const,
     },
@@ -67,7 +69,8 @@ class ErrorAnalyzer {
       pattern: /401|unauthorized|authentication failed|invalid credentials/i,
       category: ErrorCategory.AUTHENTICATION,
       severity: ErrorSeverity.CRITICAL,
-      suggestion: 'Verify API credentials, tokens, or authentication headers. Check if credentials have expired.',
+      suggestion:
+        'Verify API credentials, tokens, or authentication headers. Check if credentials have expired.',
       isRetryable: false,
       estimatedImpact: 'critical' as const,
     },
@@ -85,7 +88,8 @@ class ErrorAnalyzer {
       pattern: /timeout|timed out|deadline exceeded/i,
       category: ErrorCategory.TIMEOUT,
       severity: ErrorSeverity.MEDIUM,
-      suggestion: 'Operation exceeded time limit. Increase timeout settings or optimize the operation.',
+      suggestion:
+        'Operation exceeded time limit. Increase timeout settings or optimize the operation.',
       isRetryable: true,
       estimatedImpact: 'medium' as const,
     },
@@ -95,7 +99,8 @@ class ErrorAnalyzer {
       pattern: /400|bad request|invalid input|validation error/i,
       category: ErrorCategory.VALIDATION,
       severity: ErrorSeverity.MEDIUM,
-      suggestion: 'Input data does not meet requirements. Review data format and field constraints.',
+      suggestion:
+        'Input data does not meet requirements. Review data format and field constraints.',
       isRetryable: false,
       estimatedImpact: 'medium' as const,
     },
@@ -113,7 +118,8 @@ class ErrorAnalyzer {
       pattern: /429|rate limit|too many requests|quota exceeded/i,
       category: ErrorCategory.RATE_LIMIT,
       severity: ErrorSeverity.MEDIUM,
-      suggestion: 'API rate limit exceeded. Implement exponential backoff or reduce request frequency.',
+      suggestion:
+        'API rate limit exceeded. Implement exponential backoff or reduce request frequency.',
       isRetryable: true,
       estimatedImpact: 'medium' as const,
     },
@@ -205,14 +211,14 @@ class ErrorAnalyzer {
       criticalCount: number;
     };
   } {
-    const analyses = errors.map(error => this.analyze(error));
+    const analyses = errors.map((error) => this.analyze(error));
 
     const byCategory: Record<string, number> = {};
     const bySeverity: Record<string, number> = {};
     let retryableCount = 0;
     let criticalCount = 0;
 
-    analyses.forEach(analysis => {
+    analyses.forEach((analysis) => {
       // Count by category
       byCategory[analysis.category] = (byCategory[analysis.category] || 0) + 1;
 

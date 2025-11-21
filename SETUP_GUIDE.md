@@ -31,6 +31,7 @@ nano .env
 ```
 
 **필수 변수 설정**:
+
 ```bash
 N8N_API_URL=http://localhost:5678
 N8N_API_KEY=your-api-key-here  # ← 여기에 복사한 API Key 입력
@@ -114,6 +115,7 @@ n8n Connection Test Suite
 ### 1. n8n API 클라이언트 ([features/n8n-integration/api-client.ts](features/n8n-integration/api-client.ts))
 
 **주요 기능**:
+
 - ✅ 워크플로우 CRUD 작업
 - ✅ 워크플로우 실행 및 모니터링
 - ✅ 자동 재시도 (exponential backoff)
@@ -121,6 +123,7 @@ n8n Connection Test Suite
 - ✅ 타입 안전성 (TypeScript)
 
 **사용 예시**:
+
 ```typescript
 import { createN8nClient } from './features/n8n-integration/api-client';
 
@@ -133,7 +136,7 @@ const workflows = await client.workflows.getAll();
 // 워크플로우 실행
 const execution = await client.executions.execute('workflow-id', {
   userId: '123',
-  action: 'process'
+  action: 'process',
 });
 
 // 완료 대기
@@ -143,11 +146,13 @@ const result = await client.executions.waitForCompletion(execution.id);
 ### 2. WebSocket 클라이언트 ([features/n8n-integration/websocket-client.ts](features/n8n-integration/websocket-client.ts))
 
 **주요 기능**:
+
 - ✅ 실시간 워크플로우 실행 모니터링
 - ✅ 자동 재연결 (exponential backoff)
 - ✅ 이벤트 기반 아키텍처
 
 **사용 예시**:
+
 ```typescript
 import { createWebSocketClient } from './features/n8n-integration/websocket-client';
 
@@ -169,11 +174,13 @@ await ws.connect();
 ### 3. 인증 관리자 ([features/n8n-integration/auth-manager.ts](features/n8n-integration/auth-manager.ts))
 
 **지원 인증 방법**:
+
 - ✅ API Key (권장)
 - ✅ Basic Auth
 - ✅ Session Token
 
 **사용 예시**:
+
 ```typescript
 import { AuthManager } from './features/n8n-integration/auth-manager';
 
@@ -182,7 +189,7 @@ const auth = AuthManager.fromEnv();
 
 // 인증 헤더 적용
 const headers = auth.applyAuth({
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
 });
 ```
 
@@ -197,13 +204,14 @@ const client = new N8nClient({
   baseUrl: 'http://localhost:5678',
   apiKey: 'your-api-key',
   retry: {
-    maxAttempts: 5,        // 최대 5회 재시도
-    delayMs: 1000          // 1초부터 시작 (exponential backoff)
-  }
+    maxAttempts: 5, // 최대 5회 재시도
+    delayMs: 1000, // 1초부터 시작 (exponential backoff)
+  },
 });
 ```
 
 **재시도 정책**:
+
 - 네트워크 오류: ✅ 재시도
 - 5xx 서버 오류: ✅ 재시도
 - 4xx 클라이언트 오류: ❌ 재시도 안 함 (즉시 실패)
@@ -242,6 +250,7 @@ npm run test:websocket
 프로덕션 환경에서는 다음 사항을 확인하세요:
 
 **환경 변수**:
+
 ```bash
 # .env.production
 NODE_ENV=production
@@ -257,6 +266,7 @@ N8N_RETRY_DELAY=2000
 ```
 
 **보안 고려사항**:
+
 - ✅ HTTPS 사용
 - ✅ API Key를 환경 변수로 관리
 - ✅ API Key를 Git에 커밋하지 않음
@@ -269,6 +279,7 @@ N8N_RETRY_DELAY=2000
 **원인**: N8N_API_KEY 환경 변수가 설정되지 않음
 
 **해결**:
+
 ```bash
 # .env 파일 확인
 cat .env | grep N8N_API_KEY
@@ -281,6 +292,7 @@ cat .env | grep N8N_API_KEY
 **원인**: n8n 컨테이너가 실행 중이지 않음
 
 **해결**:
+
 ```bash
 # 컨테이너 상태 확인
 docker ps | grep n8n
@@ -295,6 +307,7 @@ docker-compose up -d
 **원인**: API Key가 유효하지 않음
 
 **해결**:
+
 1. n8n UI에서 새 API Key 생성
 2. .env 파일 업데이트
 3. 애플리케이션 재시작
@@ -304,23 +317,26 @@ docker-compose up -d
 **원인**: 요청 타임아웃 또는 n8n 서버 응답 느림
 
 **해결**:
+
 ```typescript
 const client = new N8nClient({
   baseUrl: 'http://localhost:5678',
   apiKey: 'your-api-key',
-  timeout: 60000  // 60초로 증가
+  timeout: 60000, // 60초로 증가
 });
 ```
 
 ## 📚 참고 자료
 
 ### 프로젝트 문서
+
 - [프로젝트 개요](README.md)
 - [프로젝트 구조](PROJECT_STRUCTURE.md)
 - [GitHub 설정 가이드](GITHUB_SETUP.md)
 - [n8n 통합 모듈 README](features/n8n-integration/README.md)
 
 ### 외부 문서
+
 - [n8n REST API Documentation](https://docs.n8n.io/api/)
 - [n8n WebSocket Documentation](https://docs.n8n.io/hosting/scaling/queue-mode/)
 - [n8n Docker Setup Guide](/home/gon/docker-n8n/README.md)

@@ -16,7 +16,7 @@ export class AgentManager {
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    
+
     this.tasks.set(task.id, task);
     return task;
   }

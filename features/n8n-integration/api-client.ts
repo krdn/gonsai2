@@ -66,15 +66,9 @@ export class N8nClient {
      * @aiContext
      * Returns paginated list of workflows. Use filters to narrow down results.
      */
-    getAll: async (
-      filters?: QueryFilters
-    ): Promise<PaginatedResponse<Workflow>> => {
+    getAll: async (filters?: QueryFilters): Promise<PaginatedResponse<Workflow>> => {
       const params = this.buildQueryParams(filters);
-      return this.request<PaginatedResponse<Workflow>>(
-        'GET',
-        '/workflows',
-        params
-      );
+      return this.request<PaginatedResponse<Workflow>>('GET', '/workflows', params);
     },
 
     /**
@@ -98,16 +92,8 @@ export class N8nClient {
     /**
      * Update existing workflow
      */
-    update: async (
-      workflowId: string,
-      workflow: Partial<Workflow>
-    ): Promise<Workflow> => {
-      return this.request<Workflow>(
-        'PUT',
-        `/workflows/${workflowId}`,
-        undefined,
-        workflow
-      );
+    update: async (workflowId: string, workflow: Partial<Workflow>): Promise<Workflow> => {
+      return this.request<Workflow>('PUT', `/workflows/${workflowId}`, undefined, workflow);
     },
 
     /**
@@ -121,20 +107,14 @@ export class N8nClient {
      * Activate workflow
      */
     activate: async (workflowId: string): Promise<Workflow> => {
-      return this.request<Workflow>(
-        'PATCH',
-        `/workflows/${workflowId}/activate`
-      );
+      return this.request<Workflow>('PATCH', `/workflows/${workflowId}/activate`);
     },
 
     /**
      * Deactivate workflow
      */
     deactivate: async (workflowId: string): Promise<Workflow> => {
-      return this.request<Workflow>(
-        'PATCH',
-        `/workflows/${workflowId}/deactivate`
-      );
+      return this.request<Workflow>('PATCH', `/workflows/${workflowId}/deactivate`);
     },
   };
 
@@ -170,10 +150,7 @@ export class N8nClient {
      * Get execution by ID
      */
     getById: async (executionId: string): Promise<WorkflowExecution> => {
-      return this.request<WorkflowExecution>(
-        'GET',
-        `/executions/${executionId}`
-      );
+      return this.request<WorkflowExecution>('GET', `/executions/${executionId}`);
     },
 
     /**
@@ -183,11 +160,7 @@ export class N8nClient {
       filters?: ExecutionQueryFilters
     ): Promise<PaginatedResponse<WorkflowExecution>> => {
       const params = this.buildQueryParams(filters);
-      return this.request<PaginatedResponse<WorkflowExecution>>(
-        'GET',
-        '/executions',
-        params
-      );
+      return this.request<PaginatedResponse<WorkflowExecution>>('GET', '/executions', params);
     },
 
     /**
@@ -205,10 +178,7 @@ export class N8nClient {
      * Useful for transient errors (network, timeouts).
      */
     retry: async (executionId: string): Promise<WorkflowExecution> => {
-      return this.request<WorkflowExecution>(
-        'POST',
-        `/executions/${executionId}/retry`
-      );
+      return this.request<WorkflowExecution>('POST', `/executions/${executionId}/retry`);
     },
 
     /**
@@ -240,9 +210,7 @@ export class N8nClient {
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
       }
 
-      throw new Error(
-        `Execution ${executionId} did not complete within ${maxWait}ms`
-      );
+      throw new Error(`Execution ${executionId} did not complete within ${maxWait}ms`);
     },
   };
 
@@ -253,9 +221,7 @@ export class N8nClient {
   /**
    * Build query parameters from filters
    */
-  private buildQueryParams(
-    filters?: Record<string, unknown>
-  ): Record<string, string> {
+  private buildQueryParams(filters?: Record<string, unknown>): Record<string, string> {
     if (!filters) return {};
 
     const params: Record<string, string> = {};

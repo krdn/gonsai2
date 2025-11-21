@@ -11,8 +11,8 @@ import path from 'path';
 // logger.ts가 envConfig를 import하기 때문에 printConfig()에서는 console.log 사용
 
 // .env 파일 로드 (백엔드 디렉토리 기준)
-// override: true 옵션으로 이미 존재하는 환경 변수도 덮어씀
-config({ path: path.resolve(__dirname, '../../.env'), override: true });
+// CI 환경에서는 환경 변수가 이미 설정되어 있으므로 override하지 않음
+config({ path: path.resolve(__dirname, '../../.env') });
 
 export interface AppConfig {
   // Server Configuration

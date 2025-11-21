@@ -56,13 +56,20 @@ export function NodeDetails({ node, executionData, onClose }: NodeDetailsProps) 
             <div className="space-y-2">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                 <span className="text-sm text-gray-600">상태</span>
-                <span className={`text-sm font-semibold ${
-                  executionData.executionStatus === 'success' ? 'text-green-600' :
-                  executionData.executionStatus === 'error' ? 'text-red-600' :
-                  'text-blue-600'
-                }`}>
-                  {executionData.executionStatus === 'success' ? '✅ 성공' :
-                   executionData.executionStatus === 'error' ? '❌ 실패' : '🔄 실행 중'}
+                <span
+                  className={`text-sm font-semibold ${
+                    executionData.executionStatus === 'success'
+                      ? 'text-green-600'
+                      : executionData.executionStatus === 'error'
+                        ? 'text-red-600'
+                        : 'text-blue-600'
+                  }`}
+                >
+                  {executionData.executionStatus === 'success'
+                    ? '✅ 성공'
+                    : executionData.executionStatus === 'error'
+                      ? '❌ 실패'
+                      : '🔄 실행 중'}
                 </span>
               </div>
 
@@ -121,7 +128,10 @@ export function NodeDetails({ node, executionData, onClose }: NodeDetailsProps) 
             <h3 className="text-sm font-semibold text-gray-700 mb-3">인증 정보</h3>
             <div className="space-y-2">
               {Object.entries(node.credentials).map(([type, cred]) => (
-                <div key={type} className="p-2 bg-gray-50 rounded flex items-center justify-between">
+                <div
+                  key={type}
+                  className="p-2 bg-gray-50 rounded flex items-center justify-between"
+                >
                   <span className="text-sm text-gray-600">{type}</span>
                   <span className="text-sm font-semibold text-gray-900">{cred.name}</span>
                 </div>

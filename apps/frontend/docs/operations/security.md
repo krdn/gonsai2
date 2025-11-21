@@ -88,14 +88,10 @@ export class JWTService {
 
   // Refresh Token 생성
   generateRefreshToken(userId: string): string {
-    return jwt.sign(
-      { userId, type: 'refresh' },
-      JWT_SECRET,
-      {
-        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
-        issuer: 'n8n-frontend',
-      }
-    );
+    return jwt.sign({ userId, type: 'refresh' }, JWT_SECRET, {
+      expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+      issuer: 'n8n-frontend',
+    });
   }
 
   // Token 검증
@@ -178,10 +174,7 @@ export async function authMiddleware(
     const token = jwtService.extractToken(request);
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Token 검증
@@ -191,31 +184,18 @@ export async function authMiddleware(
     return await handler(request, user);
   } catch (error: any) {
     if (error.message === 'TOKEN_EXPIRED') {
-      return NextResponse.json(
-        { error: 'Token expired', code: 'TOKEN_EXPIRED' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Token expired', code: 'TOKEN_EXPIRED' }, { status: 401 });
     }
 
-    return NextResponse.json(
-      { error: 'Invalid token', code: 'INVALID_TOKEN' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Invalid token', code: 'INVALID_TOKEN' }, { status: 401 });
   }
 }
 
 // 역할 기반 인가
 export function requireRole(allowedRoles: string[]) {
-  return async (
-    request: NextRequest,
-    user: TokenPayload,
-    handler: () => Promise<NextResponse>
-  ) => {
+  return async (request: NextRequest, user: TokenPayload, handler: () => Promise<NextResponse>) => {
     if (!allowedRoles.includes(user.role)) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     return await handler();
@@ -271,10 +251,7 @@ export const registerSchema = z.object({
     .regex(/[a-z]/, 'Password must contain lowercase letter')
     .regex(/[0-9]/, 'Password must contain number')
     .regex(/[^A-Za-z0-9]/, 'Password must contain special character'),
-  name: z
-    .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name too long'),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name too long'),
 });
 
 // 워크플로우 생성 스키마
@@ -332,10 +309,7 @@ export function validateBody(schema: ZodSchema) {
         );
       }
 
-      return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
   };
 }
@@ -362,10 +336,7 @@ export function validateQuery(schema: ZodSchema) {
         );
       }
 
-      return NextResponse.json(
-        { error: 'Invalid query parameters' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 });
     }
   };
 }
@@ -461,10 +432,7 @@ export class CSRFProtection {
 
       const expectedHash = hmac.digest('hex');
 
-      return crypto.timingSafeEqual(
-        Buffer.from(hash),
-        Buffer.from(expectedHash)
-      );
+      return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(expectedHash));
     } catch {
       return false;
     }
@@ -474,10 +442,7 @@ export class CSRFProtection {
 export const csrfProtection = new CSRFProtection();
 
 // CSRF 미들웨어
-export async function csrfMiddleware(
-  request: NextRequest,
-  handler: () => Promise<NextResponse>
-) {
+export async function csrfMiddleware(request: NextRequest, handler: () => Promise<NextResponse>) {
   // GET, HEAD, OPTIONS는 CSRF 검증 제외
   if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
     return await handler();
@@ -487,17 +452,11 @@ export async function csrfMiddleware(
   const sessionId = request.cookies.get('sessionId')?.value;
 
   if (!csrfToken || !sessionId) {
-    return NextResponse.json(
-      { error: 'CSRF token missing' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'CSRF token missing' }, { status: 403 });
   }
 
   if (!csrfProtection.verifyToken(csrfToken, sessionId)) {
-    return NextResponse.json(
-      { error: 'Invalid CSRF token' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
   }
 
   return await handler();
@@ -515,8 +474,8 @@ import Redis from 'ioredis';
 const redis = new Redis(process.env.REDIS_URL!);
 
 export interface RateLimitConfig {
-  windowMs: number;  // 시간 윈도우 (밀리초)
-  max: number;       // 최대 요청 수
+  windowMs: number; // 시간 윈도우 (밀리초)
+  max: number; // 최대 요청 수
   keyPrefix?: string;
 }
 
@@ -572,21 +531,21 @@ export class RateLimiter {
 // IP 기반 Rate Limiter
 export const ipRateLimiter = new RateLimiter({
   windowMs: 60 * 1000, // 1분
-  max: 60,             // 분당 60회
+  max: 60, // 분당 60회
   keyPrefix: 'ratelimit:ip',
 });
 
 // API 키 기반 Rate Limiter
 export const apiKeyRateLimiter = new RateLimiter({
   windowMs: 60 * 1000, // 1분
-  max: 300,            // 분당 300회
+  max: 300, // 분당 300회
   keyPrefix: 'ratelimit:apikey',
 });
 
 // 로그인 시도 Rate Limiter
 export const loginRateLimiter = new RateLimiter({
   windowMs: 15 * 60 * 1000, // 15분
-  max: 5,                   // 15분에 5회
+  max: 5, // 15분에 5회
   keyPrefix: 'ratelimit:login',
 });
 ```
@@ -603,9 +562,8 @@ export async function rateLimitMiddleware(
   handler: () => Promise<NextResponse>
 ) {
   // 클라이언트 IP 추출
-  const ip = request.headers.get('x-forwarded-for') ||
-             request.headers.get('x-real-ip') ||
-             'unknown';
+  const ip =
+    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
   const result = await ipRateLimiter.check(ip);
 
@@ -621,9 +579,7 @@ export async function rateLimitMiddleware(
           'X-RateLimit-Limit': ipRateLimiter.config.max.toString(),
           'X-RateLimit-Remaining': result.remaining.toString(),
           'X-RateLimit-Reset': result.resetAt.toISOString(),
-          'Retry-After': Math.ceil(
-            (result.resetAt.getTime() - Date.now()) / 1000
-          ).toString(),
+          'Retry-After': Math.ceil((result.resetAt.getTime() - Date.now()) / 1000).toString(),
         },
       }
     );
@@ -708,10 +664,7 @@ export class EncryptionService {
   verifySignature(data: string, signature: string, secret: string): boolean {
     const expectedSignature = this.createSignature(data, secret);
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
   }
 }
 
@@ -726,11 +679,14 @@ import { encryption } from './encryption';
 
 export class SensitiveDataProtection {
   // 크레덴셜 저장
-  async storeCredential(userId: string, data: {
-    name: string;
-    type: string;
-    data: Record<string, any>;
-  }) {
+  async storeCredential(
+    userId: string,
+    data: {
+      name: string;
+      type: string;
+      data: Record<string, any>;
+    }
+  ) {
     // 민감한 데이터 암호화
     const encryptedData = encryption.encrypt(JSON.stringify(data.data));
 
@@ -855,10 +811,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || [
   'https://app.example.com',
 ];
 
-export async function corsMiddleware(
-  request: NextRequest,
-  handler: () => Promise<NextResponse>
-) {
+export async function corsMiddleware(request: NextRequest, handler: () => Promise<NextResponse>) {
   const origin = request.headers.get('origin');
 
   // Preflight 요청 처리
@@ -866,9 +819,8 @@ export async function corsMiddleware(
     return new NextResponse(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin)
-          ? origin
-          : ALLOWED_ORIGINS[0],
+        'Access-Control-Allow-Origin':
+          origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token',
         'Access-Control-Max-Age': '86400',
@@ -1089,6 +1041,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ## 보안 체크리스트
 
 ### 배포 전 체크리스트
+
 - [ ] 모든 환경 변수를 `.env`에서 관리
 - [ ] 프로덕션에서 `console.log` 제거
 - [ ] API 키가 코드에 하드코딩되지 않았는지 확인
@@ -1101,6 +1054,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - [ ] CSRF 보호 활성화
 
 ### 인증/인가
+
 - [ ] 강력한 비밀번호 정책
 - [ ] JWT 만료 시간 설정
 - [ ] Refresh token 구현
@@ -1109,6 +1063,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - [ ] 비활성 계정 자동 로그아웃
 
 ### 데이터 보호
+
 - [ ] 민감한 데이터 암호화
 - [ ] 데이터베이스 연결 암호화
 - [ ] 백업 데이터 암호화
@@ -1116,6 +1071,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - [ ] 로그에 민감 정보 제외
 
 ### 모니터링
+
 - [ ] 감사 로그 활성화
 - [ ] 보안 이벤트 알림 설정
 - [ ] 취약점 스캔 자동화
@@ -1130,30 +1086,35 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ## 보안 사고 대응 프로세스
 
 ### Phase 1: 탐지 및 분석 (0-30분)
+
 1. 보안 이벤트 확인
 2. 영향 범위 파악
 3. 사고 심각도 평가
 4. 관련 팀에 알림
 
 ### Phase 2: 격리 (30-60분)
+
 1. 영향받은 시스템 격리
 2. 악의적 트래픽 차단
 3. 계정 잠금/비활성화
 4. 추가 피해 방지
 
 ### Phase 3: 제거 (1-4시간)
+
 1. 악성 코드 제거
 2. 취약점 패치
 3. 시스템 복구
 4. 보안 강화
 
 ### Phase 4: 복구 (4-24시간)
+
 1. 시스템 재시작
 2. 서비스 복원
 3. 모니터링 강화
 4. 사용자 통지
 
 ### Phase 5: 사후 분석
+
 1. 근본 원인 분석
 2. 대응 절차 검토
 3. 보안 개선 계획

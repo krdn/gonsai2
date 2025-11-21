@@ -192,13 +192,7 @@ export class MonitoringService {
   /**
    * 로그 조회
    */
-  async getLogs(
-    source?: string,
-    level?: string,
-    startDate?: Date,
-    endDate?: Date,
-    limit?: number
-  ) {
+  async getLogs(source?: string, level?: string, startDate?: Date, endDate?: Date, limit?: number) {
     try {
       return await logAggregator.getLogs(source, level, startDate, endDate, limit);
     } catch (error) {

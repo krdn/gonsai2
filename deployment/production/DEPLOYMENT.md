@@ -107,12 +107,12 @@
 
 ### 최소 사양
 
-| 구성 요소 | 최소 | 권장 |
-|-----------|------|------|
-| CPU | 4 cores | 8 cores |
-| RAM | 8GB | 16GB |
-| Disk | 100GB SSD | 500GB NVMe SSD |
-| Network | 100Mbps | 1Gbps |
+| 구성 요소 | 최소      | 권장           |
+| --------- | --------- | -------------- |
+| CPU       | 4 cores   | 8 cores        |
+| RAM       | 8GB       | 16GB           |
+| Disk      | 100GB SSD | 500GB NVMe SSD |
+| Network   | 100Mbps   | 1Gbps          |
 
 ### 리소스 할당
 
@@ -122,12 +122,12 @@
 총 메모리 할당: ~16GB
 
 주요 서비스:
-- gonsai2-app: 2 CPU, 2GB RAM
-- n8n: 2 CPU, 4GB RAM
-- n8n-worker (x2): 1.5 CPU, 3GB RAM (per replica)
-- postgres: 2 CPU, 2GB RAM
-- mongodb: 2 CPU, 2GB RAM
-- redis: 1 CPU, 2GB RAM
+  - gonsai2-app: 2 CPU, 2GB RAM
+  - n8n: 2 CPU, 4GB RAM
+  - n8n-worker (x2): 1.5 CPU, 3GB RAM (per replica)
+  - postgres: 2 CPU, 2GB RAM
+  - mongodb: 2 CPU, 2GB RAM
+  - redis: 1 CPU, 2GB RAM
 ```
 
 ---
@@ -264,6 +264,7 @@ GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 32)
 ```
 
 **⚠️ 중요**:
+
 - N8N_ENCRYPTION_KEY는 한번 설정하면 절대 변경하지 마세요!
 - 모든 비밀번호를 안전한 곳에 백업하세요 (KeePass, 1Password 등)
 
@@ -350,6 +351,7 @@ chmod +x scripts/*.sh
 ```
 
 스크립트는 다음을 자동으로 수행합니다:
+
 1. ✅ 환경 검증 (Docker, Docker Compose, .env)
 2. ✅ 필수 디렉토리 생성
 3. ✅ SSL 인증서 확인
@@ -395,6 +397,7 @@ docker-compose ps
 ```
 
 **예상 출력**:
+
 ```
 NAME                  STATUS
 gonsai2-app          Up (healthy)
@@ -433,11 +436,11 @@ curl -f http://localhost:3001/api/health
 
 #### 3. 웹 UI 접속 확인
 
-| 서비스 | URL | 기본 로그인 |
-|--------|-----|------------|
-| Frontend | https://yourdomain.com | (설정한 사용자 계정) |
-| n8n | https://n8n.yourdomain.com | (n8n 초기 설정 필요) |
-| Grafana | https://grafana.yourdomain.com | admin / (GRAFANA_ADMIN_PASSWORD) |
+| 서비스   | URL                            | 기본 로그인                      |
+| -------- | ------------------------------ | -------------------------------- |
+| Frontend | https://yourdomain.com         | (설정한 사용자 계정)             |
+| n8n      | https://n8n.yourdomain.com     | (n8n 초기 설정 필요)             |
+| Grafana  | https://grafana.yourdomain.com | admin / (GRAFANA_ADMIN_PASSWORD) |
 
 #### 4. 데이터베이스 연결 확인
 
@@ -541,16 +544,19 @@ git checkout <previous-commit-hash>
 ### 롤백 결정 기준
 
 **즉시 롤백**:
+
 - Critical 서비스 3개 이상 실패
 - 데이터 손상 감지
 - 보안 침해 의심
 
 **재시도 후 롤백**:
+
 - 1-2개 서비스 실패
 - 성능 저하 (응답 시간 >500ms)
 - 높은 에러율 (>5%)
 
 **모니터링 후 결정**:
+
 - 경미한 경고
 - 성능 저하 (<30%)
 - 낮은 에러율 (<1%)
@@ -661,6 +667,7 @@ journalctl -u docker -f
 **증상**: `docker-compose ps`에서 "Exited" 또는 "Restarting" 상태
 
 **해결**:
+
 ```bash
 # 1. 로그 확인
 docker-compose logs [service-name]
@@ -681,6 +688,7 @@ docker-compose up -d
 **증상**: ERR_CONNECTION_REFUSED 또는 504 Gateway Timeout
 
 **해결**:
+
 ```bash
 # 1. Nginx 상태 확인
 docker-compose logs nginx
@@ -703,6 +711,7 @@ docker-compose restart nginx
 **증상**: "Connection refused" 또는 "Authentication failed"
 
 **PostgreSQL**:
+
 ```bash
 # 연결 확인
 docker exec postgres pg_isready -U n8n
@@ -716,6 +725,7 @@ docker-compose restart postgres
 ```
 
 **MongoDB**:
+
 ```bash
 # 연결 확인
 docker exec mongodb mongosh --eval "db.adminCommand('ping')"
@@ -732,6 +742,7 @@ docker-compose restart mongodb
 **증상**: OOM Killer, 컨테이너 재시작
 
 **해결**:
+
 ```bash
 # 1. 메모리 사용량 확인
 docker stats
@@ -754,6 +765,7 @@ docker-compose up -d
 **증상**: NET::ERR_CERT_DATE_INVALID
 
 **해결**:
+
 ```bash
 # 1. 인증서 확인
 openssl x509 -in nginx/ssl/cert.pem -text -noout | grep "Not After"
@@ -785,18 +797,18 @@ docker-compose restart nginx
 
 ### B. 포트 목록
 
-| 서비스 | 내부 포트 | 외부 포트 | 프로토콜 |
-|--------|----------|----------|---------|
-| gonsai2-app | 3000 | - | HTTP |
-| n8n | 5678 | - | HTTP |
-| postgres | 5432 | - | PostgreSQL |
-| mongodb | 27017 | - | MongoDB |
-| redis | 6379 | - | Redis |
-| nginx | - | 80, 443 | HTTP/HTTPS |
-| prometheus | 9090 | - | HTTP |
-| grafana | 3001 | - | HTTP |
-| loki | 3100 | - | HTTP |
-| alertmanager | 9093 | - | HTTP |
+| 서비스       | 내부 포트 | 외부 포트 | 프로토콜   |
+| ------------ | --------- | --------- | ---------- |
+| gonsai2-app  | 3000      | -         | HTTP       |
+| n8n          | 5678      | -         | HTTP       |
+| postgres     | 5432      | -         | PostgreSQL |
+| mongodb      | 27017     | -         | MongoDB    |
+| redis        | 6379      | -         | Redis      |
+| nginx        | -         | 80, 443   | HTTP/HTTPS |
+| prometheus   | 9090      | -         | HTTP       |
+| grafana      | 3001      | -         | HTTP       |
+| loki         | 3100      | -         | HTTP       |
+| alertmanager | 9093      | -         | HTTP       |
 
 ### C. 유용한 명령어
 

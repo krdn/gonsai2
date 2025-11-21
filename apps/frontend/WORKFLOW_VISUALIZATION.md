@@ -15,30 +15,35 @@ n8n 워크플로우를 React Flow로 시각화하는 컴포넌트 사용 가이�
 ### 1. 커스텀 노드 컴포넌트 (5개)
 
 #### TriggerNode
+
 - **위치**: `src/components/workflow/nodes/TriggerNode.tsx`
 - **용도**: 워크플로우 트리거 노드 (웹훅, 스케줄, 이벤트 등)
 - **아이콘**: ⚡ (빨간색)
 - **특징**: Output Handle만 존재 (시작 노드)
 
 #### HttpNode
+
 - **위치**: `src/components/workflow/nodes/HttpNode.tsx`
 - **용도**: HTTP 요청 노드
 - **아이콘**: 🌐 (파란색)
 - **특징**: HTTP 메서드와 URL 표시
 
 #### AINode
+
 - **위치**: `src/components/workflow/nodes/AINode.tsx`
 - **용도**: AI/LLM 노드 (OpenAI, Claude 등)
 - **아이콘**: 🤖 (보라색)
 - **특징**: 모델명과 Temperature 표시
 
 #### DatabaseNode
+
 - **위치**: `src/components/workflow/nodes/DatabaseNode.tsx`
 - **용도**: 데이터베이스 작업 노드 (MongoDB, PostgreSQL 등)
 - **아이콘**: 🗄️ (초록색)
 - **특징**: Operation, Database, Collection 표시
 
 #### DefaultNode
+
 - **위치**: `src/components/workflow/nodes/DefaultNode.tsx`
 - **용도**: 기타 모든 노드 타입
 - **아이콘**: ⚙️ (회색)
@@ -82,6 +87,7 @@ function MyWorkflowPage() {
 ```
 
 #### 주요 기능
+
 - ✅ n8n 워크플로우 자동 변환 (React Flow 형식)
 - ✅ 노드 타입별 자동 색상 및 아이콘
 - ✅ 실행 상태에 따른 노드/엣지 업데이트 (성공/실패/실행중)
@@ -116,11 +122,7 @@ function MyNodeDetailsPanel() {
   return (
     <>
       {isOpen && (
-        <NodeDetails
-          node={node}
-          executionData={executionData}
-          onClose={() => setIsOpen(false)}
-        />
+        <NodeDetails node={node} executionData={executionData} onClose={() => setIsOpen(false)} />
       )}
     </>
   );
@@ -128,6 +130,7 @@ function MyNodeDetailsPanel() {
 ```
 
 #### 표시 정보
+
 - ✅ 노드 이름, 타입, 아이콘
 - ✅ 실행 상태 (성공/실패/실행중)
 - ✅ 실행 시간
@@ -161,6 +164,7 @@ function MyExecutionPage() {
 ```
 
 #### 주요 기능
+
 - ✅ 실행 타임라인 시각화
 - ✅ 노드별 실행 순서 표시
 - ✅ 각 노드의 실행 시간 표시
@@ -191,13 +195,12 @@ function MyStatsPage() {
     aiNodesUsed: 45,
   };
 
-  return (
-    <WorkflowStats statistics={statistics} />
-  );
+  return <WorkflowStats statistics={statistics} />;
 }
 ```
 
 #### 표시 정보
+
 - ✅ 총 실행 횟수
 - ✅ 평균 실행 시간
 - ✅ 성공률 (백분율 + 진행 바)
@@ -209,6 +212,7 @@ function MyStatsPage() {
 ## 🛠️ 유틸리티 함수
 
 ### convertWorkflowToFlow()
+
 ```tsx
 import { convertWorkflowToFlow } from '@/lib/workflow-utils';
 import type { N8nWorkflow } from '@/types/workflow';
@@ -220,6 +224,7 @@ const { nodes, edges } = convertWorkflowToFlow(workflow);
 n8n 워크플로우를 React Flow 형식으로 변환합니다.
 
 ### updateNodesWithExecutionStatus()
+
 ```tsx
 import { updateNodesWithExecutionStatus } from '@/lib/workflow-utils';
 
@@ -229,6 +234,7 @@ const updatedNodes = updateNodesWithExecutionStatus(nodes, executionData);
 실행 데이터를 기반으로 노드 스타일을 업데이트합니다.
 
 ### updateEdgesWithExecutionPath()
+
 ```tsx
 import { updateEdgesWithExecutionPath } from '@/lib/workflow-utils';
 
@@ -238,29 +244,31 @@ const updatedEdges = updateEdgesWithExecutionPath(edges, executionData);
 실행 경로에 따라 엣지를 하이라이트합니다.
 
 ### formatExecutionTime()
+
 ```tsx
 import { formatExecutionTime } from '@/lib/workflow-utils';
 
-formatExecutionTime(500);    // "500ms"
-formatExecutionTime(2500);   // "2.50s"
+formatExecutionTime(500); // "500ms"
+formatExecutionTime(2500); // "2.50s"
 formatExecutionTime(125000); // "2.08m"
 ```
 
 밀리초를 읽기 쉬운 형식으로 변환합니다.
 
 ### getNodeIcon() / getNodeColor()
+
 ```tsx
 import { getNodeIcon, getNodeColor } from '@/lib/workflow-utils';
 
-getNodeIcon('trigger');   // "⚡"
-getNodeIcon('http');      // "🌐"
-getNodeIcon('ai');        // "🤖"
-getNodeIcon('database');  // "🗄️"
+getNodeIcon('trigger'); // "⚡"
+getNodeIcon('http'); // "🌐"
+getNodeIcon('ai'); // "🤖"
+getNodeIcon('database'); // "🗄️"
 
-getNodeColor('trigger');   // "#ef4444" (red)
-getNodeColor('http');      // "#3b82f6" (blue)
-getNodeColor('ai');        // "#8b5cf6" (purple)
-getNodeColor('database');  // "#10b981" (green)
+getNodeColor('trigger'); // "#ef4444" (red)
+getNodeColor('http'); // "#3b82f6" (blue)
+getNodeColor('ai'); // "#8b5cf6" (purple)
+getNodeColor('database'); // "#10b981" (green)
 ```
 
 노드 타입별 아이콘과 색상을 반환합니다.
@@ -274,12 +282,7 @@ getNodeColor('database');  // "#10b981" (green)
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  WorkflowCanvas,
-  NodeDetails,
-  ExecutionFlow,
-  WorkflowStats
-} from '@/components/workflow';
+import { WorkflowCanvas, NodeDetails, ExecutionFlow, WorkflowStats } from '@/components/workflow';
 import { apiClient } from '@/lib/api-client';
 import { useWorkflowStore } from '@/stores/workflow-store';
 
@@ -333,10 +336,7 @@ export default function WorkflowPage({ params }: { params: { id: string } }) {
         {/* Execution Timeline */}
         {latestExecution && (
           <div className="flex-1">
-            <ExecutionFlow
-              workflow={workflow}
-              execution={latestExecution}
-            />
+            <ExecutionFlow workflow={workflow} execution={latestExecution} />
           </div>
         )}
 
@@ -401,11 +401,7 @@ export interface ExecutionError { ... }
 // 1. 새 노드 컴포넌트 생성
 // src/components/workflow/nodes/CustomNode.tsx
 export function CustomNode({ data }: NodeProps<CustomNodeData>) {
-  return (
-    <div className="...">
-      {/* 커스텀 UI */}
-    </div>
-  );
+  return <div className="...">{/* 커스텀 UI */}</div>;
 }
 
 // 2. nodeTypes에 등록
@@ -428,15 +424,13 @@ function getNodeType(n8nType: string): string {
 ### 커스텀 스타일 적용
 
 ```tsx
-<WorkflowCanvas
-  workflow={workflow}
-  className="border-2 border-blue-500 rounded-xl shadow-2xl"
-/>
+<WorkflowCanvas workflow={workflow} className="border-2 border-blue-500 rounded-xl shadow-2xl" />
 ```
 
 ## 🐛 트러블슈팅
 
 ### React Flow 렌더링 문제
+
 ```tsx
 // 컨테이너에 명시적 높이 설정 필요
 <div className="h-screen">
@@ -445,12 +439,14 @@ function getNodeType(n8nType: string): string {
 ```
 
 ### WebSocket 연결 문제
+
 ```tsx
 // .env.local 설정 확인
 NEXT_PUBLIC_WS_URL=ws://localhost:4000
 ```
 
 ### 타입 오류
+
 ```bash
 # 타입 체크 실행
 npm run type-check

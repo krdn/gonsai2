@@ -72,6 +72,7 @@ gh api repos/:owner/gonsai2/branches/main/protection \
 **Branch name pattern**: `main`
 
 **Protect matching branches** 섹션:
+
 - ✅ **Require a pull request before merging**
   - Required approvals: 1
   - ✅ Dismiss stale pull request approvals when new commits are pushed
@@ -112,17 +113,18 @@ gh secret set JWT_SECRET --body "your-jwt-secret"
 
 #### 필수 Secrets:
 
-| Secret Name | Description | 값 가져오는 방법 |
-|------------|-------------|---------------|
-| `N8N_API_KEY` | n8n API 인증 키 | n8n UI → Settings → API → Create new API key |
-| `MONGODB_PASSWORD` | MongoDB superadmin 비밀번호 | `/home/gon/docker-mongo-ubuntu/.env` 파일 참조 |
-| `JWT_SECRET` | JWT 토큰 시크릿 | `openssl rand -base64 32` 명령으로 생성 |
-| `ANTHROPIC_API_KEY` | Claude API 키 (선택) | Anthropic Console에서 발급 |
-| `OPENAI_API_KEY` | OpenAI API 키 (선택) | OpenAI Platform에서 발급 |
+| Secret Name         | Description                 | 값 가져오는 방법                               |
+| ------------------- | --------------------------- | ---------------------------------------------- |
+| `N8N_API_KEY`       | n8n API 인증 키             | n8n UI → Settings → API → Create new API key   |
+| `MONGODB_PASSWORD`  | MongoDB superadmin 비밀번호 | `/home/gon/docker-mongo-ubuntu/.env` 파일 참조 |
+| `JWT_SECRET`        | JWT 토큰 시크릿             | `openssl rand -base64 32` 명령으로 생성        |
+| `ANTHROPIC_API_KEY` | Claude API 키 (선택)        | Anthropic Console에서 발급                     |
+| `OPENAI_API_KEY`    | OpenAI API 키 (선택)        | OpenAI Platform에서 발급                       |
 
 #### Secret 추가 방법:
 
 각 Secret에 대해:
+
 1. "Name" 입력 (예: `N8N_API_KEY`)
 2. "Secret" 입력 (실제 값)
 3. **Add secret** 클릭
@@ -148,6 +150,7 @@ git remote -v
 ```
 
 출력 예시:
+
 ```
 origin  git@github.com:yourusername/gonsai2.git (fetch)
 origin  git@github.com:yourusername/gonsai2.git (push)
@@ -294,17 +297,20 @@ gh run list --limit 5
 ## 🚀 다음 단계
 
 1. **팀원 초대** (협업 시)
+
    ```bash
    gh repo invite <username> --role admin
    ```
 
 2. **Issue 템플릿 추가**
+
    ```bash
    mkdir -p .github/ISSUE_TEMPLATE
    # 템플릿 파일 생성 (bug_report.md, feature_request.md 등)
    ```
 
 3. **Pull Request 템플릿 추가**
+
    ```bash
    cat > .github/pull_request_template.md << 'EOF'
    ## 변경 사항
@@ -324,6 +330,7 @@ gh run list --limit 5
    ```
 
 4. **Code Owners 설정**
+
    ```bash
    cat > .github/CODEOWNERS << 'EOF'
    # 코드 소유자 설정
@@ -385,6 +392,7 @@ gh auth status
 이제 gonsai2 프로젝트가 GitHub와 성공적으로 연동되었습니다.
 
 다음 작업:
+
 1. 개발 브랜치 생성: `git checkout -b develop`
 2. 기능 개발 시작
 3. Pull Request 생성 및 코드 리뷰

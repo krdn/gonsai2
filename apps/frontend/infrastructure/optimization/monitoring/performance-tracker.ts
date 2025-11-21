@@ -123,11 +123,7 @@ class PerformanceTracker {
   /**
    * Track cache performance
    */
-  static async trackCache(
-    cacheName: string,
-    hits: number,
-    misses: number
-  ): Promise<void> {
+  static async trackCache(cacheName: string, hits: number, misses: number): Promise<void> {
     const hitRate = hits + misses > 0 ? (hits / (hits + misses)) * 100 : 0;
 
     const metric: PerformanceMetric = {
@@ -177,9 +173,7 @@ class PerformanceTracker {
     endTime?: number
   ): Promise<PerformanceMetric[]> {
     const client = await RedisClient.getClient();
-    const pattern = name
-      ? `${this.PREFIX}${type}:${name}`
-      : `${this.PREFIX}${type}:*`;
+    const pattern = name ? `${this.PREFIX}${type}:${name}` : `${this.PREFIX}${type}:*`;
 
     const keys = await client.keys(pattern);
     const metrics: PerformanceMetric[] = [];
@@ -191,7 +185,7 @@ class PerformanceTracker {
       try {
         const values = await client.zrangebyscore(key, start, end);
 
-        values.forEach(value => {
+        values.forEach((value) => {
           metrics.push(JSON.parse(value));
         });
       } catch (error) {
@@ -205,24 +199,20 @@ class PerformanceTracker {
   /**
    * Generate performance report
    */
-  static async generateReport(
-    startTime?: number,
-    endTime?: number
-  ): Promise<PerformanceReport> {
+  static async generateReport(startTime?: number, endTime?: number): Promise<PerformanceReport> {
     const start = startTime || Date.now() - 24 * 60 * 60 * 1000; // Last 24h
     const end = endTime || Date.now();
 
     // Get all metrics
-    const [executionMetrics, apiMetrics, memoryMetrics, cacheMetrics] =
-      await Promise.all([
-        this.getMetrics('execution', undefined, start, end),
-        this.getMetrics('api', undefined, start, end),
-        this.getMetrics('memory', undefined, start, end),
-        this.getMetrics('cache', undefined, start, end),
-      ]);
+    const [executionMetrics, apiMetrics, memoryMetrics, cacheMetrics] = await Promise.all([
+      this.getMetrics('execution', undefined, start, end),
+      this.getMetrics('api', undefined, start, end),
+      this.getMetrics('memory', undefined, start, end),
+      this.getMetrics('cache', undefined, start, end),
+    ]);
 
     // Analyze executions
-    const executionDurations = executionMetrics.map(m => m.value).sort((a, b) => a - b);
+    const executionDurations = executionMetrics.map((m) => m.value).sort((a, b) => a - b);
     const executionStats = {
       total: executionMetrics.length,
       avgDuration: this.average(executionDurations),
@@ -232,18 +222,18 @@ class PerformanceTracker {
       slowest: executionMetrics
         .sort((a, b) => b.value - a.value)
         .slice(0, 10)
-        .map(m => ({
+        .map((m) => ({
           workflowId: m.name,
           duration: m.value,
         })),
     };
 
     // Analyze API calls
-    const apiTimes = apiMetrics.map(m => m.value).sort((a, b) => a - b);
+    const apiTimes = apiMetrics.map((m) => m.value).sort((a, b) => a - b);
 
     // Group by endpoint
     const endpointStats = new Map<string, number[]>();
-    apiMetrics.forEach(m => {
+    apiMetrics.forEach((m) => {
       if (!endpointStats.has(m.name)) {
         endpointStats.set(m.name, []);
       }
@@ -268,7 +258,7 @@ class PerformanceTracker {
     };
 
     // Analyze memory
-    const memoryValues = memoryMetrics.map(m => m.value);
+    const memoryValues = memoryMetrics.map((m) => m.value);
     const memoryStats = {
       avg: this.average(memoryValues),
       max: Math.max(...memoryValues),
@@ -279,7 +269,7 @@ class PerformanceTracker {
     let totalHits = 0;
     let totalMisses = 0;
 
-    cacheMetrics.forEach(m => {
+    cacheMetrics.forEach((m) => {
       if (m.metadata) {
         totalHits += m.metadata.hits || 0;
         totalMisses += m.metadata.misses || 0;
@@ -287,9 +277,7 @@ class PerformanceTracker {
     });
 
     const cacheStats = {
-      hitRate: totalHits + totalMisses > 0
-        ? (totalHits / (totalHits + totalMisses)) * 100
-        : 0,
+      hitRate: totalHits + totalMisses > 0 ? (totalHits / (totalHits + totalMisses)) * 100 : 0,
       totalHits,
       totalMisses,
     };
@@ -366,12 +354,12 @@ class PerformanceTracker {
       this.getMetrics('cache', undefined, oneMinuteAgo, now),
     ]);
 
-    const executionTimes = executions.map(m => m.value);
-    const apiTimes = apiCalls.map(m => m.value);
+    const executionTimes = executions.map((m) => m.value);
+    const apiTimes = apiCalls.map((m) => m.value);
 
     let cacheHits = 0;
     let cacheMisses = 0;
-    cache.forEach(m => {
+    cache.forEach((m) => {
       if (m.metadata) {
         cacheHits += m.metadata.hits || 0;
         cacheMisses += m.metadata.misses || 0;
@@ -384,9 +372,7 @@ class PerformanceTracker {
       avgExecutionTime: this.average(executionTimes),
       avgApiResponseTime: this.average(apiTimes),
       currentMemory: memory.length > 0 ? memory[memory.length - 1].value : 0,
-      cacheHitRate: cacheHits + cacheMisses > 0
-        ? (cacheHits / (cacheHits + cacheMisses)) * 100
-        : 0,
+      cacheHitRate: cacheHits + cacheMisses > 0 ? (cacheHits / (cacheHits + cacheMisses)) * 100 : 0,
     };
   }
 

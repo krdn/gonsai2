@@ -32,7 +32,7 @@ const workflows = await client.workflows.getAll();
 // 워크플로우 실행
 const execution = await client.executions.execute('workflow-id', {
   userId: '123',
-  action: 'process'
+  action: 'process',
 });
 
 // 실행 완료 대기
@@ -134,7 +134,7 @@ const client = createN8nClient();
 
 // 실행
 const execution = await client.executions.execute('workflow-id', {
-  input: 'test data'
+  input: 'test data',
 });
 
 console.log(`Execution started: ${execution.id}`);
@@ -171,8 +171,8 @@ const client = new N8nClient({
   apiKey: 'your-api-key',
   retry: {
     maxAttempts: 5,
-    delayMs: 2000 // 2초 간격으로 재시도
-  }
+    delayMs: 2000, // 2초 간격으로 재시도
+  },
 });
 ```
 

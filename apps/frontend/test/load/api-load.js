@@ -17,19 +17,19 @@ const apiCalls = new Counter('api_calls_total');
 // Test configuration
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },  // Warm up
-    { duration: '2m', target: 50 },   // Moderate load
-    { duration: '1m', target: 100 },  // High load
-    { duration: '2m', target: 50 },   // Back to moderate
-    { duration: '30s', target: 0 },   // Cool down
+    { duration: '30s', target: 20 }, // Warm up
+    { duration: '2m', target: 50 }, // Moderate load
+    { duration: '1m', target: 100 }, // High load
+    { duration: '2m', target: 50 }, // Back to moderate
+    { duration: '30s', target: 0 }, // Cool down
   ],
 
   thresholds: {
-    http_req_duration: ['p(95)<1000'],       // 95% under 1s
-    http_req_failed: ['rate<0.01'],          // Error rate below 1%
-    errors: ['rate<0.05'],                   // Custom errors below 5%
-    get_workflows_duration: ['p(95)<500'],   // GET workflows under 500ms
-    get_executions_duration: ['p(95)<800'],  // GET executions under 800ms
+    http_req_duration: ['p(95)<1000'], // 95% under 1s
+    http_req_failed: ['rate<0.01'], // Error rate below 1%
+    errors: ['rate<0.05'], // Custom errors below 5%
+    get_workflows_duration: ['p(95)<500'], // GET workflows under 500ms
+    get_executions_duration: ['p(95)<800'], // GET executions under 800ms
   },
 };
 
@@ -55,10 +55,7 @@ export default function () {
   group('GET Workflows', () => {
     const startTime = Date.now();
 
-    const response = http.get(
-      `${BASE_URL}/api/v1/workflows`,
-      { headers }
-    );
+    const response = http.get(`${BASE_URL}/api/v1/workflows`, { headers });
 
     const duration = Date.now() - startTime;
     getWorkflowsDuration.add(duration);
@@ -86,10 +83,7 @@ export default function () {
   group('GET Executions', () => {
     const startTime = Date.now();
 
-    const response = http.get(
-      `${BASE_URL}/api/v1/executions?limit=10`,
-      { headers }
-    );
+    const response = http.get(`${BASE_URL}/api/v1/executions?limit=10`, { headers });
 
     const duration = Date.now() - startTime;
     getExecutionsDuration.add(duration);
@@ -115,10 +109,7 @@ export default function () {
 
   // Test 3: Health Check
   group('Health Check', () => {
-    const response = http.get(
-      `${BASE_URL}/healthz`,
-      { headers }
-    );
+    const response = http.get(`${BASE_URL}/healthz`, { headers });
 
     apiCalls.add(1);
 

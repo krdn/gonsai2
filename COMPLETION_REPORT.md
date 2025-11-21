@@ -15,17 +15,20 @@ n8n 워크플로우 자동화와 MongoDB를 통합한 AI 최적화 프로젝트�
 ### 1. 프로젝트 구조 생성
 
 #### Git 저장소 초기화
+
 - ✅ Git 저장소 초기화 (main 브랜치)
 - ✅ `.gitignore` 생성 (Node.js, Docker, AI artifacts)
 - ✅ 초기 커밋 완료 (35 files, 5880+ lines)
 
 #### 설정 파일
+
 - ✅ `.env.example` - 환경 변수 템플릿
 - ✅ `.editorconfig` - 코드 일관성 설정
 - ✅ `package.json` - npm 의존성 및 스크립트
 - ✅ `tsconfig.json` - TypeScript 컴파일러 설정
 
 #### 문서화
+
 - ✅ `README.md` - 프로젝트 개요 및 빠른 시작
 - ✅ `SETUP_GUIDE.md` - 상세 설정 가이드 (350+ 줄)
 - ✅ `GITHUB_SETUP.md` - GitHub 저장소 설정 가이드
@@ -34,6 +37,7 @@ n8n 워크플로우 자동화와 MongoDB를 통합한 AI 최적화 프로젝트�
 ### 2. n8n 통합 모듈 (features/n8n-integration/)
 
 #### 핵심 클라이언트
+
 - ✅ **types.ts** (400+ 줄): 완전한 TypeScript 타입 정의
   - N8nClientConfig, Workflow, WorkflowExecution
   - PaginatedResponse, QueryFilters, ExecutionData
@@ -58,6 +62,7 @@ n8n 워크플로우 자동화와 MongoDB를 통합한 AI 최적화 프로젝트�
   - 자동 인증 방식 감지
 
 #### 추가 유틸리티
+
 - ✅ **webhook-handler.ts**: Webhook 처리 및 검증
 - ✅ **workflow-executor.ts**: 워크플로우 실행 관리
 - ✅ **workflow-monitor.ts**: 메트릭 수집
@@ -65,6 +70,7 @@ n8n 워크플로우 자동화와 MongoDB를 통합한 AI 최적화 프로젝트�
 ### 3. 테스트 스크립트
 
 #### test-connection.ts (300+ 줄)
+
 - ✅ 종합 연결 테스트 스위트
 - ✅ 환경 변수 검증
 - ✅ 인증 방식 확인
@@ -74,11 +80,13 @@ n8n 워크플로우 자동화와 MongoDB를 통합한 AI 최적화 프로젝트�
 - ✅ 색상 코드 출력 (ANSI colors)
 
 **실행 방법**:
+
 ```bash
 npm run test:connection
 ```
 
 #### test-workflow-execution.ts (330+ 줄)
+
 - ✅ 샘플 워크플로우 실행 테스트
 - ✅ 활성 워크플로우 목록 조회
 - ✅ 워크플로우 자동/수동 선택
@@ -88,11 +96,13 @@ npm run test:connection
 - ✅ 결과 검증 및 디버깅 팁
 
 **실행 방법**:
+
 ```bash
 npm run test:workflow [workflow-id]
 ```
 
 #### test-websocket.ts (330+ 줄)
+
 - ✅ WebSocket 연결 테스트
 - ✅ 실시간 이벤트 수신 (30초)
 - ✅ 워크플로우 실행 트리거
@@ -101,6 +111,7 @@ npm run test:workflow [workflow-id]
 - ✅ 연결 상태 관리
 
 **실행 방법**:
+
 ```bash
 npm run test:websocket
 ```
@@ -108,6 +119,7 @@ npm run test:websocket
 ### 4. 설정 자동화 스크립트
 
 #### setup-api-key.sh (190+ 줄)
+
 - ✅ 대화형 API Key 설정 스크립트
 - ✅ n8n 컨테이너 상태 확인
 - ✅ 헬스체크 검증
@@ -119,6 +131,7 @@ npm run test:websocket
 - ✅ 색상 코드 출력
 
 **실행 방법**:
+
 ```bash
 chmod +x setup-api-key.sh
 ./setup-api-key.sh
@@ -129,12 +142,14 @@ npm run setup
 ### 5. AI 컨텍스트 시스템 (.ai/)
 
 #### context-map.json
+
 - ✅ 워크플로우 구조 매핑
 - ✅ 입력/출력 스키마
 - ✅ AI 컨텍스트 메타데이터
 - ✅ 복잡도 및 수정 안전성 지표
 
 #### error-patterns.json
+
 - ✅ 6개 에러 카테고리
   - connection: 연결 오류
   - execution: 실행 오류
@@ -147,6 +162,7 @@ npm run setup
 - ✅ 승인 필요 여부 플래그
 
 #### README.md
+
 - ✅ AI 협업 패턴 문서
 - ✅ 컨텍스트 맵 사용법
 - ✅ 에러 패턴 활용 가이드
@@ -154,12 +170,14 @@ npm run setup
 ### 6. 추가 모듈
 
 #### features/agent-orchestration/
+
 - ✅ **types.ts**: AgentTask, AgentResult 인터페이스
 - ✅ **agent-manager.ts**: 작업 생성 및 라이프사이클
 - ✅ **execution-queue.ts**: 우선순위 기반 큐
 - ✅ **result-processor.ts**: 결과 처리
 
 #### features/error-healing/
+
 - ✅ **types.ts**: ErrorPattern, DiagnosisResult
 - ✅ **n8n-error-analyzer.ts**: 에러 패턴 매칭
 - ✅ **workflow-fixer.ts**: 자동 수정 실행
@@ -169,10 +187,12 @@ npm run setup
 ## 📦 설치된 패키지
 
 ### Dependencies
+
 - `dotenv@^16.0.0` - 환경 변수 관리
 - `ws@^8.0.0` - WebSocket 클라이언트
 
 ### DevDependencies
+
 - `typescript@^5.0.0` - TypeScript 컴파일러
 - `ts-node@^10.9.0` - TypeScript 실행
 - `@types/node@^20.0.0` - Node.js 타입 정의
@@ -201,26 +221,31 @@ npm run setup
 ## 🎯 주요 기능
 
 ### 1. 타입 안전성
+
 - 모든 n8n API 응답에 대한 완전한 TypeScript 타입 정의
 - 컴파일 타임 오류 감지
 - IntelliSense 자동 완성 지원
 
 ### 2. 오류 처리
+
 - Exponential backoff retry 전략
 - 자동 재연결 (WebSocket)
 - 상세한 오류 메시지 및 디버깅 정보
 
 ### 3. 인증
+
 - 다중 인증 방식 지원
 - 자동 인증 방식 감지
 - 환경 변수 기반 설정
 
 ### 4. 실시간 모니터링
+
 - WebSocket 기반 이벤트 스트리밍
 - 워크플로우 실행 상태 추적
 - 노드별 실행 정보
 
 ### 5. AI 최적화
+
 - 명확한 의도 (Clear Intent)
 - 작은 단계 (Small Steps)
 - 풍부한 컨텍스트 (Rich Context)
@@ -238,6 +263,7 @@ npm run setup
 - **테스트 스크립트**: 4개
 
 ### 디렉토리 구조
+
 ```
 gonsai2/
 ├── .ai/                           # AI 컨텍스트 (3 files)
@@ -254,13 +280,16 @@ gonsai2/
 ## 🚀 다음 단계
 
 ### 즉시 가능
+
 1. ✅ API Key 설정: `npm run setup`
 2. ✅ 연결 테스트: `npm run test:connection`
 3. ✅ 워크플로우 테스트: `npm run test:workflow`
 4. ✅ WebSocket 테스트: `npm run test:websocket`
 
 ### GitHub 저장소 생성
+
 `GITHUB_SETUP.md`를 참조하여:
+
 1. GitHub에서 새 저장소 생성
 2. 로컬 저장소와 연결
 3. 코드 푸시
@@ -272,16 +301,19 @@ git push -u origin main
 ```
 
 ### 단기 계획 (1-2주)
+
 - [ ] MongoDB 통합 구현
 - [ ] 워크플로우 CRUD UI
 - [ ] 실시간 모니터링 대시보드
 
 ### 중기 계획 (1-2개월)
+
 - [ ] 에이전트 오케스트레이션 완성
 - [ ] 자동 에러 복구 시스템
 - [ ] 성능 모니터링 및 최적화
 
 ### 장기 계획 (3-6개월)
+
 - [ ] AI 기반 워크플로우 추천
 - [ ] 프로덕션 배포
 - [ ] 스케일링 및 고가용성
@@ -293,16 +325,19 @@ git push -u origin main
 `★ Insight ─────────────────────────────────────`
 
 **1. Kent Beck의 Augmented Coding 원칙 적용**
+
 - Clear Intent: 파일명과 함수명이 명확한 의도를 전달
 - Small Steps: 각 모듈이 단일 책임을 가지도록 분리
 - Rich Context: .ai/ 디렉토리로 AI가 이해할 수 있는 컨텍스트 제공
 
 **2. TypeScript 타입 안전성의 중요성**
+
 - 400+ 줄의 타입 정의로 런타임 오류 사전 방지
 - API 응답 구조 변경 시 컴파일 타임 감지
 - IntelliSense로 개발 속도 향상
 
 **3. 실전 오류 처리 패턴**
+
 - Exponential backoff: 네트워크 일시 장애 대응
 - Auto-reconnect: 장기 실행 연결 안정성
 - 상세한 에러 메시지: 디버깅 시간 단축

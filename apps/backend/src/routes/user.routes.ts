@@ -65,10 +65,17 @@ router.patch(
   '/me',
   [
     authenticateJWT,
-    body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+    body('name')
+      .optional()
+      .trim()
+      .isLength({ min: 2 })
+      .withMessage('Name must be at least 2 characters'),
     body('email').optional().isEmail().withMessage('Valid email is required'),
     body('currentPassword').optional().isString(),
-    body('newPassword').optional().isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+    body('newPassword')
+      .optional()
+      .isLength({ min: 6 })
+      .withMessage('New password must be at least 6 characters'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {

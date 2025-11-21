@@ -188,18 +188,13 @@ async function runMongoDBTest(): Promise<void> {
     if (collectionNames.includes(COLLECTIONS.AGENT_LOGS)) {
       totalTests++;
       try {
-        const testLog = createAgentLogDocument(
-          'test-agent',
-          'test-exec-id',
-          'test-action',
-          {
-            result: 'success',
-            totalTokens: 100,
-            cost: 0.01,
-            model: 'test-model',
-            duration: 500,
-          }
-        );
+        const testLog = createAgentLogDocument('test-agent', 'test-exec-id', 'test-action', {
+          result: 'success',
+          totalTokens: 100,
+          cost: 0.01,
+          model: 'test-model',
+          duration: 500,
+        });
 
         const result = await db.collection(COLLECTIONS.AGENT_LOGS).insertOne(testLog as any);
         log('success', `Agent Log 문서 삽입: ${result.insertedId}`);
@@ -252,7 +247,6 @@ async function runMongoDBTest(): Promise<void> {
     console.log();
 
     process.exit(passedTests === totalTests ? 0 : 1);
-
   } catch (error) {
     log('error', `테스트 실패: ${error instanceof Error ? error.message : error}`);
 

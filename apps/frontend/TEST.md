@@ -52,12 +52,12 @@ test/
 
 ### 테스트 범위
 
-| 테스트 유형 | 목적 | 도구 | 대상 커버리지 |
-|------------|------|------|--------------|
-| **단위 테스트** | 개별 컴포넌트 검증 | Jest | 80%+ |
-| **통합 테스트** | 시스템 간 통합 검증 | Jest + Docker | 주요 통합 지점 |
-| **E2E 테스트** | 사용자 시나리오 검증 | Playwright | 핵심 사용자 플로우 |
-| **부하 테스트** | 성능 및 확장성 검증 | K6 | 성능 임계값 |
+| 테스트 유형     | 목적                 | 도구          | 대상 커버리지      |
+| --------------- | -------------------- | ------------- | ------------------ |
+| **단위 테스트** | 개별 컴포넌트 검증   | Jest          | 80%+               |
+| **통합 테스트** | 시스템 간 통합 검증  | Jest + Docker | 주요 통합 지점     |
+| **E2E 테스트**  | 사용자 시나리오 검증 | Playwright    | 핵심 사용자 플로우 |
+| **부하 테스트** | 성능 및 확장성 검증  | K6            | 성능 임계값        |
 
 ---
 
@@ -121,12 +121,14 @@ npm run test:unit -- n8n-client.test.ts
 **파일**: `test/unit/n8n-client.test.ts`
 
 **테스트 내용**:
+
 - ✅ n8n API 엔드포인트 호출
 - ✅ 재시도 로직 (exponential backoff)
 - ✅ 타임아웃 처리
 - ✅ 에러 처리 (4xx vs 5xx)
 
 **예제**:
+
 ```typescript
 describe('N8nApiClient', () => {
   it('should fetch all workflows', async () => {
@@ -140,7 +142,9 @@ describe('N8nApiClient', () => {
     const promise = client.getWorkflows();
 
     // 재시도 중 서버 재시작
-    setTimeout(async () => { await mockServer.start(); }, 500);
+    setTimeout(async () => {
+      await mockServer.start();
+    }, 500);
 
     await expect(promise).rejects.toThrow();
   });
@@ -152,12 +156,14 @@ describe('N8nApiClient', () => {
 **파일**: `test/unit/workflow-parser.test.ts`
 
 **테스트 내용**:
+
 - ✅ 워크플로우 구조 분석
 - ✅ 복잡도 계산 (nodes + connections + branches + loops)
 - ✅ 실행 시간 추정
 - ✅ 워크플로우 검증 (disconnected nodes, invalid connections)
 
 **예제**:
+
 ```typescript
 describe('WorkflowParser', () => {
   it('should calculate complexity', () => {
@@ -168,7 +174,9 @@ describe('WorkflowParser', () => {
   });
 
   it('should detect loops using DFS', () => {
-    const loopWorkflow = { /* self-loop */ };
+    const loopWorkflow = {
+      /* self-loop */
+    };
     const parsed = WorkflowParser.parse(loopWorkflow);
 
     expect(parsed.complexity).toBeGreaterThan(3); // Loop penalty
@@ -181,12 +189,14 @@ describe('WorkflowParser', () => {
 **파일**: `test/unit/error-analyzer.test.ts`
 
 **테스트 내용**:
+
 - ✅ 에러 카테고리 분류 (network, auth, timeout 등)
 - ✅ 심각도 평가 (low, medium, high, critical)
 - ✅ 재시도 전략 제안 (exponential, linear, none)
 - ✅ 알림 트리거 판단
 
 **예제**:
+
 ```typescript
 describe('ErrorAnalyzer', () => {
   it('should categorize network errors', () => {
@@ -214,12 +224,14 @@ describe('ErrorAnalyzer', () => {
 Express 기반 Mock n8n API 서버로, 실제 n8n 없이 API 호출을 테스트합니다.
 
 **기능**:
+
 - ✅ 전체 n8n REST API 엔드포인트 구현
 - ✅ 인메모리 데이터 저장
 - ✅ 비동기 실행 시뮬레이션
 - ✅ 테스트 간 상태 리셋
 
 **사용 예**:
+
 ```typescript
 const mockServer = new MockN8nServer(5679);
 await mockServer.start();
@@ -255,10 +267,12 @@ npm run test:integration
 **파일**: `test/integration/docker-compose.test.yml`
 
 **서비스**:
+
 - **n8n-test**: n8n 최신 버전 (포트 5679)
 - **postgres-test**: PostgreSQL 16 (포트 5433)
 
 **Health Check**:
+
 ```yaml
 healthcheck:
   test: ['CMD-SHELL', 'wget --spider -q http://localhost:5678/healthz']
@@ -291,6 +305,7 @@ const logs = TestEnvironment.getLogs('n8n-test');
 **파일**: `test/integration/workflow-execution.test.ts`
 
 **테스트 내용**:
+
 - ✅ 워크플로우 생성/조회/수정/삭제 (CRUD)
 - ✅ 워크플로우 실행 및 결과 확인
 - ✅ 실행 이력 조회 및 필터링
@@ -298,6 +313,7 @@ const logs = TestEnvironment.getLogs('n8n-test');
 - ✅ 에러 시나리오 처리
 
 **예제**:
+
 ```typescript
 describe('Workflow Execution Integration', () => {
   let client: N8nApiClient;
@@ -313,8 +329,12 @@ describe('Workflow Execution Integration', () => {
     // 워크플로우 생성
     const workflow = await client.createWorkflow({
       name: 'Test Workflow',
-      nodes: [/* ... */],
-      connections: {/* ... */},
+      nodes: [
+        /* ... */
+      ],
+      connections: {
+        /* ... */
+      },
     });
 
     // 실행
@@ -323,7 +343,7 @@ describe('Workflow Execution Integration', () => {
     expect(result.executionId).toBeTruthy();
 
     // 실행 결과 확인
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const execution = await client.getExecution(result.executionId);
 
     expect(execution.status).toBe('success');
@@ -367,6 +387,7 @@ npm run test:e2e -- --ui
 **파일**: `test/e2e/workflow-execution.spec.ts`
 
 **시나리오**:
+
 1. 사용자가 로그인
 2. 워크플로우 목록 조회
 3. 특정 워크플로우 선택
@@ -379,6 +400,7 @@ npm run test:e2e -- --ui
 **파일**: `test/e2e/monitoring-dashboard.spec.ts`
 
 **시나리오**:
+
 1. 대시보드 페이지 로드
 2. 실시간 통계 렌더링 확인
 3. 차트 및 그래프 로드 확인
@@ -428,13 +450,13 @@ k6 run --vus 50 --duration 5m test/load/workflow-execution.js
 export let options = {
   thresholds: {
     http_req_duration: ['p(95)<500'], // 95% 요청이 500ms 이하
-    http_req_failed: ['rate<0.01'],   // 실패율 1% 미만
+    http_req_failed: ['rate<0.01'], // 실패율 1% 미만
     'checks{type:workflow}': ['rate>0.95'], // 워크플로우 성공률 95% 이상
   },
   stages: [
-    { duration: '1m', target: 10 },   // Ramp up
-    { duration: '3m', target: 50 },   // Peak load
-    { duration: '1m', target: 0 },    // Ramp down
+    { duration: '1m', target: 10 }, // Ramp up
+    { duration: '3m', target: 50 }, // Peak load
+    { duration: '1m', target: 0 }, // Ramp down
   ],
 };
 ```
@@ -446,6 +468,7 @@ export let options = {
 **파일**: `test/load/workflow-execution.js`
 
 **목표**:
+
 - 50개 동시 사용자 (VUs)
 - 각 사용자가 5분 동안 워크플로우 실행
 - 95% 요청이 500ms 이하
@@ -456,6 +479,7 @@ export let options = {
 **파일**: `test/load/api-load.js`
 
 **목표**:
+
 - GET /api/v1/workflows
 - GET /api/v1/executions
 - POST /api/v1/workflows/:id/execute
@@ -466,6 +490,7 @@ export let options = {
 **파일**: `test/load/websocket-load.js`
 
 **목표**:
+
 - 100개 동시 WebSocket 연결
 - 실시간 메시지 수신 검증
 - 연결 안정성 테스트
@@ -504,6 +529,7 @@ coverageThreshold: {
 ```
 
 **임계값 미달 시 빌드 실패**:
+
 ```bash
 npm run test:coverage
 # Jest: "global" coverage threshold for lines (78.5%) not met: 80%
@@ -555,12 +581,14 @@ jobs:
 ### GitHub Actions
 
 **단위 테스트**:
+
 ```yaml
 - name: Run unit tests
   run: npm run test:unit
 ```
 
 **통합 테스트 (Docker 필요)**:
+
 ```yaml
 - name: Start test environment
   run: docker-compose -f test/integration/docker-compose.test.yml up -d
@@ -573,6 +601,7 @@ jobs:
 ```
 
 **E2E 테스트**:
+
 ```yaml
 - name: Install Playwright
   run: npx playwright install --with-deps
@@ -620,11 +649,13 @@ integration-tests:
 #### 1. Mock 서버 포트 충돌
 
 **증상**:
+
 ```
 Error: listen EADDRINUSE: address already in use :::5679
 ```
 
 **해결책**:
+
 ```bash
 # 포트 5679를 사용하는 프로세스 찾기
 lsof -i :5679
@@ -636,11 +667,13 @@ kill -9 <PID>
 #### 2. Docker 컨테이너 시작 실패
 
 **증상**:
+
 ```
 Error: n8n failed to start within 60000ms
 ```
 
 **해결책**:
+
 ```bash
 # 컨테이너 로그 확인
 docker-compose -f test/integration/docker-compose.test.yml logs n8n-test
@@ -656,11 +689,13 @@ lsof -i :5433
 #### 3. Jest 타임아웃
 
 **증상**:
+
 ```
 Timeout - Async callback was not invoked within the 30000 ms timeout
 ```
 
 **해결책**:
+
 ```typescript
 // 특정 테스트의 타임아웃 증가
 it('should execute workflow', async () => {
@@ -675,11 +710,13 @@ testTimeout: 60000,
 #### 4. 커버리지 임계값 미달
 
 **증상**:
+
 ```
 Jest: "global" coverage threshold for branches (75%) not met: 80%
 ```
 
 **해결책**:
+
 ```bash
 # 커버리지 리포트 확인
 npm run test:coverage
@@ -691,11 +728,13 @@ open coverage/final/index.html
 #### 5. n8n API 인증 에러
 
 **증상**:
+
 ```
 Error: HTTP 401: Unauthorized
 ```
 
 **해결책**:
+
 ```typescript
 // 테스트 환경에서는 API 키 불필요
 const client = new N8nApiClient({
@@ -755,7 +794,9 @@ beforeEach(() => {
 });
 
 // ❌ Bad: 테스트 간 상태 공유
-const workflow = { /* shared data */ };
+const workflow = {
+  /* shared data */
+};
 ```
 
 ### 2. 비동기 처리
@@ -769,7 +810,7 @@ it('should create workflow', async () => {
 
 // ❌ Bad: Promise 체인 사용
 it('should create workflow', (done) => {
-  client.createWorkflow(data).then(workflow => {
+  client.createWorkflow(data).then((workflow) => {
     expect(workflow.id).toBeTruthy();
     done();
   });
@@ -823,17 +864,20 @@ it('should work correctly', () => {
 ## 참고 자료
 
 ### 공식 문서
+
 - [Jest Documentation](https://jestjs.io/)
 - [Playwright Documentation](https://playwright.dev/)
 - [K6 Documentation](https://k6.io/docs/)
 - [n8n API Documentation](https://docs.n8n.io/api/)
 
 ### 프로젝트 구조
+
 - [lib/n8n/client.ts](lib/n8n/client.ts) - n8n API 클라이언트
 - [lib/n8n/workflow-parser.ts](lib/n8n/workflow-parser.ts) - 워크플로우 파서
 - [lib/n8n/error-analyzer.ts](lib/n8n/error-analyzer.ts) - 에러 분석기
 
 ### CI/CD 템플릿
+
 - [GitHub Actions](.github/workflows/test.yml)
 - [GitLab CI](.gitlab-ci.yml)
 

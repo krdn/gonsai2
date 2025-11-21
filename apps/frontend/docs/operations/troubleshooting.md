@@ -131,12 +131,14 @@ grep "url" "$LOG_FILE" | \
 ### 1. 애플리케이션이 시작되지 않음
 
 #### 증상
+
 ```bash
 $ npm start
 Error: Cannot find module 'next'
 ```
 
 #### 원인
+
 - 의존성 패키지가 설치되지 않음
 - node_modules 손상
 
@@ -162,6 +164,7 @@ npm start
 ### 2. 포트가 이미 사용 중
 
 #### 증상
+
 ```
 Error: listen EADDRINUSE: address already in use :::3000
 ```
@@ -185,6 +188,7 @@ PORT=3001 npm start
 ### 3. MongoDB 연결 실패
 
 #### 증상
+
 ```typescript
 MongoServerError: bad auth : Authentication failed
 ```
@@ -277,6 +281,7 @@ netstat -tulpn | grep 27017
 ### 4. Redis 연결 문제
 
 #### 증상
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:6379
 ```
@@ -378,6 +383,7 @@ redis-cli config get requirepass
 ### 5. n8n 워크플로우 실행 실패
 
 #### 증상
+
 - 워크플로우가 "error" 상태로 종료
 - 특정 노드에서 실패
 
@@ -485,37 +491,24 @@ diagnoseWorkflow('workflow-id');
 ```typescript
 // 일반적인 워크플로우 에러 해결
 export const workflowTroubleshooting = {
-  'CREDENTIAL_NOT_FOUND': {
+  CREDENTIAL_NOT_FOUND: {
     cause: '워크플로우에 필요한 크레덴셜이 없음',
     solution: 'n8n UI에서 크레덴셜 추가 및 노드에 연결',
   },
 
-  'NODE_EXECUTION_ERROR': {
+  NODE_EXECUTION_ERROR: {
     cause: '노드 실행 중 에러 발생',
-    solution: [
-      '노드 설정 검증',
-      '입력 데이터 형식 확인',
-      '외부 API 응답 확인',
-      '재시도 로직 추가',
-    ],
+    solution: ['노드 설정 검증', '입력 데이터 형식 확인', '외부 API 응답 확인', '재시도 로직 추가'],
   },
 
-  'WORKFLOW_ACTIVATION_ERROR': {
+  WORKFLOW_ACTIVATION_ERROR: {
     cause: '워크플로우 활성화 실패',
-    solution: [
-      '트리거 노드 설정 확인',
-      'Webhook URL 중복 확인',
-      'n8n 서버 재시작',
-    ],
+    solution: ['트리거 노드 설정 확인', 'Webhook URL 중복 확인', 'n8n 서버 재시작'],
   },
 
-  'TIMEOUT_ERROR': {
+  TIMEOUT_ERROR: {
     cause: '노드 실행 시간 초과',
-    solution: [
-      '타임아웃 설정 증가',
-      '데이터 배치 크기 감소',
-      '병렬 실행 제한',
-    ],
+    solution: ['타임아웃 설정 증가', '데이터 배치 크기 감소', '병렬 실행 제한'],
   },
 };
 ```
@@ -523,6 +516,7 @@ export const workflowTroubleshooting = {
 ### 6. 메모리 부족 (Out of Memory)
 
 #### 증상
+
 ```
 FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
 ```
@@ -888,72 +882,43 @@ export const httpErrorSolutions = {
   401: {
     title: 'Unauthorized',
     causes: ['인증 토큰 없음', '만료된 토큰', '잘못된 크레덴셜'],
-    solutions: [
-      '로그인 다시 시도',
-      'API 키 확인',
-      '환경 변수에 올바른 토큰 설정',
-    ],
+    solutions: ['로그인 다시 시도', 'API 키 확인', '환경 변수에 올바른 토큰 설정'],
   },
 
   403: {
     title: 'Forbidden',
     causes: ['권한 부족', 'IP 차단', '리소스 접근 제한'],
-    solutions: [
-      '사용자 권한 확인',
-      'IP 화이트리스트 확인',
-      '관리자에게 권한 요청',
-    ],
+    solutions: ['사용자 권한 확인', 'IP 화이트리스트 확인', '관리자에게 권한 요청'],
   },
 
   404: {
     title: 'Not Found',
     causes: ['리소스가 존재하지 않음', '잘못된 URL', '삭제된 리소스'],
-    solutions: [
-      'URL 경로 확인',
-      '리소스 ID 확인',
-      '리소스가 삭제되었는지 확인',
-    ],
+    solutions: ['URL 경로 확인', '리소스 ID 확인', '리소스가 삭제되었는지 확인'],
   },
 
   429: {
     title: 'Too Many Requests',
     causes: ['Rate limit 초과', '너무 많은 요청'],
-    solutions: [
-      '요청 빈도 줄이기',
-      '재시도 로직에 백오프 추가',
-      'Rate limit 증가 요청',
-    ],
+    solutions: ['요청 빈도 줄이기', '재시도 로직에 백오프 추가', 'Rate limit 증가 요청'],
   },
 
   500: {
     title: 'Internal Server Error',
     causes: ['서버 내부 오류', '처리되지 않은 예외', '설정 오류'],
-    solutions: [
-      '서버 로그 확인',
-      '에러 스택 트레이스 분석',
-      '서버 재시작',
-      '개발팀에 보고',
-    ],
+    solutions: ['서버 로그 확인', '에러 스택 트레이스 분석', '서버 재시작', '개발팀에 보고'],
   },
 
   502: {
     title: 'Bad Gateway',
     causes: ['업스트림 서버 응답 없음', '게이트웨이 오류'],
-    solutions: [
-      '업스트림 서버 상태 확인',
-      '로드 밸런서 설정 확인',
-      '타임아웃 설정 증가',
-    ],
+    solutions: ['업스트림 서버 상태 확인', '로드 밸런서 설정 확인', '타임아웃 설정 증가'],
   },
 
   503: {
     title: 'Service Unavailable',
     causes: ['서버 과부하', '유지보수 중', '서비스 중단'],
-    solutions: [
-      '잠시 후 재시도',
-      '서버 리소스 확인',
-      '스케일링 고려',
-    ],
+    solutions: ['잠시 후 재시도', '서버 리소스 확인', '스케일링 고려'],
   },
 };
 ```
@@ -966,30 +931,35 @@ export const httpErrorSolutions = {
 ## 긴급 복구 절차
 
 ### Phase 1: 평가 (0-5분)
+
 - [ ] 장애 범위 확인 (전체/부분)
 - [ ] 영향받은 사용자 수 파악
 - [ ] 에러 로그 수집
 - [ ] 모니터링 대시보드 확인
 
 ### Phase 2: 격리 (5-10분)
+
 - [ ] 문제 서비스 격리
 - [ ] 트래픽 우회 (유지보수 페이지)
 - [ ] 관련 팀에 알림
 - [ ] 사용자 공지
 
 ### Phase 3: 복구 시도 (10-30분)
+
 - [ ] 서비스 재시작
 - [ ] 설정 롤백
 - [ ] 데이터베이스 복구
 - [ ] 캐시 클리어
 
 ### Phase 4: 검증 (30-45분)
+
 - [ ] 헬스체크 통과 확인
 - [ ] 핵심 기능 테스트
 - [ ] 모니터링 지표 정상화 확인
 - [ ] 단계적 트래픽 복구
 
 ### Phase 5: 사후 조치 (45분-)
+
 - [ ] 근본 원인 분석
 - [ ] 재발 방지 대책 수립
 - [ ] 문서 업데이트

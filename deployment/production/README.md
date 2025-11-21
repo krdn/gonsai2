@@ -63,12 +63,14 @@ n8n 통합 Next.js 애플리케이션의 프로덕션 환경 배포 및 운영 �
 ### 하드웨어
 
 **최소 사양**:
+
 - CPU: 4 cores
 - RAM: 8GB
 - Disk: 100GB SSD
 - Network: 100Mbps
 
 **권장 사양**:
+
 - CPU: 8 cores
 - RAM: 16GB
 - Disk: 500GB NVMe SSD
@@ -191,6 +193,7 @@ GRAFANA_ADMIN_PASSWORD=  # 강력한 비밀번호
 ```
 
 **랜덤 키 생성 방법**:
+
 ```bash
 # N8N_ENCRYPTION_KEY, JWT_SECRET 등
 openssl rand -hex 32
@@ -252,6 +255,7 @@ chmod +x scripts/*.sh
 ```
 
 스크립트는 다음을 자동으로 수행합니다:
+
 1. 환경 검증
 2. 필수 디렉토리 생성
 3. SSL 인증서 확인
@@ -375,10 +379,12 @@ docker-compose restart nginx
 **접속**: https://grafana.yourdomain.com
 
 **기본 계정**:
+
 - Username: admin
 - Password: (GRAFANA_ADMIN_PASSWORD)
 
 **주요 대시보드**:
+
 1. **시스템 개요**: 전체 서비스 상태
 2. **n8n 워크플로우**: 실행 통계, 성공/실패율
 3. **데이터베이스**: 성능, 연결 수, 쿼리 시간
@@ -389,6 +395,7 @@ docker-compose restart nginx
 **접속**: http://localhost:9090
 
 **유용한 쿼리**:
+
 ```promql
 # n8n 워크플로우 실행 실패율
 rate(n8n_workflow_failed_total[5m]) / rate(n8n_workflow_executions_total[5m])
@@ -425,6 +432,7 @@ redis_memory_used_bytes / redis_memory_max_bytes
 **알림 채널 설정**:
 
 1. Slack:
+
    ```bash
    # .env.production에 추가
    ALERT_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
@@ -437,6 +445,7 @@ redis_memory_used_bytes / redis_memory_max_bytes
    ```
 
 **알림 규칙**:
+
 - `monitoring/prometheus/rules/alerts.yml` 참조
 - Critical 알림: 즉시 전송
 - Warning 알림: 5분 대기 후 전송
@@ -601,6 +610,7 @@ MIT License
 ## 지원
 
 문제가 발생하면 다음으로 연락하세요:
+
 - 이슈 트래커: [GitHub Issues]
 - 이메일: support@yourdomain.com
 - Slack: #gonsai2-support

@@ -167,27 +167,15 @@
   "healingStrategies": {
     "automatic": {
       "description": "Can be executed without human approval",
-      "criteria": [
-        "Low risk of data loss",
-        "Reversible action",
-        "Well-tested resolution"
-      ]
+      "criteria": ["Low risk of data loss", "Reversible action", "Well-tested resolution"]
     },
     "semi-automatic": {
       "description": "Requires human approval before execution",
-      "criteria": [
-        "Medium risk",
-        "Impacts production data",
-        "May require rollback"
-      ]
+      "criteria": ["Medium risk", "Impacts production data", "May require rollback"]
     },
     "manual": {
       "description": "Requires human intervention",
-      "criteria": [
-        "High risk",
-        "Complex diagnosis needed",
-        "No known auto-healing action"
-      ]
+      "criteria": ["High risk", "Complex diagnosis needed", "No known auto-healing action"]
     }
   },
   "metadata": {

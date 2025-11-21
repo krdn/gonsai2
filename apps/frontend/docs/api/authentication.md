@@ -29,6 +29,7 @@ n8n 웹 UI에서 API 키를 생성합니다:
 7. 생성된 API 키 복사
 
 **API 키 형식:**
+
 ```
 n8n_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
@@ -149,7 +150,7 @@ Content-Type: application/json
 ```typescript
 const response = await fetch('/api/workflows', {
   headers: {
-    'Authorization': `Bearer ${accessToken}`,
+    Authorization: `Bearer ${accessToken}`,
     'Content-Type': 'application/json',
   },
 });
@@ -168,7 +169,7 @@ const queryClient = new QueryClient({
 
         const response = await fetch(queryKey[0] as string, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -217,7 +218,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
     ...options,
     headers: {
       ...options.headers,
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -240,7 +241,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
         ...options,
         headers: {
           ...options.headers,
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
     }
@@ -293,10 +294,7 @@ export async function POST(request: NextRequest) {
 
   // 시크릿 검증
   if (secret !== process.env.WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // Webhook 처리
@@ -320,10 +318,7 @@ const crypto = require('crypto');
 const payload = JSON.stringify($input.all());
 const secret = 'your-webhook-secret';
 
-const signature = crypto
-  .createHmac('sha256', secret)
-  .update(payload)
-  .digest('hex');
+const signature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
 
 return {
   json: {
@@ -350,10 +345,7 @@ export async function POST(request: NextRequest) {
 
   // 서명 비교
   if (receivedSignature !== expectedSignature) {
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
   // 검증 통과
@@ -397,7 +389,7 @@ const credentials = btoa(`${username}:${password}`);
 
 const response = await fetch('http://localhost:5678/api/v1/workflows', {
   headers: {
-    'Authorization': `Basic ${credentials}`,
+    Authorization: `Basic ${credentials}`,
     'X-N8N-API-KEY': 'your-api-key',
   },
 });
@@ -421,6 +413,7 @@ const client = new N8nApiClient({
 ### 401 Unauthorized
 
 **원인:**
+
 - API 키 누락 또는 잘못됨
 - JWT 토큰 만료
 - Basic 인증 실패
@@ -448,6 +441,7 @@ try {
 ### 403 Forbidden
 
 **원인:**
+
 - API 키는 유효하지만 권한 부족
 - 리소스 접근 권한 없음
 
@@ -546,10 +540,7 @@ export function middleware(request: NextRequest) {
   if (!limit || now > limit.resetTime) {
     rateLimit.set(ip, { count: 1, resetTime: now + 60000 }); // 1분
   } else if (limit.count >= 60) {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded' },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   } else {
     limit.count++;
   }

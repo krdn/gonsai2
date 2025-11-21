@@ -39,13 +39,11 @@ async function analyzeNodePerformance(executionId: string) {
     return null;
   }
 
-  const nodeTimings = Object.entries(execution.data.resultData.runData).map(
-    ([nodeName, runs]) => ({
-      nodeName,
-      executionTime: runs[0].executionTime,
-      startTime: runs[0].startTime,
-    })
-  );
+  const nodeTimings = Object.entries(execution.data.resultData.runData).map(([nodeName, runs]) => ({
+    nodeName,
+    executionTime: runs[0].executionTime,
+    startTime: runs[0].startTime,
+  }));
 
   // 실행 시간 기준 정렬
   nodeTimings.sort((a, b) => b.executionTime - a.executionTime);
@@ -64,11 +62,13 @@ async function analyzeNodePerformance(executionId: string) {
 ### 1. 불필요한 노드 제거
 
 **Before (비효율적):**
+
 ```
 Start → HTTP Request → Set → Function → Set → Response
 ```
 
 **After (최적화):**
+
 ```
 Start → HTTP Request → Function → Response
 ```
@@ -76,6 +76,7 @@ Start → HTTP Request → Function → Response
 ### 2. 병렬 실행
 
 **Sequential (느림):**
+
 ```mermaid
 graph LR
     A[Start] --> B[API 1]
@@ -85,6 +86,7 @@ graph LR
 ```
 
 **Parallel (빠름):**
+
 ```mermaid
 graph LR
     A[Start] --> B[API 1]
@@ -191,15 +193,17 @@ graph LR
 ### 5. 데이터 크기 최소화
 
 **Before:**
+
 ```javascript
 // Function 노드: 모든 데이터 반환
 return items;
 ```
 
 **After:**
+
 ```javascript
 // Function 노드: 필요한 필드만 반환
-return items.map(item => ({
+return items.map((item) => ({
   json: {
     id: item.json.id,
     name: item.json.name,
@@ -368,35 +372,29 @@ function WorkflowDetail() {
 
 ```typescript
 // MongoDB 컬렉션에 인덱스 생성
-await db.collection('workflow_executions').createIndex(
-  { workflowId: 1, createdAt: -1 },
-  { background: true }
-);
+await db
+  .collection('workflow_executions')
+  .createIndex({ workflowId: 1, createdAt: -1 }, { background: true });
 
-await db.collection('workflow_executions').createIndex(
-  { status: 1 },
-  { background: true }
-);
+await db.collection('workflow_executions').createIndex({ status: 1 }, { background: true });
 
 // 복합 인덱스
-await db.collection('webhook_events').createIndex(
-  { workflowId: 1, event: 1, timestamp: -1 },
-  { background: true }
-);
+await db
+  .collection('webhook_events')
+  .createIndex({ workflowId: 1, event: 1, timestamp: -1 }, { background: true });
 ```
 
 ### 쿼리 최적화
 
 **Before (느림):**
+
 ```typescript
 // 모든 필드 가져오기
-const executions = await db
-  .collection('workflow_executions')
-  .find({ workflowId })
-  .toArray();
+const executions = await db.collection('workflow_executions').find({ workflowId }).toArray();
 ```
 
 **After (빠름):**
+
 ```typescript
 // 필요한 필드만 가져오기
 const executions = await db
@@ -432,10 +430,7 @@ const stats = await db
         count: { $sum: 1 },
         avgDuration: {
           $avg: {
-            $subtract: [
-              { $toDate: '$stoppedAt' },
-              { $toDate: '$startedAt' },
-            ],
+            $subtract: [{ $toDate: '$stoppedAt' }, { $toDate: '$startedAt' }],
           },
         },
       },
@@ -451,9 +446,7 @@ const stats = await db
 ```typescript
 import { redis } from '@/lib/redis';
 
-async function getExecutionWithCache(
-  executionId: string
-): Promise<Execution> {
+async function getExecutionWithCache(executionId: string): Promise<Execution> {
   // 캐시 확인
   const cached = await redis.get(`execution:${executionId}`);
 
@@ -465,11 +458,7 @@ async function getExecutionWithCache(
   const execution = await n8nClient.getExecution(executionId);
 
   // 캐시 저장 (1시간)
-  await redis.setex(
-    `execution:${executionId}`,
-    3600,
-    JSON.stringify(execution)
-  );
+  await redis.setex(`execution:${executionId}`, 3600, JSON.stringify(execution));
 
   return execution;
 }
@@ -528,21 +517,17 @@ const client = new N8nApiClient({
 ### 요청 배칭
 
 ```typescript
-async function batchGetWorkflows(
-  workflowIds: string[]
-): Promise<Workflow[]> {
+async function batchGetWorkflows(workflowIds: string[]): Promise<Workflow[]> {
   // 병렬로 여러 워크플로우 가져오기
-  const promises = workflowIds.map(id => n8nClient.getWorkflow(id));
+  const promises = workflowIds.map((id) => n8nClient.getWorkflow(id));
 
   // Promise.all 대신 Promise.allSettled 사용
   // 일부 실패해도 나머지 성공한 결과 반환
   const results = await Promise.allSettled(promises);
 
   return results
-    .filter((result): result is PromiseFulfilledResult<Workflow> =>
-      result.status === 'fulfilled'
-    )
-    .map(result => result.value);
+    .filter((result): result is PromiseFulfilledResult<Workflow> => result.status === 'fulfilled')
+    .map((result) => result.value);
 }
 ```
 
@@ -550,20 +535,13 @@ async function batchGetWorkflows(
 
 ```typescript
 class N8nApiClient {
-  private async requestWithRetry<T>(
-    options: RequestOptions,
-    maxRetries = 3
-  ): Promise<T> {
+  private async requestWithRetry<T>(options: RequestOptions, maxRetries = 3): Promise<T> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await this.request<T>(options);
       } catch (error: any) {
         // 재시도하지 않아야 하는 에러
-        if (
-          error.statusCode >= 400 &&
-          error.statusCode < 500 &&
-          error.statusCode !== 429
-        ) {
+        if (error.statusCode >= 400 && error.statusCode < 500 && error.statusCode !== 429) {
           throw error;
         }
 
@@ -576,7 +554,7 @@ class N8nApiClient {
         const jitter = Math.random() * 1000;
         const delay = baseDelay + jitter;
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -605,15 +583,11 @@ async function collectMetrics(
   const execution = await n8nClient.getExecution(executionId);
 
   const startTime = new Date(execution.startedAt).getTime();
-  const endTime = execution.stoppedAt
-    ? new Date(execution.stoppedAt).getTime()
-    : Date.now();
+  const endTime = execution.stoppedAt ? new Date(execution.stoppedAt).getTime() : Date.now();
 
   const executionTime = endTime - startTime;
 
-  const nodeCount = Object.keys(
-    execution.data?.resultData?.runData || {}
-  ).length;
+  const nodeCount = Object.keys(execution.data?.resultData?.runData || {}).length;
 
   const dataSize = JSON.stringify(execution.data).length;
 
@@ -635,9 +609,7 @@ async function collectMetrics(
 ### 성능 알림
 
 ```typescript
-async function checkPerformanceThresholds(
-  metrics: PerformanceMetrics
-): Promise<void> {
+async function checkPerformanceThresholds(metrics: PerformanceMetrics): Promise<void> {
   const thresholds = {
     executionTime: 30000, // 30초
     dataSize: 1000000, // 1MB

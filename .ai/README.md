@@ -22,17 +22,20 @@
 **목적**: n8n 워크플로우의 구조, 의존성, 실행 패턴을 AI가 이해할 수 있도록 구조화
 
 **사용 시나리오**:
+
 - 워크플로우 수정 전 의존성 확인
 - 새로운 워크플로우 설계 시 패턴 참조
 - 오류 발생 시 컨텍스트 파악
 
 **주요 정보**:
+
 - 워크플로우 입출력 스키마
 - 노드 간 데이터 흐름
 - 외부 서비스 의존성
 - 실행 메트릭 및 성공률
 
 **AI 활용 예시**:
+
 ```typescript
 // AI가 context-map.json을 읽고 자동으로 생성한 타입
 interface WorkflowInput {
@@ -53,11 +56,13 @@ interface WorkflowOutput {
 **목적**: 발생 가능한 오류를 분류하고 자동 치유(auto-healing) 전략 제공
 
 **사용 시나리오**:
+
 - 오류 발생 시 자동 진단
 - 알려진 오류에 대한 자동 복구
 - 새로운 오류 패턴 학습
 
 **주요 정보**:
+
 - 오류 시그니처 (정규표현식)
 - 심각도 및 영향도
 - 진단 단계
@@ -65,6 +70,7 @@ interface WorkflowOutput {
 - 수동 해결 가이드
 
 **AI 활용 예시**:
+
 ```typescript
 // AI가 error-patterns.json을 기반으로 자동 치유 시도
 async function autoHealError(error: Error) {
@@ -89,6 +95,7 @@ async function autoHealError(error: Error) {
 **목적**: 검증된 워크플로우 템플릿을 JSON 형식으로 저장
 
 **파일 구조**:
+
 ```
 n8n-templates/
 ├── webhook-to-mongodb.json      # 웹훅 → MongoDB 저장
@@ -98,11 +105,13 @@ n8n-templates/
 ```
 
 **템플릿 사용법**:
+
 1. n8n UI에서 Import Workflow
 2. 환경 변수 및 자격증명 설정
 3. 활성화 및 테스트
 
 **AI 활용**:
+
 - 유사한 요구사항에 대한 템플릿 추천
 - 템플릿 기반 커스터마이징
 
@@ -113,29 +122,37 @@ n8n-templates/
 **파일 명명 규칙**: `{workflow-id}.md`
 
 **문서 구조**:
+
 ```markdown
 # Workflow Name
 
 ## 개요
+
 워크플로우의 목적과 사용 사례
 
 ## 트리거
+
 언제, 어떻게 실행되는가
 
 ## 데이터 흐름
+
 입력 → 처리 → 출력 과정 설명
 
 ## 의존성
+
 - 외부 서비스
 - 다른 워크플로우
 
 ## 오류 처리
+
 예상되는 오류와 대응 방법
 
 ## 테스트
+
 테스트 방법과 샘플 데이터
 
 ## 수정 이력
+
 변경 사항 기록
 ```
 
@@ -144,6 +161,7 @@ n8n-templates/
 ### 1. 컨텍스트 우선 읽기
 
 AI가 작업을 시작하기 전:
+
 ```bash
 # AI가 자동으로 실행할 명령
 cat .ai/context-map.json | jq '.workflows["target-workflow-id"]'
@@ -163,7 +181,7 @@ function diagnoseError(error: Error): DiagnosisResult {
           patternId: pattern.id,
           severity: pattern.severity,
           diagnosticSteps: pattern.diagnosticSteps,
-          autoHealable: pattern.autoHealingActions.length > 0
+          autoHealable: pattern.autoHealingActions.length > 0,
         };
       }
     }
@@ -230,12 +248,14 @@ npm run ai:update-context
 ### 민감 정보 제외
 
 **절대 포함하지 말 것**:
+
 - ❌ API 키
 - ❌ 비밀번호
 - ❌ 개인 식별 정보 (PII)
 - ❌ 프로덕션 데이터
 
 **대신 사용**:
+
 - ✅ 환경 변수 참조 (`${N8N_API_KEY}`)
 - ✅ 샘플 데이터
 - ✅ 구조적 정보만 포함
@@ -254,6 +274,7 @@ git diff --cached | grep -E '(password|api[_-]?key|secret|token).*[:=].*["\']'
 ### AI 활용 효과 측정
 
 **추적할 메트릭**:
+
 - 자동 치유 성공률
 - 오류 진단 정확도
 - 컨텍스트 맵 참조 빈도
@@ -308,10 +329,7 @@ git diff --cached | grep -E '(password|api[_-]?key|secret|token).*[:=].*["\']'
 ```json
 // ✅ AI가 자동으로 실행할 수 있는 명령
 {
-  "diagnosticSteps": [
-    "docker ps | grep mongodb",
-    "docker logs my-mongodb-container --tail 50"
-  ]
+  "diagnosticSteps": ["docker ps | grep mongodb", "docker logs my-mongodb-container --tail 50"]
 }
 ```
 

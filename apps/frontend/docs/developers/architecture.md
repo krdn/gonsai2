@@ -516,14 +516,8 @@ export class N8nApiClient {
     return response.data.data;
   }
 
-  async executeWorkflow(
-    workflowId: string,
-    data?: any
-  ): Promise<Execution> {
-    const response = await this.httpClient.post(
-      `/workflows/${workflowId}/execute`,
-      data
-    );
+  async executeWorkflow(workflowId: string, data?: any): Promise<Execution> {
+    const response = await this.httpClient.post(`/workflows/${workflowId}/execute`, data);
     return response.data.data;
   }
 
@@ -783,28 +777,28 @@ spec:
         app: frontend
     spec:
       containers:
-      - name: frontend
-        image: registry/frontend:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: MONGODB_URI
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: mongodb-uri
-        - name: REDIS_URL
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: redis-url
-        resources:
-          requests:
-            cpu: 500m
-            memory: 512Mi
-          limits:
-            cpu: 1000m
-            memory: 1Gi
+        - name: frontend
+          image: registry/frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-uri
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: redis-url
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
 ```
 
 ## 성능 최적화 전략
@@ -841,8 +835,8 @@ export function useWorkflows() {
   return useQuery({
     queryKey: ['workflows'],
     queryFn: () => n8nClient.getWorkflows(),
-    staleTime: 30000,    // 30초 동안 fresh
-    cacheTime: 300000,   // 5분 동안 캐시 유지
+    staleTime: 30000, // 30초 동안 fresh
+    cacheTime: 300000, // 5분 동안 캐시 유지
     refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

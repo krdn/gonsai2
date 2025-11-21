@@ -192,6 +192,7 @@ This is a danger alert
 문서 사이트는 Algolia DocSearch를 사용하여 빠르고 정확한 검색을 제공합니다.
 
 검색 단축키:
+
 - **macOS**: `⌘ + K`
 - **Windows/Linux**: `Ctrl + K`
 

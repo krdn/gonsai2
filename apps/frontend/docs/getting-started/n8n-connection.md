@@ -70,8 +70,8 @@ const n8nClient = new N8nApiClient({
 const customClient = new N8nApiClient({
   baseUrl: 'https://n8n.yourdomain.com/api/v1',
   apiKey: 'your-api-key',
-  timeout: 60000,  // 60초
-  retries: 5,       // 5회 재시도
+  timeout: 60000, // 60초
+  retries: 5, // 5회 재시도
 });
 ```
 
@@ -84,7 +84,7 @@ try {
   const workflows = await n8nClient.getWorkflows();
   console.log(`Total workflows: ${workflows.length}`);
 
-  workflows.forEach(workflow => {
+  workflows.forEach((workflow) => {
     console.log(`- ${workflow.name} (${workflow.active ? 'Active' : 'Inactive'})`);
   });
 } catch (error) {
@@ -232,16 +232,11 @@ export function WorkflowList() {
 
   return (
     <div className="space-y-4">
-      {workflows?.map(workflow => (
+      {workflows?.map((workflow) => (
         <div key={workflow.id} className="border p-4 rounded-lg">
           <h3 className="font-semibold">{workflow.name}</h3>
-          <p className="text-sm text-gray-500">
-            {workflow.active ? '활성' : '비활성'}
-          </p>
-          <Button
-            onClick={() => handleExecute(workflow.id)}
-            disabled={executeWorkflow.isPending}
-          >
+          <p className="text-sm text-gray-500">{workflow.active ? '활성' : '비활성'}</p>
+          <Button onClick={() => handleExecute(workflow.id)} disabled={executeWorkflow.isPending}>
             실행
           </Button>
         </div>
@@ -318,9 +313,7 @@ export function ExecutionMonitor({ executionId }: { executionId: string }) {
       <div className="mt-2">
         <p>상태: {status}</p>
         {data && (
-          <pre className="mt-2 bg-gray-100 p-2 rounded">
-            {JSON.stringify(data, null, 2)}
-          </pre>
+          <pre className="mt-2 bg-gray-100 p-2 rounded">{JSON.stringify(data, null, 2)}</pre>
         )}
       </div>
     </div>
@@ -360,10 +353,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

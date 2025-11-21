@@ -113,7 +113,9 @@ export function LogStream({ className = '' }: LogStreamProps) {
   };
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col ${className}`}>
+    <div
+      className={`bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col ${className}`}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
@@ -261,9 +263,7 @@ export function LogStream({ className = '' }: LogStreamProps) {
             DEBUG: {logs.filter((l) => l.level === 'debug').length}
           </span>
         </div>
-        {isPaused && (
-          <span className="text-orange-600 font-semibold">⏸ 일시정지됨</span>
-        )}
+        {isPaused && <span className="text-orange-600 font-semibold">⏸ 일시정지됨</span>}
       </div>
     </div>
   );

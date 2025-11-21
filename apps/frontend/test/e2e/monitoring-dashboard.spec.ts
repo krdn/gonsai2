@@ -21,18 +21,10 @@ test.describe('Monitoring Dashboard', () => {
     await expect(dashboard).toBeVisible();
 
     // Verify key metrics are displayed
-    await expect(
-      page.locator('[data-testid="metric-total-workflows"]')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="metric-active-workflows"]')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="metric-total-executions"]')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="metric-success-rate"]')
-    ).toBeVisible();
+    await expect(page.locator('[data-testid="metric-total-workflows"]')).toBeVisible();
+    await expect(page.locator('[data-testid="metric-active-workflows"]')).toBeVisible();
+    await expect(page.locator('[data-testid="metric-total-executions"]')).toBeVisible();
+    await expect(page.locator('[data-testid="metric-success-rate"]')).toBeVisible();
   });
 
   test('should display execution statistics chart', async ({ page }) => {
@@ -50,9 +42,7 @@ test.describe('Monitoring Dashboard', () => {
 
   test('should display recent executions table', async ({ page }) => {
     // Check for recent executions section
-    const recentExecutions = page.locator(
-      '[data-testid="recent-executions"]'
-    );
+    const recentExecutions = page.locator('[data-testid="recent-executions"]');
     await expect(recentExecutions).toBeVisible();
 
     // Verify table headers
@@ -93,12 +83,8 @@ test.describe('Monitoring Dashboard', () => {
 
       // Verify workflow item structure
       const firstItem = workflowItems.first();
-      await expect(
-        firstItem.locator('[data-testid="workflow-name"]')
-      ).toBeVisible();
-      await expect(
-        firstItem.locator('[data-testid="workflow-status-badge"]')
-      ).toBeVisible();
+      await expect(firstItem.locator('[data-testid="workflow-name"]')).toBeVisible();
+      await expect(firstItem.locator('[data-testid="workflow-status-badge"]')).toBeVisible();
     }
   });
 
@@ -117,12 +103,8 @@ test.describe('Monitoring Dashboard', () => {
     } else {
       // Verify alert structure
       const firstAlert = alerts.first();
-      await expect(
-        firstAlert.locator('[data-testid="alert-severity"]')
-      ).toBeVisible();
-      await expect(
-        firstAlert.locator('[data-testid="alert-message"]')
-      ).toBeVisible();
+      await expect(firstAlert.locator('[data-testid="alert-severity"]')).toBeVisible();
+      await expect(firstAlert.locator('[data-testid="alert-message"]')).toBeVisible();
     }
   });
 });
@@ -135,9 +117,7 @@ test.describe('Real-time Dashboard Updates', () => {
     await page.waitForLoadState('networkidle');
 
     // Get initial total executions count
-    const executionsMetric = page.locator(
-      '[data-testid="metric-total-executions"]'
-    );
+    const executionsMetric = page.locator('[data-testid="metric-total-executions"]');
     const initialCount = await executionsMetric.textContent();
 
     // Monitor WebSocket connection
@@ -228,14 +208,8 @@ test.describe('Dashboard Filtering and Time Range', () => {
     const today = new Date();
     const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    await page.fill(
-      '[data-testid="start-date"]',
-      lastWeek.toISOString().split('T')[0]
-    );
-    await page.fill(
-      '[data-testid="end-date"]',
-      today.toISOString().split('T')[0]
-    );
+    await page.fill('[data-testid="start-date"]', lastWeek.toISOString().split('T')[0]);
+    await page.fill('[data-testid="end-date"]', today.toISOString().split('T')[0]);
 
     // Apply custom range
     await page.click('[data-testid="apply-date-range"]');
@@ -244,9 +218,7 @@ test.describe('Dashboard Filtering and Time Range', () => {
     await page.waitForTimeout(1000);
 
     // Verify custom range is active
-    await expect(page.locator('[data-testid="time-range-selector"]')).toContainText(
-      /custom/i
-    );
+    await expect(page.locator('[data-testid="time-range-selector"]')).toContainText(/custom/i);
   });
 });
 
@@ -283,9 +255,7 @@ test.describe('Dashboard Export and Actions', () => {
     await page.goto('/dashboard');
 
     // Get initial metric value
-    const executionsMetric = page.locator(
-      '[data-testid="metric-total-executions"]'
-    );
+    const executionsMetric = page.locator('[data-testid="metric-total-executions"]');
     await expect(executionsMetric).toBeVisible();
 
     // Click refresh button
@@ -373,12 +343,8 @@ test.describe('Dashboard Responsive Design', () => {
     await expect(dashboard).toBeVisible();
 
     // All key elements should be visible
-    await expect(
-      page.locator('[data-testid="metric-total-workflows"]')
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-testid="execution-stats-chart"]')
-    ).toBeVisible();
+    await expect(page.locator('[data-testid="metric-total-workflows"]')).toBeVisible();
+    await expect(page.locator('[data-testid="execution-stats-chart"]')).toBeVisible();
   });
 });
 
@@ -402,12 +368,8 @@ test.describe('Dashboard Accessibility', () => {
     await page.goto('/dashboard');
 
     // Check for ARIA labels on interactive elements
-    await expect(
-      page.locator('[aria-label="Export dashboard data"]')
-    ).toBeVisible();
-    await expect(
-      page.locator('[aria-label="Refresh dashboard"]')
-    ).toBeVisible();
+    await expect(page.locator('[aria-label="Export dashboard data"]')).toBeVisible();
+    await expect(page.locator('[aria-label="Refresh dashboard"]')).toBeVisible();
 
     // Check for ARIA roles on complex widgets
     await expect(page.locator('[role="region"]')).toHaveCount(

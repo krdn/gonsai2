@@ -12,6 +12,7 @@ n8n 워크플로우 관리 시스템을 실행하기 위한 Docker 환경을 구
 ### Docker 설치
 
 **Ubuntu/Debian:**
+
 ```bash
 # 이전 버전 제거
 sudo apt-get remove docker docker-engine docker.io containerd runc
@@ -39,6 +40,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 ```
 
 **macOS:**
+
 ```bash
 # Homebrew 사용
 brew install --cask docker
@@ -47,6 +49,7 @@ brew install --cask docker
 ```
 
 **Windows:**
+
 1. [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/) 다운로드
 2. WSL 2 백엔드 활성화
 3. Docker Desktop 설치 및 실행
@@ -110,7 +113,7 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - "5678:5678"
+      - '5678:5678'
     environment:
       - N8N_HOST=${N8N_HOST}
       - N8N_PORT=5678
@@ -146,7 +149,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      test: ['CMD-SHELL', 'wget --spider -q http://localhost:5678/healthz || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -167,7 +170,7 @@ services:
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -183,7 +186,7 @@ services:
     volumes:
       - ./volumes/redis:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -202,7 +205,7 @@ services:
     volumes:
       - ./volumes/mongodb:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -215,8 +218,8 @@ services:
     container_name: n8n-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro

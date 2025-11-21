@@ -84,11 +84,13 @@ scripts/auto-healing/
 **실행 주기**: 5분마다 (systemd timer)
 
 **모니터링 항목**:
+
 - n8n 헬스 체크 (`/healthz`)
 - 실패한 워크플로우 실행 조회
 - MongoDB 오류 로그 확인
 
 **트리거 조건**:
+
 - 같은 오류 패턴이 5회 이상 발생
 - 심각도가 critical 또는 high
 - 마지막 치유 시도 후 30분 경과
@@ -98,6 +100,7 @@ scripts/auto-healing/
 **실행 주기**: 1시간마다 (systemd timer)
 
 **분석 프로세스**:
+
 1. **오류 분류**: 카테고리별 자동 분류
    - Database (MongoDB 관련)
    - Network (HTTP, 연결 오류)
@@ -109,6 +112,7 @@ scripts/auto-healing/
 2. **빈도 분석**: 오류 발생 횟수 및 추세
 
 3. **영향도 평가**: Impact Score 계산
+
    ```
    Impact Score = 빈도(50점) + 심각도(30점) + 영향범위(20점)
    ```
@@ -120,16 +124,19 @@ scripts/auto-healing/
 **실행**: 자동 트리거 (심각한 오류 감지 시)
 
 **Claude API 활용**:
+
 - Model: `claude-3-5-sonnet-20241022`
 - Temperature: `0.2` (정확성 우선)
 - Max Tokens: `4096`
 
 **생성되는 수정**:
+
 - **Workflow 수정**: n8n 워크플로우 JSON 패치
 - **Code 수정**: TypeScript/JavaScript 코드 변경
 - **Configuration 수정**: 환경 변수, 설정 파일
 
 **각 수정에 포함**:
+
 - 설명 (Description)
 - 변경 사항 (Changes)
 - 테스트 계획 (Test Plan)
@@ -139,6 +146,7 @@ scripts/auto-healing/
 ### 자동 배포 (deploy-fix.sh)
 
 **배포 프로세스**:
+
 1. **백업 생성**: 모든 변경 파일 백업
 2. **테스트 실행**:
    - ESLint
@@ -239,6 +247,7 @@ cd /home/gon/projects/gonsai2/apps/frontend/scripts/auto-healing/systemd
 ```
 
 설치 스크립트는 다음을 수행합니다:
+
 - 서비스 파일을 `~/.config/systemd/user/`에 복사
 - systemd 데몬 리로드
 - 타이머 활성화 및 시작
@@ -374,6 +383,7 @@ GET /api/v1/executions?status=error&limit=50
 ```
 
 실패한 워크플로우 실행 정보:
+
 - `executionId`: 실행 ID
 - `workflowId`: 워크플로우 ID
 - `workflowName`: 워크플로우 이름
@@ -385,8 +395,8 @@ GET /api/v1/executions?status=error&limit=50
 ```javascript
 db.executions.find({
   finished: false,
-  stoppedAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) }
-})
+  stoppedAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) },
+});
 ```
 
 최근 5분 내 미완료 실행 조회
@@ -395,34 +405,35 @@ db.executions.find({
 
 #### 카테고리 정의
 
-| 카테고리 | 서브카테고리 | 심각도 | 예시 |
-|---------|------------|--------|------|
-| `database` | connection | critical | MongoNetworkError |
-| `database` | query | high | MongoServerError |
-| `database` | performance | high | MongoTimeoutError |
-| `network` | connection_refused | high | ECONNREFUSED |
-| `network` | timeout | medium | ETIMEDOUT |
-| `network` | dns | high | ENOTFOUND |
-| `authentication` | credentials | high | Unauthorized |
-| `authentication` | permissions | high | Forbidden |
-| `data` | validation | medium | ValidationError |
-| `data` | type | medium | TypeError |
-| `data` | parsing | medium | JSON parse error |
-| `workflow` | structure | high | Node not found |
-| `workflow` | configuration | medium | Missing parameter |
-| `resources` | memory | critical | Out of memory |
-| `resources` | disk | critical | Disk full |
+| 카테고리         | 서브카테고리       | 심각도   | 예시              |
+| ---------------- | ------------------ | -------- | ----------------- |
+| `database`       | connection         | critical | MongoNetworkError |
+| `database`       | query              | high     | MongoServerError  |
+| `database`       | performance        | high     | MongoTimeoutError |
+| `network`        | connection_refused | high     | ECONNREFUSED      |
+| `network`        | timeout            | medium   | ETIMEDOUT         |
+| `network`        | dns                | high     | ENOTFOUND         |
+| `authentication` | credentials        | high     | Unauthorized      |
+| `authentication` | permissions        | high     | Forbidden         |
+| `data`           | validation         | medium   | ValidationError   |
+| `data`           | type               | medium   | TypeError         |
+| `data`           | parsing            | medium   | JSON parse error  |
+| `workflow`       | structure          | high     | Node not found    |
+| `workflow`       | configuration      | medium   | Missing parameter |
+| `resources`      | memory             | critical | Out of memory     |
+| `resources`      | disk               | critical | Disk full         |
 
 #### Impact Score 계산
 
 ```typescript
 const impactScore =
-  Math.min(frequency * 2, 50) +  // 빈도 점수 (최대 50점)
-  severityScore +                 // 심각도 점수 (최대 30점)
-  Math.min(affectedWorkflows * 5, 20);  // 범위 점수 (최대 20점)
+  Math.min(frequency * 2, 50) + // 빈도 점수 (최대 50점)
+  severityScore + // 심각도 점수 (최대 30점)
+  Math.min(affectedWorkflows * 5, 20); // 범위 점수 (최대 20점)
 ```
 
 **심각도별 점수**:
+
 - `critical`: 30점
 - `high`: 20점
 - `medium`: 10점
@@ -525,6 +536,7 @@ git revert [commit-hash]
 **증상**: `systemctl --user list-timers`에서 타이머가 보이지 않음
 
 **해결**:
+
 ```bash
 # 타이머 파일 확인
 ls -la ~/.config/systemd/user/n8n-auto-healing-*.timer
@@ -545,6 +557,7 @@ sudo loginctl enable-linger $USER
 **증상**: "ANTHROPIC_API_KEY not set"
 
 **해결**:
+
 ```bash
 # .env 파일 위치 확인
 ls -la /home/gon/projects/gonsai2/apps/frontend/scripts/auto-healing/.env
@@ -564,6 +577,7 @@ systemctl --user daemon-reload
 **증상**: "MongoNetworkError: connect ECONNREFUSED"
 
 **해결**:
+
 ```bash
 # MongoDB 상태 확인
 docker ps | grep mongo
@@ -580,6 +594,7 @@ echo $MONGODB_URI
 **증상**: "Failed to fetch workflow: Unauthorized"
 
 **해결**:
+
 ```bash
 # n8n API 키 확인
 echo $N8N_API_KEY
@@ -596,6 +611,7 @@ nano /home/gon/projects/gonsai2/apps/frontend/scripts/auto-healing/.env
 **증상**: "Error calling Claude API"
 
 **해결**:
+
 ```bash
 # API 키 확인
 echo $ANTHROPIC_API_KEY
@@ -620,6 +636,7 @@ curl https://api.anthropic.com/v1/messages \
 **증상**: "Failed to push branch: Permission denied"
 
 **해결**:
+
 ```bash
 # Git 인증 확인
 git config --global user.name
@@ -640,6 +657,7 @@ gh auth login
 **증상**: "gh pr create failed"
 
 **해결**:
+
 ```bash
 # GitHub CLI 설치 확인
 gh --version
@@ -797,12 +815,12 @@ send_notification() {
 ```typescript
 // 자동 수정 가능한 항목 필터링
 const autoFixable = analysis.priority_fixes
-  .filter(f => {
+  .filter((f) => {
     // 특정 카테고리만 허용
     const allowedCategories = ['workflow', 'configuration'];
     return f.automated_fix_available && allowedCategories.includes(f.category);
   })
-  .filter(f => {
+  .filter((f) => {
     // Impact Score 임계값
     return f.impact_score >= 50;
   })
@@ -826,6 +844,7 @@ echo ".env" >> .gitignore
 ### 2. systemd 보안 설정
 
 서비스 파일에 포함된 보안 설정:
+
 - `PrivateTmp=yes`: 격리된 임시 디렉토리
 - `NoNewPrivileges=true`: 권한 상승 방지
 - `ProtectSystem=strict`: 시스템 파일 보호

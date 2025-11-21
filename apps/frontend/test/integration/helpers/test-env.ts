@@ -147,7 +147,7 @@ export class TestEnvironment {
    * Sleep utility
    */
   private static sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -155,10 +155,9 @@ export class TestEnvironment {
    */
   static getLogs(service: 'n8n-test' | 'postgres-test' = 'n8n-test'): string {
     try {
-      return execSync(
-        `docker-compose -f ${DOCKER_COMPOSE_FILE} logs ${service}`,
-        { encoding: 'utf-8' }
-      );
+      return execSync(`docker-compose -f ${DOCKER_COMPOSE_FILE} logs ${service}`, {
+        encoding: 'utf-8',
+      });
     } catch (error: any) {
       return error.message;
     }
@@ -167,15 +166,11 @@ export class TestEnvironment {
   /**
    * Execute command in container
    */
-  static execInContainer(
-    service: 'n8n-test' | 'postgres-test',
-    command: string
-  ): string {
+  static execInContainer(service: 'n8n-test' | 'postgres-test', command: string): string {
     try {
-      return execSync(
-        `docker-compose -f ${DOCKER_COMPOSE_FILE} exec -T ${service} ${command}`,
-        { encoding: 'utf-8' }
-      );
+      return execSync(`docker-compose -f ${DOCKER_COMPOSE_FILE} exec -T ${service} ${command}`, {
+        encoding: 'utf-8',
+      });
     } catch (error: any) {
       return error.message;
     }

@@ -43,6 +43,7 @@ Start 노드는 기본적으로 추가되어 있습니다.
 3. **HTTP Request** 노드 선택
 
 **설정:**
+
 - **Method**: GET
 - **URL**: `https://jsonplaceholder.typicode.com/todos/1`
 
@@ -54,6 +55,7 @@ Start 노드는 기본적으로 추가되어 있습니다.
 2. "Set" 검색 후 선택
 
 **설정:**
+
 - **Keep Only Set**: 활성화
 - **Values to Set**:
   - Name: `title`
@@ -71,6 +73,7 @@ Frontend로 결과를 전송하려면 Webhook 노드를 추가합니다:
 2. "Webhook" 검색 후 선택
 
 **설정:**
+
 - **HTTP Method**: POST
 - **Path**: `my-first-workflow`
 - **Response Mode**: Using 'Respond to Webhook' Node
@@ -143,7 +146,7 @@ export function FirstWorkflowDemo() {
 
   const waitForCompletion = async (executionId: string, maxAttempts = 20): Promise<any> => {
     for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2초 대기
 
       const status = await n8nClient.getExecution(executionId);
 
@@ -163,20 +166,14 @@ export function FirstWorkflowDemo() {
     <Card className="p-6">
       <h2 className="text-2xl font-bold mb-4">첫 워크플로우 실행</h2>
 
-      <Button
-        onClick={executeWorkflow}
-        disabled={isExecuting}
-        className="mb-4"
-      >
+      <Button onClick={executeWorkflow} disabled={isExecuting} className="mb-4">
         {isExecuting ? '실행 중...' : '워크플로우 실행'}
       </Button>
 
       {result && (
         <div className="mt-4 p-4 bg-gray-100 rounded-lg">
           <h3 className="font-semibold mb-2">실행 결과:</h3>
-          <pre className="text-sm overflow-auto">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+          <pre className="text-sm overflow-auto">{JSON.stringify(result, null, 2)}</pre>
         </div>
       )}
     </Card>
@@ -202,10 +199,7 @@ export async function POST(request: NextRequest) {
     const { workflowId } = await request.json();
 
     if (!workflowId) {
-      return NextResponse.json(
-        { error: 'workflowId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'workflowId is required' }, { status: 400 });
     }
 
     // 워크플로우 실행
@@ -216,7 +210,7 @@ export async function POST(request: NextRequest) {
     const maxAttempts = 15;
 
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const status = await n8nClient.getExecution(execution.executionId);
 
@@ -252,10 +246,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Workflow execution error:', error);
 
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -319,7 +310,7 @@ export function WorkflowExecutionMonitor({ executionId }: { executionId: string 
         setStatus(data.status);
         setProgress(data.progress || 0);
       } else if (data.type === 'log') {
-        setLogs(prev => [...prev, data.message]);
+        setLogs((prev) => [...prev, data.message]);
       }
     };
 
@@ -347,8 +338,8 @@ export function WorkflowExecutionMonitor({ executionId }: { executionId: string 
             status === 'success'
               ? 'bg-green-100 text-green-800'
               : status === 'error'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-blue-100 text-blue-800'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-blue-100 text-blue-800'
           }`}
         >
           {status}
@@ -403,11 +394,7 @@ async function saveExecutionResult(workflowId: string, executionId: string, resu
 import { redis } from '@/lib/redis';
 
 async function cacheExecutionResult(executionId: string, result: any, ttl = 3600) {
-  await redis.setex(
-    `execution:${executionId}`,
-    ttl,
-    JSON.stringify(result)
-  );
+  await redis.setex(`execution:${executionId}`, ttl, JSON.stringify(result));
 }
 
 async function getCachedResult(executionId: string) {
@@ -421,12 +408,14 @@ async function getCachedResult(executionId: string) {
 ### 워크플로우가 실행되지 않음
 
 1. **워크플로우가 활성화되어 있는지 확인**
+
    ```typescript
    const workflow = await n8nClient.getWorkflow(workflowId);
    console.log('Active:', workflow.active);
    ```
 
 2. **API 키가 올바른지 확인**
+
    ```typescript
    console.log('API Key:', process.env.NEXT_PUBLIC_N8N_API_KEY?.slice(0, 10) + '...');
    ```
@@ -439,14 +428,16 @@ async function getCachedResult(executionId: string) {
 ### 실행 결과를 받을 수 없음
 
 1. **실행 ID 확인**
+
    ```typescript
    console.log('Execution ID:', execution.executionId);
    ```
 
 2. **폴링 간격 조정**
+
    ```typescript
    // 2초 대신 5초로 변경
-   await new Promise(resolve => setTimeout(resolve, 5000));
+   await new Promise((resolve) => setTimeout(resolve, 5000));
    ```
 
 3. **직접 n8n UI에서 확인**
@@ -456,6 +447,7 @@ async function getCachedResult(executionId: string) {
 ### WebSocket 연결 실패
 
 1. **WebSocket URL 확인**
+
    ```typescript
    console.log('WebSocket URL:', process.env.NEXT_PUBLIC_N8N_WEBSOCKET_URL);
    ```

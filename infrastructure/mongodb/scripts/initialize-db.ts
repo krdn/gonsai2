@@ -162,7 +162,6 @@ async function initializeDatabase(): Promise<void> {
     console.log(`2. n8n 워크플로우 동기화:`);
     console.log(`   npm run sync:workflows`);
     console.log();
-
   } catch (error) {
     log('error', `초기화 실패: ${error instanceof Error ? error.message : error}`);
 

@@ -257,11 +257,14 @@ export interface TokenUsageStats {
   totalCost: number;
   averageTokensPerLog: number;
   averageCostPerLog: number;
-  byModel: Record<string, {
-    count: number;
-    tokens: number;
-    cost: number;
-  }>;
+  byModel: Record<
+    string,
+    {
+      count: number;
+      tokens: number;
+      cost: number;
+    }
+  >;
 }
 
 export async function calculateTokenUsageStats(
@@ -397,9 +400,7 @@ export async function getAgentPerformanceMetrics(
     totalExecutions: result.totalExecutions,
     successCount: result.successCount,
     failedCount: result.failedCount,
-    successRate: result.totalExecutions > 0
-      ? result.successCount / result.totalExecutions
-      : 0,
+    successRate: result.totalExecutions > 0 ? result.successCount / result.totalExecutions : 0,
     averageDuration: Math.round(result.averageDuration || 0),
     averageTokens: Math.round(result.averageTokens || 0),
     totalCost: result.totalCost,
