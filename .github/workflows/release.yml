@@ -1,0 +1,249 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is-prerelease: ${{ steps.version.outputs.prerelease }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            PRERELEASE="${{ inputs.prerelease }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            if [[ "$VERSION" == *"-"* ]]; then
+              PRERELEASE="true"
+            else
+              PRERELEASE="false"
+            fi
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+          echo "## Release Version: $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "Pre-release: $PRERELEASE" >> $GITHUB_STEP_SUMMARY
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:unit
+
+      - name: Build
+        run: |
+          npm run build --workspace=apps/backend
+          npm run build --workspace=apps/frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_WS_URL: ${{ vars.NEXT_PUBLIC_WS_URL }}
+
+  build-release-images:
+    name: Build Release Images
+    runs-on: ubuntu-latest
+    needs: [validate]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:${{ needs.validate.outputs.version }}
+            ghcr.io/${{ github.repository }}/backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:${{ needs.validate.outputs.version }}
+            ghcr.io/${{ github.repository }}/frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_WS_URL=${{ vars.NEXT_PUBLIC_WS_URL }}
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: [validate]
+
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: |
+            {
+              "categories": [
+                {
+                  "title": "## 🚀 Features",
+                  "labels": ["feature", "enhancement"]
+                },
+                {
+                  "title": "## 🐛 Bug Fixes",
+                  "labels": ["bug", "fix"]
+                },
+                {
+                  "title": "## 📚 Documentation",
+                  "labels": ["documentation", "docs"]
+                },
+                {
+                  "title": "## 🔧 Maintenance",
+                  "labels": ["chore", "maintenance", "dependencies"]
+                },
+                {
+                  "title": "## 🔒 Security",
+                  "labels": ["security"]
+                }
+              ],
+              "template": "#{{CHANGELOG}}\n\n**Full Changelog**: #{{RELEASE_DIFF}}"
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate, build-release-images, generate-changelog]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.validate.outputs.version }}
+          name: Release v${{ needs.validate.outputs.version }}
+          body: |
+            ## 🎉 gonsai2 v${{ needs.validate.outputs.version }}
+
+            ${{ needs.generate-changelog.outputs.changelog }}
+
+            ---
+
+            ### 📦 Docker Images
+
+            ```bash
+            # Backend
+            docker pull ghcr.io/${{ github.repository }}/backend:${{ needs.validate.outputs.version }}
+
+            # Frontend
+            docker pull ghcr.io/${{ github.repository }}/frontend:${{ needs.validate.outputs.version }}
+            ```
+
+            ### 🚀 Quick Start
+
+            ```bash
+            # Clone and navigate
+            git clone https://github.com/${{ github.repository }}.git
+            cd gonsai2
+            git checkout v${{ needs.validate.outputs.version }}
+
+            # Deploy with Docker Compose
+            docker-compose -f docker-compose.prod.yml up -d
+            ```
+
+            ---
+
+            **SHA**: `${{ github.sha }}`
+          draft: false
+          prerelease: ${{ needs.validate.outputs.is-prerelease == 'true' }}
+          generate_release_notes: true
+
+      - name: Generate release summary
+        run: |
+          echo "## 🎉 Release v${{ needs.validate.outputs.version }} Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: \`ghcr.io/${{ github.repository }}/backend:${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: \`ghcr.io/${{ github.repository }}/frontend:${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [validate, create-release]
+    if: always()
+
+    steps:
+      - name: Send Slack notification
+        if: vars.SLACK_WEBHOOK_URL != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ needs.create-release.result }}
+          fields: repo,message,commit,author
+          text: |
+            🎉 New Release: v${{ needs.validate.outputs.version }}
+            https://github.com/${{ github.repository }}/releases/tag/v${{ needs.validate.outputs.version }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}

@@ -307,8 +307,8 @@ export function getSocketClient(): SocketIOClient {
     // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // 모든 원격 접속은 공개 도메인의 백엔드 포트(3000)로 연결
-      // 내부 IP 사용 시 CORS Private Network Access 정책에 의해 차단됨
+      // 개발환경: 백엔드 포트(3000)로 직접 연결
+      // 프론트엔드(3002)와 백엔드(3000)가 분리된 구조
       socketUrl = `http://${hostname}:3000`;
     }
 
