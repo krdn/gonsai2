@@ -72,7 +72,7 @@ describe('AuthService', () => {
       const userId = new ObjectId().toString();
       const email = 'test@example.com';
 
-      const token = authService.generateToken(userId, email);
+      const token = authService.generateToken(userId, email, 'user');
 
       expect(token).toBeDefined();
       expect(typeof token).toBe('string');
@@ -83,7 +83,7 @@ describe('AuthService', () => {
       const userId = new ObjectId().toString();
       const email = 'test@example.com';
 
-      const token = authService.generateToken(userId, email);
+      const token = authService.generateToken(userId, email, 'user');
       const decoded = jwt.decode(token) as any;
 
       expect(decoded.userId).toBe(userId);
@@ -96,7 +96,7 @@ describe('AuthService', () => {
     it('유효한 토큰을 검증해야 함', () => {
       const userId = new ObjectId().toString();
       const email = 'test@example.com';
-      const token = authService.generateToken(userId, email);
+      const token = authService.generateToken(userId, email, 'user');
 
       const payload = authService.verifyToken(token);
 
@@ -135,7 +135,7 @@ describe('AuthService', () => {
       expect(result.user).toBeDefined();
       expect(result.user.email).toBe(email);
       expect(result.user.name).toBe(name);
-      expect(result.user.password).toBeUndefined(); // 비밀번호는 응답에 포함되지 않아야 함
+      expect((result.user as any).password).toBeUndefined(); // 비밀번호는 응답에 포함되지 않아야 함
       expect(result.token).toBeDefined();
 
       // 토큰 검증
@@ -229,7 +229,7 @@ describe('AuthService', () => {
       expect(user).toBeDefined();
       expect(user.email).toBe(email);
       expect(user.name).toBe(name);
-      expect(user.password).toBeUndefined();
+      expect((user as any).password).toBeUndefined();
     });
 
     it('유효하지 않은 토큰으로 조회를 거부해야 함', async () => {
@@ -240,7 +240,7 @@ describe('AuthService', () => {
 
     it('존재하지 않는 사용자의 토큰을 거부해야 함', async () => {
       const nonExistentUserId = new ObjectId().toString();
-      const token = authService.generateToken(nonExistentUserId, 'ghost@example.com');
+      const token = authService.generateToken(nonExistentUserId, 'ghost@example.com', 'user');
 
       await expect(authService.getUserFromToken(token)).rejects.toThrow('User not found');
     });
