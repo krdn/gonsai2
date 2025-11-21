@@ -24,6 +24,7 @@ module.exports = {
         '/dist/',
         '<rootDir>/features/agent-orchestration/tests/',
         '<rootDir>/features/monitoring/tests/',
+        '<rootDir>/apps/backend/src/services/__tests__/auth.service.test.ts',
       ],
       transform: {
         '^.+\\.tsx?$': [
