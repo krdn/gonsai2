@@ -23,6 +23,7 @@ module.exports = {
         '/node_modules/',
         '/dist/',
         '<rootDir>/features/agent-orchestration/tests/',
+        '<rootDir>/features/monitoring/tests/',
       ],
       transform: {
         '^.+\\.tsx?$': [
