@@ -51,9 +51,10 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:8081/api
-        - NEXT_PUBLIC_WS_URL=ws://localhost:8081/ws
-        - NEXT_PUBLIC_SOCKET_URL=http://localhost:8081
+        # 빈 문자열로 설정하여 클라이언트가 상대 경로 사용 (origin 기준)
+        - NEXT_PUBLIC_API_URL=
+        - NEXT_PUBLIC_WS_URL=
+        - NEXT_PUBLIC_SOCKET_URL=
         - NEXT_PUBLIC_N8N_BASE_URL=http://localhost:5678
         - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
         - NEXT_PUBLIC_N8N_UI_URL=https://krdn-n8n.duckdns.org
@@ -63,8 +64,11 @@ services:
     environment:
       - NODE_ENV=production
       - BACKEND_INTERNAL_URL=http://gonsai2-backend:3000/api/:path*
+      - N8N_INTERNAL_URL=http://n8n:5678
+      - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
     networks:
       - gonsai2-network
+      - n8n-network
     depends_on:
       gonsai2-backend:
         condition: service_healthy

@@ -7,7 +7,9 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    // Docker 내부 네트워크 사용 (런타임 환경변수 또는 기본값)
+    const backendUrl =
+      process.env.BACKEND_INTERNAL_URL?.replace('/api/:path*', '') || 'http://gonsai2-backend:3000';
     const apiKey =
       process.env.NEXT_PUBLIC_BACKEND_API_KEY || process.env.NEXT_PUBLIC_N8N_API_KEY || '';
 
