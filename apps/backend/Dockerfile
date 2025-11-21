@@ -4,7 +4,7 @@
 # ==================================================
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
 
 # Install build dependencies for native modules
@@ -23,7 +23,7 @@ RUN npm ci
 # ==================================================
 # Stage 2: Builder
 # ==================================================
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 
 # Copy dependencies from deps stage
@@ -38,7 +38,7 @@ RUN npm run build --workspace=apps/backend || npx tsc -p apps/backend/tsconfig.j
 # ==================================================
 # Stage 3: Production
 # ==================================================
-FROM node:20-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 
 # Set environment
