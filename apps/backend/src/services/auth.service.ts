@@ -187,7 +187,7 @@ class AuthService {
       const usersCollection = databaseService.getUsersCollection();
 
       const user = await usersCollection.findOne({
-        _id: new (require('mongodb').ObjectId)(payload.userId),
+        _id: new ObjectId(payload.userId),
       });
 
       if (!user) {

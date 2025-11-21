@@ -29,4 +29,4 @@ export interface CreateTagRequest {
 /**
  * 태그 생성 응답
  */
-export interface CreateTagResponse extends N8nTag {}
+export type CreateTagResponse = N8nTag;
