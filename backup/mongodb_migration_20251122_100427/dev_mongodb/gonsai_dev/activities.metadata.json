@@ -1,0 +1,54 @@
+{
+  "indexes": [
+    { "v": { "$numberInt": "2" }, "key": { "_id": { "$numberInt": "1" } }, "name": "_id_" },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "user": { "$numberInt": "1" } },
+      "name": "user_1",
+      "background": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "resource.id": { "$numberInt": "1" } },
+      "name": "resource.id_1",
+      "background": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "user": { "$numberInt": "1" }, "createdAt": { "$numberInt": "-1" } },
+      "name": "user_1_createdAt_-1",
+      "background": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "resource.type": { "$numberInt": "1" }, "resource.id": { "$numberInt": "1" } },
+      "name": "resource.type_1_resource.id_1",
+      "background": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "action": { "$numberInt": "1" } },
+      "name": "action_1",
+      "background": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "createdAt": { "$numberInt": "-1" } },
+      "name": "createdAt_-1",
+      "background": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": {
+        "user": { "$numberInt": "1" },
+        "resource.type": { "$numberInt": "1" },
+        "createdAt": { "$numberInt": "-1" }
+      },
+      "name": "user_1_resource.type_1_createdAt_-1",
+      "background": true
+    }
+  ],
+  "uuid": "432faaca7ff64240839fade507f08743",
+  "collectionName": "activities",
+  "type": "collection"
+}

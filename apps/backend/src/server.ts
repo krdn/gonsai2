@@ -103,7 +103,12 @@ function createApp(): Application {
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5, // 15분에 5번만 허용
-    message: 'Too many authentication attempts, please try again later.',
+    message: {
+      success: false,
+      error: '너무 많은 인증 시도가 있었습니다. 잠시 후 다시 시도해주세요.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
   });
 
   // Body 파싱 (크기 제한)

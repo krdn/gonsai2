@@ -20,7 +20,20 @@ export async function POST(request: NextRequest) {
       credentials: 'include', // 쿠키 전달을 위해 필요
     });
 
-    const data = await response.json();
+    // Content-Type 확인 및 안전한 JSON 파싱
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      // 비-JSON 응답 처리 (예: rate limiter의 text/html 응답)
+      const text = await response.text();
+      data = {
+        success: false,
+        error: text || '서버 응답 오류가 발생했습니다.',
+      };
+    }
 
     // 백엔드에서 설정한 쿠키를 프론트엔드 응답에 전달
     const nextResponse = NextResponse.json(data, { status: response.status });

@@ -34,7 +34,42 @@ class DatabaseService {
         maxIdleTimeMS: 30000,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
+        monitorCommands: true, // 커맨드 모니터링 활성화
       });
+
+      // 쿼리 로깅 이벤트 리스너 등록
+      this.client.on('commandStarted', (event) => {
+        if (event.commandName !== 'ismaster' && event.commandName !== 'hello') {
+          log.debug('MongoDB Command Started', {
+            command: event.commandName,
+            database: event.databaseName,
+            requestId: event.requestId,
+            // 민감한 정보가 포함될 수 있으므로 command 내용은 필요시 주석 해제하여 확인
+            // command: event.command,
+          });
+        }
+      });
+
+      this.client.on('commandSucceeded', (event) => {
+        if (event.commandName !== 'ismaster' && event.commandName !== 'hello') {
+          log.debug('MongoDB Command Succeeded', {
+            command: event.commandName,
+            duration: event.duration,
+            requestId: event.requestId,
+          });
+        }
+      });
+
+      this.client.on('commandFailed', (event) => {
+        if (event.commandName !== 'ismaster' && event.commandName !== 'hello') {
+          log.error('MongoDB Command Failed', event.failure, {
+            command: event.commandName,
+            duration: event.duration,
+            requestId: event.requestId,
+          });
+        }
+      });
+
       await this.client.connect();
 
       // 데이터베이스 선택 (URI에서 자동으로 선택)

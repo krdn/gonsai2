@@ -1,0 +1,159 @@
+{
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "errorType",
+          "category",
+          "pattern",
+          "frequency",
+          "solutions",
+          "autoFixEnabled",
+          "severity",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "errorType": { "bsonType": "string", "description": "Error type must be a string" },
+          "category": {
+            "enum": [
+              "connection",
+              "authentication",
+              "execution",
+              "resource",
+              "configuration",
+              "data",
+              "network",
+              "timeout"
+            ],
+            "description": "Category must be one of the enum values"
+          },
+          "pattern": { "bsonType": "string", "description": "Regex pattern must be a string" },
+          "description": { "bsonType": ["string", "null"], "description": "Optional description" },
+          "frequency": {
+            "bsonType": "number",
+            "minimum": { "$numberInt": "0" },
+            "description": "Frequency must be non-negative"
+          },
+          "lastOccurred": {
+            "bsonType": ["date", "null"],
+            "description": "Optional last occurrence timestamp"
+          },
+          "solutions": {
+            "bsonType": "array",
+            "minItems": { "$numberInt": "1" },
+            "description": "At least one solution required",
+            "items": {
+              "bsonType": "object",
+              "required": ["title", "description", "requiresApproval"],
+              "properties": {
+                "title": { "bsonType": "string" },
+                "description": { "bsonType": "string" },
+                "action": { "bsonType": ["string", "null"] },
+                "command": { "bsonType": ["string", "null"] },
+                "requiresApproval": { "bsonType": "bool" },
+                "successRate": {
+                  "bsonType": ["number", "null"],
+                  "minimum": { "$numberInt": "0" },
+                  "maximum": { "$numberInt": "1" }
+                },
+                "averageFixTime": {
+                  "bsonType": ["number", "null"],
+                  "minimum": { "$numberInt": "0" }
+                }
+              }
+            }
+          },
+          "autoFixEnabled": { "bsonType": "bool", "description": "Auto-fix enabled flag" },
+          "severity": {
+            "enum": ["critical", "high", "medium", "low"],
+            "description": "Severity must be one of the enum values"
+          },
+          "affectedWorkflows": {
+            "bsonType": ["array", "null"],
+            "description": "Optional affected workflows array",
+            "items": { "bsonType": "string" }
+          },
+          "tags": {
+            "bsonType": ["array", "null"],
+            "description": "Optional tags array",
+            "items": { "bsonType": "string" }
+          },
+          "createdAt": { "bsonType": "date", "description": "Creation timestamp" },
+          "updatedAt": { "bsonType": "date", "description": "Last update timestamp" }
+        }
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "error"
+  },
+  "indexes": [
+    { "v": { "$numberInt": "2" }, "key": { "_id": { "$numberInt": "1" } }, "name": "_id_" },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "errorType": { "$numberInt": "1" } },
+      "name": "idx_error_pattern_type",
+      "unique": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "category": { "$numberInt": "1" }, "frequency": { "$numberInt": "-1" } },
+      "name": "idx_error_pattern_category"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "frequency": { "$numberInt": "-1" } },
+      "name": "idx_error_pattern_frequency"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "lastOccurred": { "$numberInt": "-1" } },
+      "name": "idx_error_pattern_last_occurred",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "severity": { "$numberInt": "1" }, "frequency": { "$numberInt": "-1" } },
+      "name": "idx_error_pattern_severity"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "autoFixEnabled": { "$numberInt": "1" }, "frequency": { "$numberInt": "-1" } },
+      "name": "idx_error_pattern_autofix"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "tags": { "$numberInt": "1" } },
+      "name": "idx_error_pattern_tags",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "affectedWorkflows": { "$numberInt": "1" } },
+      "name": "idx_error_pattern_workflows",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": {
+        "category": { "$numberInt": "1" },
+        "severity": { "$numberInt": "1" },
+        "frequency": { "$numberInt": "-1" }
+      },
+      "name": "idx_error_pattern_category_severity"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "_fts": "text", "_ftsx": { "$numberInt": "1" } },
+      "name": "idx_error_pattern_text_search",
+      "weights": { "description": { "$numberInt": "1" }, "errorType": { "$numberInt": "1" } },
+      "default_language": "english",
+      "language_override": "language",
+      "textIndexVersion": { "$numberInt": "3" }
+    }
+  ],
+  "uuid": "b886c3f654054d669d54b97c3a77f9ae",
+  "collectionName": "error_patterns",
+  "type": "collection"
+}

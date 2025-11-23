@@ -302,14 +302,16 @@ export function getSocketClient(): SocketIOClient {
 
   if (!socketClient) {
     // 브라우저 환경에서 동적으로 URL 결정
-    let socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+    const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    let socketUrl: string;
 
-    // 현재 호스트가 localhost가 아닌 경우 (원격 접속)
-    const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // 개발환경: 백엔드 포트(3000)로 직접 연결
-      // 프론트엔드(3002)와 백엔드(3000)가 분리된 구조
-      socketUrl = `http://${hostname}:3000`;
+    if (envSocketUrl && envSocketUrl.trim() !== '') {
+      // 환경변수가 설정된 경우 사용
+      socketUrl = envSocketUrl;
+    } else {
+      // 환경변수가 없거나 빈 문자열이면 현재 origin 사용
+      // 이를 통해 localhost:8081, 외부 도메인 등 어디서든 동작
+      socketUrl = window.location.origin;
     }
 
     console.log('[Socket.io] Creating singleton client for:', socketUrl);

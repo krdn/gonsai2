@@ -19,6 +19,9 @@ services:
       dockerfile: apps/backend/Dockerfile
     container_name: gonsai2-backend
     restart: unless-stopped
+    # 리소스 제한
+    mem_limit: 256m
+    cpus: 0.5
     env_file:
       - apps/backend/.env.production
     environment:
@@ -61,6 +64,9 @@ services:
         - NEXT_PUBLIC_BACKEND_API_KEY=${N8N_API_KEY}
     container_name: gonsai2-frontend
     restart: unless-stopped
+    # 리소스 제한
+    mem_limit: 256m
+    cpus: 0.5
     environment:
       - NODE_ENV=production
       - BACKEND_INTERNAL_URL=http://gonsai2-backend:3000/api/:path*
@@ -86,6 +92,9 @@ services:
     image: mongo:7
     container_name: gonsai2-mongodb-prod
     restart: unless-stopped
+    # 리소스 제한
+    mem_limit: 512m
+    cpus: 0.5
     environment:
       - MONGO_INITDB_ROOT_USERNAME=gonsai2
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-gonsai2_prod_password}
@@ -94,8 +103,8 @@ services:
       - mongodb_prod_data:/data/db
       - mongodb_prod_config:/data/configdb
     ports:
-      # 27018로 외부 노출 (개발 DB 27017과 분리)
-      - '127.0.0.1:27018:27017'
+      # 27018로 외부 노출 (원격 접속 허용)
+      - '0.0.0.0:27018:27017'
     networks:
       - gonsai2-network
     healthcheck:
@@ -112,6 +121,9 @@ services:
     image: nginx:alpine
     container_name: gonsai2-nginx
     restart: unless-stopped
+    # 리소스 제한
+    mem_limit: 64m
+    cpus: 0.25
     ports:
       # 호스트 Nginx가 80 사용 중이므로 8081 사용
       - '8081:80'

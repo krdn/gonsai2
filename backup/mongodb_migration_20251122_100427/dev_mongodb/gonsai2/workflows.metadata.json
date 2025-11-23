@@ -1,0 +1,100 @@
+{
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["n8nWorkflowId", "name", "active", "lastSyncedAt", "createdAt", "updatedAt"],
+        "properties": {
+          "n8nWorkflowId": {
+            "bsonType": "string",
+            "description": "n8n workflow ID must be a string"
+          },
+          "name": {
+            "bsonType": "string",
+            "minLength": { "$numberInt": "1" },
+            "description": "Workflow name must be a non-empty string"
+          },
+          "description": {
+            "bsonType": ["string", "null"],
+            "description": "Optional workflow description"
+          },
+          "active": { "bsonType": "bool", "description": "Active status must be boolean" },
+          "nodes": {
+            "bsonType": "array",
+            "description": "Workflow nodes array",
+            "items": {
+              "bsonType": "object",
+              "required": ["id", "name", "type", "typeVersion", "position"],
+              "properties": {
+                "id": { "bsonType": "string" },
+                "name": { "bsonType": "string" },
+                "type": { "bsonType": "string" },
+                "typeVersion": { "bsonType": "number" },
+                "position": {
+                  "bsonType": "array",
+                  "minItems": { "$numberInt": "2" },
+                  "maxItems": { "$numberInt": "2" },
+                  "items": { "bsonType": "number" }
+                }
+              }
+            }
+          },
+          "settings": { "bsonType": "object", "description": "Workflow settings" },
+          "tags": {
+            "bsonType": ["array", "null"],
+            "description": "Optional tags array",
+            "items": { "bsonType": "string" }
+          },
+          "lastSyncedAt": { "bsonType": "date", "description": "Last sync timestamp" },
+          "createdAt": { "bsonType": "date", "description": "Creation timestamp" },
+          "updatedAt": { "bsonType": "date", "description": "Last update timestamp" }
+        }
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "error"
+  },
+  "indexes": [
+    { "v": { "$numberInt": "2" }, "key": { "_id": { "$numberInt": "1" } }, "name": "_id_" },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "n8nWorkflowId": { "$numberInt": "1" } },
+      "name": "idx_n8n_workflow_id",
+      "unique": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "name": { "$numberInt": "1" } },
+      "name": "idx_workflow_name"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "active": { "$numberInt": "1" } },
+      "name": "idx_workflow_active"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "lastSyncedAt": { "$numberInt": "-1" } },
+      "name": "idx_workflow_last_synced"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "createdAt": { "$numberInt": "-1" } },
+      "name": "idx_workflow_created"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "tags": { "$numberInt": "1" } },
+      "name": "idx_workflow_tags",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "active": { "$numberInt": "1" }, "lastSyncedAt": { "$numberInt": "-1" } },
+      "name": "idx_workflow_active_synced"
+    }
+  ],
+  "uuid": "c0938ee9694a456fa0eb33882b34c85e",
+  "collectionName": "workflows",
+  "type": "collection"
+}

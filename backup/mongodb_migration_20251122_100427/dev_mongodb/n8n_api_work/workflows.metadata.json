@@ -1,0 +1,8 @@
+{
+  "indexes": [
+    { "v": { "$numberInt": "2" }, "key": { "_id": { "$numberInt": "1" } }, "name": "_id_" }
+  ],
+  "uuid": "8dec09be89cf45deacd3b00dd25bc45b",
+  "collectionName": "workflows",
+  "type": "collection"
+}

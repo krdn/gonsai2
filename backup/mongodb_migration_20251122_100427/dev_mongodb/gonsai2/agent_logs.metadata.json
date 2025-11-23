@@ -1,0 +1,124 @@
+{
+  "options": {
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["agentType", "executionId", "timestamp", "action", "result", "createdAt"],
+        "properties": {
+          "agentType": { "bsonType": "string", "description": "Agent type must be a string" },
+          "executionId": { "bsonType": "string", "description": "Execution ID must be a string" },
+          "n8nExecutionId": {
+            "bsonType": ["string", "null"],
+            "description": "Optional n8n execution ID"
+          },
+          "timestamp": { "bsonType": "date", "description": "Log timestamp must be a date" },
+          "action": { "bsonType": "string", "description": "Action must be a string" },
+          "result": {
+            "enum": ["success", "failed", "partial", "timeout", "canceled"],
+            "description": "Result must be one of the enum values"
+          },
+          "inputTokens": {
+            "bsonType": ["number", "null"],
+            "minimum": { "$numberInt": "0" },
+            "description": "Input tokens must be non-negative"
+          },
+          "outputTokens": {
+            "bsonType": ["number", "null"],
+            "minimum": { "$numberInt": "0" },
+            "description": "Output tokens must be non-negative"
+          },
+          "totalTokens": {
+            "bsonType": ["number", "null"],
+            "minimum": { "$numberInt": "0" },
+            "description": "Total tokens must be non-negative"
+          },
+          "cost": {
+            "bsonType": ["number", "null"],
+            "minimum": { "$numberInt": "0" },
+            "description": "Cost must be non-negative"
+          },
+          "model": { "bsonType": ["string", "null"], "description": "Optional AI model name" },
+          "duration": {
+            "bsonType": ["number", "null"],
+            "minimum": { "$numberInt": "0" },
+            "description": "Duration in milliseconds"
+          },
+          "createdAt": { "bsonType": "date", "description": "Creation timestamp" }
+        }
+      }
+    },
+    "validationLevel": "moderate",
+    "validationAction": "error"
+  },
+  "indexes": [
+    { "v": { "$numberInt": "2" }, "key": { "_id": { "$numberInt": "1" } }, "name": "_id_" },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "agentType": { "$numberInt": "1" }, "timestamp": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_type"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "executionId": { "$numberInt": "1" }, "timestamp": { "$numberInt": "1" } },
+      "name": "idx_agent_log_execution"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "n8nExecutionId": { "$numberInt": "1" }, "timestamp": { "$numberInt": "1" } },
+      "name": "idx_agent_log_n8n_execution",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "timestamp": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_timestamp"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "result": { "$numberInt": "1" }, "timestamp": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_result"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "model": { "$numberInt": "1" }, "timestamp": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_model",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "totalTokens": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_tokens",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "cost": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_cost",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "duration": { "$numberInt": "-1" } },
+      "name": "idx_agent_log_duration",
+      "sparse": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": {
+        "agentType": { "$numberInt": "1" },
+        "result": { "$numberInt": "1" },
+        "timestamp": { "$numberInt": "-1" }
+      },
+      "name": "idx_agent_log_type_result"
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "createdAt": { "$numberInt": "1" } },
+      "name": "idx_agent_log_ttl",
+      "expireAfterSeconds": { "$numberInt": "7776000" }
+    }
+  ],
+  "uuid": "6b395da1dff74070b1f957f94ccda530",
+  "collectionName": "agent_logs",
+  "type": "collection"
+}

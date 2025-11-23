@@ -1,0 +1,25 @@
+{
+  "indexes": [
+    { "v": { "$numberInt": "2" }, "key": { "_id": { "$numberInt": "1" } }, "name": "_id_" },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "email": { "$numberInt": "1" } },
+      "name": "email_1",
+      "unique": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "username": { "$numberInt": "1" } },
+      "name": "username_1",
+      "unique": true
+    },
+    {
+      "v": { "$numberInt": "2" },
+      "key": { "createdAt": { "$numberInt": "-1" } },
+      "name": "createdAt_-1"
+    }
+  ],
+  "uuid": "8ba27a76dc2841d69958782d9cc92a96",
+  "collectionName": "users",
+  "type": "collection"
+}
