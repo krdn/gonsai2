@@ -5,7 +5,9 @@ This project, `gonsai2`, is an AI-optimized system designed for n8n workflow aut
 The core of the project is the AI agent orchestration, which manages and executes n8n workflows containing AI-powered nodes. The system is designed to be scalable and resilient, with a queue-based architecture for handling workflow executions and a strong emphasis on testing and monitoring.
 
 -- Answers are always in Korean
--- Answers and task updates are always in Korean
+-- Markdown documents are always in Korean
+-- Make all documents such as Tasks, implementation plans, etc. in Korean.
+-- Make all task updates in Korean.
 
 ## Building and Running
 
