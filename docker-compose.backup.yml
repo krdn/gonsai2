@@ -1,19 +1,15 @@
-networks:
-  gonsai2-network:
-    driver: bridge
-  n8n-network:
-    external: true
-    name: docker-n8n_n8n-network
+name: gonsai2
 services:
   gonsai2-backend:
     build:
       context: /home/gon/projects/gonsai2
       dockerfile: apps/backend/Dockerfile
-    container_name: gonsai2-backend
     cpus: 0.5
+    container_name: gonsai2-backend
     depends_on:
       mongodb-prod:
         condition: service_healthy
+        required: true
     environment:
       CORS_ORIGINS: http://localhost:8081,http://192.168.0.50:8081,http://krdn.iptime.org:8081
       EMAIL_FROM: noreply@gonsai2.com
@@ -52,11 +48,8 @@ services:
       WS_PATH: /ws
       WS_PORT: '3001'
     extra_hosts:
-      - host.docker.internal:host-gateway
+      - host.docker.internal=host-gateway
     healthcheck:
-      interval: 30s
-      retries: 3
-      start_period: 10s
       test:
         - CMD
         - wget
@@ -65,16 +58,27 @@ services:
         - --spider
         - http://127.0.0.1:3000/health
       timeout: 10s
-    mem_limit: 256m
+      interval: 30s
+      retries: 3
+      start_period: 10s
+    mem_limit: '268435456'
     networks:
       gonsai2-network: null
       n8n-network: null
     restart: unless-stopped
     volumes:
-      - backend_logs:/app/logs:rw
-      - backend_uploads:/app/uploads:rw
+      - type: volume
+        source: backend_logs
+        target: /app/logs
+        volume: {}
+      - type: volume
+        source: backend_uploads
+        target: /app/uploads
+        volume: {}
   gonsai2-frontend:
     build:
+      context: /home/gon/projects/gonsai2
+      dockerfile: apps/frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ''
         NEXT_PUBLIC_BACKEND_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc
@@ -83,22 +87,18 @@ services:
         NEXT_PUBLIC_N8N_UI_URL: https://krdn-n8n.duckdns.org
         NEXT_PUBLIC_SOCKET_URL: ''
         NEXT_PUBLIC_WS_URL: ''
-      context: /home/gon/projects/gonsai2
-      dockerfile: apps/frontend/Dockerfile
-    container_name: gonsai2-frontend
     cpus: 0.5
+    container_name: gonsai2-frontend
     depends_on:
       gonsai2-backend:
         condition: service_healthy
+        required: true
     environment:
       BACKEND_INTERNAL_URL: http://gonsai2-backend:3000/api/:path*
       N8N_INTERNAL_URL: http://n8n:5678
       NEXT_PUBLIC_N8N_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc
       NODE_ENV: production
     healthcheck:
-      interval: 30s
-      retries: 3
-      start_period: 15s
       test:
         - CMD
         - wget
@@ -107,45 +107,60 @@ services:
         - --spider
         - http://127.0.0.1:3002
       timeout: 10s
-    mem_limit: 256m
+      interval: 30s
+      retries: 3
+      start_period: 15s
+    mem_limit: '268435456'
     networks:
       gonsai2-network: null
       n8n-network: null
     restart: unless-stopped
   mongodb-prod:
-    container_name: gonsai2-mongodb-prod
     cpus: 0.5
+    container_name: gonsai2-mongodb-prod
     environment:
       MONGO_INITDB_DATABASE: gonsai2_prod
       MONGO_INITDB_ROOT_PASSWORD: gonsai2_prod_password
       MONGO_INITDB_ROOT_USERNAME: gonsai2
     healthcheck:
+      test:
+        - CMD-SHELL
+        - echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      timeout: 10s
       interval: 30s
       retries: 5
       start_period: 40s
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      timeout: 10s
     image: mongo:7
-    mem_limit: 512m
+    mem_limit: '536870912'
     networks:
       gonsai2-network: null
     ports:
-      - 0.0.0.0:27018:27017/tcp
+      - mode: ingress
+        host_ip: 0.0.0.0
+        target: 27017
+        published: '27018'
+        protocol: tcp
     restart: unless-stopped
     volumes:
-      - mongodb_prod_data:/data/db:rw
-      - mongodb_prod_config:/data/configdb:rw
+      - type: volume
+        source: mongodb_prod_data
+        target: /data/db
+        volume: {}
+      - type: volume
+        source: mongodb_prod_config
+        target: /data/configdb
+        volume: {}
   nginx:
-    container_name: gonsai2-nginx
     cpus: 0.25
+    container_name: gonsai2-nginx
     depends_on:
       gonsai2-backend:
         condition: service_healthy
+        required: true
       gonsai2-frontend:
         condition: service_healthy
+        required: true
     healthcheck:
-      interval: 30s
-      retries: 3
       test:
         - CMD
         - wget
@@ -154,17 +169,32 @@ services:
         - --spider
         - http://127.0.0.1/health
       timeout: 10s
+      interval: 30s
+      retries: 3
     image: nginx:alpine
-    mem_limit: 64m
+    mem_limit: '67108864'
     networks:
       gonsai2-network: null
     ports:
-      - published: 8081
+      - mode: ingress
         target: 80
+        published: '8081'
+        protocol: tcp
     restart: unless-stopped
     volumes:
-      - /home/gon/projects/gonsai2/deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-version: '3.8'
+      - type: bind
+        source: /home/gon/projects/gonsai2/deployment/nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind:
+          create_host_path: true
+networks:
+  gonsai2-network:
+    name: gonsai2_gonsai2-network
+    driver: bridge
+  n8n-network:
+    name: docker-n8n_n8n-network
+    external: true
 volumes:
   backend_logs:
     name: gonsai2_backend_logs
