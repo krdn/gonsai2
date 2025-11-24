@@ -163,11 +163,9 @@ jobs:
             # Create backup of current state
             docker compose -f docker-compose.prod.yml config > docker-compose.backup.yml
 
-            # Deploy with zero downtime
-            docker compose -f docker-compose.prod.yml up -d --no-deps --scale gonsai2-backend=2 gonsai2-backend
-            sleep 10
+            # Deploy services
             docker compose -f docker-compose.prod.yml up -d --no-deps gonsai2-backend
-
+            sleep 5
             docker compose -f docker-compose.prod.yml up -d --no-deps gonsai2-frontend
 
             # Cleanup old images
