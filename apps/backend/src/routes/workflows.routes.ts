@@ -70,27 +70,61 @@ router.use(authenticateN8nApiKey);
 /**
  * GET /api/workflows
  * 모든 워크플로우 조회 (n8n API 프록시)
+ * - includeNodes=true 쿼리 파라미터로 nodes 정보 포함 가능
  */
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const correlationId = getCorrelationId(req);
+    const includeNodes = req.query.includeNodes === 'true';
 
     // ⚡ 성능 최적화: 캐싱 적용
+    const cacheKey = includeNodes ? 'workflows:list:withNodes' : 'workflows:list';
     const n8nData = await fetchN8nApi<{ data?: any[] }>(
       '/api/v1/workflows',
-      'workflows:list',
+      cacheKey,
       CACHE_TTL.WORKFLOWS
     );
 
+    let workflows = n8nData.data || [];
+
+    // nodes 정보가 필요한 경우, 각 워크플로우의 상세 정보를 가져옴
+    if (includeNodes && workflows.length > 0) {
+      const workflowsWithNodes = await Promise.all(
+        workflows.map(async (workflow: any) => {
+          try {
+            const detail = await fetchN8nApi<any>(
+              `/api/v1/workflows/${workflow.id}`,
+              `workflow:detail:${workflow.id}`,
+              CACHE_TTL.WORKFLOW_DETAIL
+            );
+            return {
+              ...workflow,
+              nodes: detail.nodes || [],
+              connections: detail.connections || {},
+            };
+          } catch (error) {
+            log.warn('Failed to fetch workflow detail', {
+              correlationId,
+              workflowId: workflow.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+            return workflow;
+          }
+        })
+      );
+      workflows = workflowsWithNodes;
+    }
+
     log.info('Workflows retrieved', {
       correlationId,
-      count: n8nData.data?.length || 0,
+      count: workflows.length,
+      includeNodes,
     });
 
     const response: ApiResponse = {
       success: true,
-      data: n8nData.data || [],
+      data: workflows,
       timestamp: new Date().toISOString(),
     };
 

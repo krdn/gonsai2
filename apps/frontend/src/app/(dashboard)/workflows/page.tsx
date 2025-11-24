@@ -13,11 +13,127 @@ import {
   HelpCircle,
   X,
   Tag as TagIcon,
+  Copy,
+  Check,
+  Webhook,
+  FileText,
+  Bot,
+  Info,
 } from 'lucide-react';
 import { workflowsApi, tagsApi } from '@/lib/api-client';
 import WorkflowExecutionModal from '@/components/workflow/WorkflowExecutionModal';
 
 import { WORKFLOW_IDS } from '@/config/workflows.config';
+
+// ============================================
+// 유틸리티 함수들
+// ============================================
+
+interface StickyNoteContent {
+  title: string;
+  description: string;
+  details: string[];
+}
+
+// Sticky Note에서 설명 추출
+function extractDescriptionFromStickyNote(nodes: any[]): StickyNoteContent | null {
+  const stickyNote = nodes?.find((node: any) => node.type === 'n8n-nodes-base.stickyNote');
+
+  if (!stickyNote || !stickyNote.parameters?.content) {
+    return null;
+  }
+
+  const content = stickyNote.parameters.content;
+  const result: StickyNoteContent = {
+    title: '',
+    description: '',
+    details: [],
+  };
+
+  // ## 제목 추출
+  const titleMatch = content.match(/^##\s+(.+)$/m);
+  if (titleMatch) {
+    result.title = titleMatch[1].trim();
+  }
+
+  // ### 설명 섹션 추출
+  const descMatch = content.match(/###\s+설명\s*\n([\s\S]*?)(?=###|$)/);
+  if (descMatch) {
+    result.description = descMatch[1].trim();
+  }
+
+  // ### 상세내역 섹션 추출
+  const detailMatch = content.match(/###\s+상세내역\s*\n([\s\S]*?)(?=###|$)/);
+  if (detailMatch) {
+    result.details = detailMatch[1]
+      .split('\n')
+      .filter((line: string) => line.trim().startsWith('-'))
+      .map((line: string) => line.replace(/^-\s*/, '').trim());
+  }
+
+  return result;
+}
+
+// 트리거 타입 추출
+function extractTriggerType(nodes: any[]): string {
+  const triggerNode = nodes?.find(
+    (node: any) =>
+      node.type?.includes('webhook') ||
+      node.type?.includes('formTrigger') ||
+      node.type?.includes('cron') ||
+      node.type?.includes('emailTrigger')
+  );
+
+  if (!triggerNode) return 'manual';
+
+  if (triggerNode.type.includes('webhook')) return 'webhook';
+  if (triggerNode.type.includes('formTrigger')) return 'form';
+  if (triggerNode.type.includes('cron')) return 'cron';
+  if (triggerNode.type.includes('emailTrigger')) return 'email';
+
+  return 'trigger';
+}
+
+// AI 모델 추출
+function extractAIModels(nodes: any[]): string[] {
+  const aiNodes =
+    nodes?.filter(
+      (node: any) =>
+        node.type?.includes('langchain') ||
+        node.type?.includes('gemini') ||
+        node.type?.includes('openai')
+    ) || [];
+
+  return aiNodes
+    .map((node: any) => {
+      // 모델 ID에서 이름 추출
+      if (node.parameters?.model) {
+        const model = node.parameters.model;
+        // "moonshotai/kimi-k2:free" -> "kimi-k2"
+        if (model.includes('/')) {
+          return model.split('/').pop()?.split(':')[0] || model;
+        }
+        return model;
+      }
+      if (node.parameters?.modelId?.value) {
+        const value = node.parameters.modelId.value;
+        // "={{ $json.body.aimodel }}" -> "dynamic"
+        if (value.includes('$json')) return 'dynamic';
+        // "models/gemini-2.5-pro" -> "gemini-2.5-pro"
+        if (value.includes('models/')) {
+          return value.split('models/')[1];
+        }
+        return value;
+      }
+      // 노드 타입에서 추출
+      const typeName = node.type.split('.').pop() || '';
+      if (typeName.includes('gemini')) return 'gemini';
+      if (typeName.includes('openai') || typeName.includes('ChatOpenAi')) return 'openai';
+      if (typeName.includes('OpenRouter')) return 'openrouter';
+      return typeName;
+    })
+    .filter((v, i, a) => a.indexOf(v) === i); // 중복 제거
+}
 
 interface Tag {
   id: string;
@@ -49,6 +165,7 @@ function WorkflowsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [executionModal, setExecutionModal] = useState<{
     isOpen: boolean;
     workflowId: string;
@@ -58,6 +175,17 @@ function WorkflowsContent() {
     workflowId: '',
     workflowName: '',
   });
+
+  // ID 복사 핸들러
+  const copyToClipboard = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('복사 실패:', err);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -69,8 +197,9 @@ function WorkflowsContent() {
       setError(null);
 
       // 워크플로우와 태그를 병렬로 조회
+      // includeNodes: true - Sticky Note에서 설명 추출, AI 모델/트리거 타입 분석을 위해 nodes 정보 필요
       const [workflowsData, tagsData] = await Promise.all([
-        workflowsApi.list(),
+        workflowsApi.list({ includeNodes: true }),
         tagsApi.list().catch(() => ({ data: [] })), // 태그 조회 실패해도 워크플로우는 표시
       ]);
 
@@ -200,77 +329,149 @@ function WorkflowsContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredWorkflows.map((workflow) => (
-                <div
-                  key={workflow.id}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
-                >
-                  {/* Workflow Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{workflow.name}</h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                            workflow.active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {workflow.active ? '활성화됨' : '비활성화됨'}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {workflow.nodes?.length || 0}개 노드
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              {filteredWorkflows.map((workflow) => {
+                // 워크플로우별 추가 정보 추출
+                const stickyContent = extractDescriptionFromStickyNote(workflow.nodes);
+                const triggerType = extractTriggerType(workflow.nodes);
+                const aiModels = extractAIModels(workflow.nodes);
 
-                  {/* Tags */}
-                  {workflow.tags && workflow.tags.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {workflow.tags.map((tag) => (
+                return (
+                  <div
+                    key={workflow.id}
+                    className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                  >
+                    {/* Workflow Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          {workflow.name}
+                        </h3>
+                        {/* ID 표시 */}
+                        <div className="flex items-center gap-1 mb-2">
                           <button
-                            key={tag.id}
-                            onClick={() => handleTagSelect(tag.id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                            onClick={() => copyToClipboard(workflow.id)}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition-colors"
+                            title="클릭하여 복사"
                           >
-                            <TagIcon className="w-3 h-3" />
-                            {tag.name}
+                            {copiedId === workflow.id ? (
+                              <>
+                                <Check className="w-3 h-3 text-green-600" />
+                                <span className="text-green-600">복사됨</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>{workflow.id}</span>
+                              </>
+                            )}
                           </button>
-                        ))}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                              workflow.active
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {workflow.active ? '활성화됨' : '비활성화됨'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {workflow.nodes?.length || 0}개 노드
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* Workflow Info */}
-                  <div className="mb-4 space-y-1 text-sm text-gray-600">
-                    <div>생성일: {formatDate(workflow.createdAt)}</div>
-                    <div>수정일: {formatDate(workflow.updatedAt)}</div>
-                  </div>
+                    {/* 설명 (Sticky Note에서 추출) */}
+                    {stickyContent?.description && (
+                      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-700 line-clamp-2">
+                          {stickyContent.description}
+                        </p>
+                        {stickyContent.details.length > 0 && (
+                          <div className="mt-2 flex items-start gap-1">
+                            <Info className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-gray-500 line-clamp-1">
+                              {stickyContent.details.join(' • ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => executeWorkflow(workflow.id, workflow.name)}
-                      disabled={!workflow.active}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Play className="w-4 h-4" />
-                      <span>실행</span>
-                    </button>
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/workflow/${workflow.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      n8n에서 열기
-                    </a>
+                    {/* 트리거 타입 & AI 모델 배지 */}
+                    <div className="mb-3 flex items-center gap-1 flex-wrap">
+                      {/* 트리거 타입 */}
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded">
+                        {triggerType === 'webhook' && <Webhook className="w-3 h-3" />}
+                        {triggerType === 'form' && <FileText className="w-3 h-3" />}
+                        {triggerType === 'manual' && <Play className="w-3 h-3" />}
+                        {triggerType}
+                      </span>
+
+                      {/* AI 모델 */}
+                      {aiModels.map((model) => (
+                        <span
+                          key={model}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-amber-50 text-amber-700 rounded"
+                        >
+                          <Bot className="w-3 h-3" />
+                          {model}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Tags */}
+                    {workflow.tags && workflow.tags.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {workflow.tags.map((tag) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => handleTagSelect(tag.id)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                            >
+                              <TagIcon className="w-3 h-3" />
+                              {tag.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Workflow Info */}
+                    <div className="mb-4 space-y-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-4">
+                        <span>📅 생성: {formatDate(workflow.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span>✏️ 수정: {formatDate(workflow.updatedAt)}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => executeWorkflow(workflow.id, workflow.name)}
+                        disabled={!workflow.active}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Play className="w-4 h-4" />
+                        <span>실행</span>
+                      </button>
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678'}/workflow/${workflow.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        n8n에서 열기
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -137,8 +137,17 @@ async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit
 export const workflowsApi = {
   /**
    * 모든 워크플로우 조회
+   * @param options.includeNodes - true로 설정하면 nodes 정보 포함 (Sticky Note 설명 추출용)
    */
-  list: () => fetchWithErrorHandling(`${getApiUrl()}/api/workflows`),
+  list: (options?: { includeNodes?: boolean }) => {
+    const params = new URLSearchParams();
+    if (options?.includeNodes) {
+      params.set('includeNodes', 'true');
+    }
+    const queryString = params.toString();
+    const url = `${getApiUrl()}/api/workflows${queryString ? `?${queryString}` : ''}`;
+    return fetchWithErrorHandling(url);
+  },
 
   /**
    * 특정 워크플로우 조회
