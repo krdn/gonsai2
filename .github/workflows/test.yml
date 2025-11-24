@@ -167,6 +167,7 @@ jobs:
           WS_PORT: 8001
           NEXT_PUBLIC_API_URL: http://localhost:8000
           NEXT_PUBLIC_WS_URL: ws://localhost:8001
+          CYPRESS_BASE_URL: http://localhost:3002
 
       - name: Upload Cypress screenshots
         uses: actions/upload-artifact@v4
@@ -174,6 +175,7 @@ jobs:
         with:
           name: cypress-screenshots
           path: tests/e2e/screenshots
+          if-no-files-found: ignore
 
       - name: Upload Cypress videos
         uses: actions/upload-artifact@v4
@@ -181,6 +183,7 @@ jobs:
         with:
           name: cypress-videos
           path: tests/e2e/videos
+          if-no-files-found: ignore
 
   coverage-report:
     name: Coverage Report
