@@ -91,6 +91,7 @@ function createApp(): Application {
         return (
           req.method === 'OPTIONS' ||
           req.path === '/health' ||
+          req.path === '/api/health' ||
           req.path === '/' ||
           req.path.startsWith('/api-docs')
         );
@@ -141,6 +142,7 @@ function createApp(): Application {
   // API 라우트
   app.get('/', healthRoutes);
   app.use('/health', healthRoutes);
+  app.use('/api/health', healthRoutes); // GitHub Actions health check용
   app.use('/webhooks', webhookRoutes);
   app.use('/api/workflows', workflowsRoutes);
   app.use('/api/monitoring', monitoringRoutes); // 모니터링 라우트

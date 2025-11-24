@@ -173,7 +173,7 @@ router.get(
   '/executions/recent',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { limit = 20 } = req.query;
-    const correlationId = getCorrelationId(req);
+    const _correlationId = getCorrelationId(req);
 
     try {
       // ⚡ 성능 최적화: 병렬 API 호출 + 캐싱
@@ -236,7 +236,7 @@ router.get(
   '/metrics/hourly',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { hours = 24 } = req.query;
-    const correlationId = getCorrelationId(req);
+    const _correlationId = getCorrelationId(req);
 
     try {
       // ⚡ 성능 최적화: 캐싱 적용

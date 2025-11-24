@@ -8,7 +8,7 @@ import { Router, Request, Response } from 'express';
 import { envConfig } from '../utils/env-validator';
 import { log } from '../utils/logger';
 import { getCorrelationId } from '../middleware/correlation-id.middleware';
-import { workflowRepository, executionRepository } from '../repositories/workflow.repository';
+import { executionRepository } from '../repositories/workflow.repository';
 import { ApiResponse, ExecuteWorkflowRequest, ExecuteWorkflowResponse } from '../types/api.types';
 import { asyncHandler, authenticateN8nApiKey } from '../middleware';
 import { N8nApiError, NotFoundError } from '../utils/errors';
@@ -60,7 +60,7 @@ const router = Router();
 interface N8nExecutionResponse {
   data: {
     executionId: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -80,7 +80,7 @@ router.get(
 
     // ⚡ 성능 최적화: 캐싱 적용
     const cacheKey = includeNodes ? 'workflows:list:withNodes' : 'workflows:list';
-    const n8nData = await fetchN8nApi<{ data?: any[] }>(
+    const n8nData = await fetchN8nApi<{ data?: Record<string, unknown>[] }>(
       '/api/v1/workflows',
       cacheKey,
       CACHE_TTL.WORKFLOWS
@@ -91,17 +91,17 @@ router.get(
     // nodes 정보가 필요한 경우, 각 워크플로우의 상세 정보를 가져옴
     if (includeNodes && workflows.length > 0) {
       const workflowsWithNodes = await Promise.all(
-        workflows.map(async (workflow: any) => {
+        workflows.map(async (workflow: Record<string, unknown>) => {
           try {
-            const detail = await fetchN8nApi<any>(
+            const detail = await fetchN8nApi<Record<string, unknown>>(
               `/api/v1/workflows/${workflow.id}`,
               `workflow:detail:${workflow.id}`,
               CACHE_TTL.WORKFLOW_DETAIL
             );
             return {
               ...workflow,
-              nodes: detail.nodes || [],
-              connections: detail.connections || {},
+              nodes: (detail.nodes as unknown[]) || [],
+              connections: (detail.connections as Record<string, unknown>) || {},
             };
           } catch (error) {
             log.warn('Failed to fetch workflow detail', {

@@ -201,7 +201,10 @@ async function updateErrorPattern(db: Db, errorMessage: string, workflowId: stri
         break; // 첫 번째 매칭만 처리
       }
     } catch (error) {
-      log.warn('Invalid regex pattern', { pattern: pattern.pattern });
+      log.warn('Invalid regex pattern', {
+        pattern: pattern.pattern,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 }

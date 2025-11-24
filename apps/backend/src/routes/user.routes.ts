@@ -42,7 +42,7 @@ router.get('/me', authenticateJWT, async (req: Request, res: Response): Promise<
     }
 
     // 비밀번호 제외하고 반환
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
 
     res.status(200).json({
       success: true,
@@ -112,7 +112,7 @@ router.patch(
         return;
       }
 
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
 
       // 이름 업데이트
       if (name) {
@@ -164,7 +164,7 @@ router.patch(
 
       // 업데이트된 사용자 정보 조회
       const updatedUser = await db.collection('users').findOne({ _id: new ObjectId(userId) });
-      const { password, ...userWithoutPassword } = updatedUser!;
+      const { password: _password, ...userWithoutPassword } = updatedUser!;
 
       res.status(200).json({
         success: true,
