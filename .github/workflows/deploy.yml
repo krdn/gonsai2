@@ -164,11 +164,11 @@ jobs:
             docker-compose -f docker-compose.prod.yml config > docker-compose.backup.yml
 
             # Deploy with zero downtime
-            docker-compose -f docker-compose.prod.yml up -d --no-deps --scale backend=2 backend
+            docker-compose -f docker-compose.prod.yml up -d --no-deps --scale gonsai2-backend=2 gonsai2-backend
             sleep 10
-            docker-compose -f docker-compose.prod.yml up -d --no-deps backend
+            docker-compose -f docker-compose.prod.yml up -d --no-deps gonsai2-backend
 
-            docker-compose -f docker-compose.prod.yml up -d --no-deps frontend
+            docker-compose -f docker-compose.prod.yml up -d --no-deps gonsai2-frontend
 
             # Cleanup old images
             docker image prune -f
