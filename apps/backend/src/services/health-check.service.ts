@@ -253,8 +253,8 @@ class HealthCheckService {
 
     // 하나라도 unhealthy면 unhealthy
     if (statuses.includes('unhealthy')) {
-      // Redis는 degraded여도 괜찮음 (선택사항)
-      const criticalServices = ['mongodb', 'n8n'];
+      // MongoDB만 critical service (Redis, n8n은 없어도 기본 기능 동작 가능)
+      const criticalServices = ['mongodb'];
       const criticalUnhealthy = Object.entries(services)
         .filter(([name]) => criticalServices.includes(name))
         .some(([, health]) => health.status === 'unhealthy');
