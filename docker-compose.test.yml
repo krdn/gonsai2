@@ -16,6 +16,7 @@ services:
       N8N_API_KEY: test_api_key_for_e2e_testing
       ALLOWED_ORIGINS: http://localhost:3002,http://frontend:3002
       LOG_LEVEL: debug
+      JWT_SECRET: test_jwt_secret_key_for_e2e_testing_minimum_32_characters
     ports:
       - '3000:3000'
       - '3001:3001'
