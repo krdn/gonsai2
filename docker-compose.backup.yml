@@ -1,0 +1,176 @@
+networks:
+  gonsai2-network:
+    driver: bridge
+  n8n-network:
+    external: true
+    name: docker-n8n_n8n-network
+services:
+  gonsai2-backend:
+    build:
+      context: /home/gon/projects/gonsai2
+      dockerfile: apps/backend/Dockerfile
+    container_name: gonsai2-backend
+    cpus: 0.5
+    depends_on:
+      mongodb-prod:
+        condition: service_healthy
+    environment:
+      CORS_ORIGINS: http://localhost:8081,http://192.168.0.50:8081,http://krdn.iptime.org:8081
+      EMAIL_FROM: noreply@gonsai2.com
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PASSWORD: your-app-password
+      EMAIL_PORT: '587'
+      EMAIL_SECURE: 'false'
+      EMAIL_USER: your-email@gmail.com
+      ENABLE_DEBUG_LOGGING: 'false'
+      ENABLE_METRICS: 'true'
+      ENABLE_SWAGGER_UI: 'false'
+      FRONTEND_URL: http://localhost:8081
+      HOST: 0.0.0.0
+      JWT_EXPIRES_IN: 7d
+      JWT_SECRET: d12a71e9ed0cbc7aba5c0958d26791fde3930f9d30c794c51f96a4295753c972
+      LOG_FILE_PATH: ./logs
+      LOG_LEVEL: info
+      LOG_MAX_FILES: 14d
+      LOG_MAX_SIZE: 20m
+      MAX_FILE_SIZE: '10485760'
+      MONGODB_MAX_POOL_SIZE: '100'
+      MONGODB_MIN_POOL_SIZE: '10'
+      MONGODB_URI: mongodb://gonsai2:gonsai2_prod_password@mongodb-prod:27017/gonsai2_prod?authSource=admin
+      N8N_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc
+      N8N_BASE_URL: http://n8n:5678
+      N8N_WEBHOOK_SECRET: gonsai2-webhook-secret-production-2024
+      NODE_ENV: production
+      PORT: '3000'
+      RATE_LIMIT_AUTH_MAX: '5'
+      RATE_LIMIT_AUTH_WINDOW: '15'
+      RATE_LIMIT_MAX_REQUESTS: '100'
+      RATE_LIMIT_WINDOW: '15'
+      SESSION_SECRET: feb847b396c2f042d5d581e1e5389e435bbe6b4b3327f706a46338fa6bdf0527
+      TRUST_PROXY: 'true'
+      UPLOAD_DIR: ./uploads
+      WS_PATH: /ws
+      WS_PORT: '3001'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://127.0.0.1:3000/health
+      timeout: 10s
+    mem_limit: 256m
+    networks:
+      gonsai2-network: null
+      n8n-network: null
+    restart: unless-stopped
+    volumes:
+      - backend_logs:/app/logs:rw
+      - backend_uploads:/app/uploads:rw
+  gonsai2-frontend:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: ''
+        NEXT_PUBLIC_BACKEND_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc
+        NEXT_PUBLIC_N8N_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc
+        NEXT_PUBLIC_N8N_BASE_URL: http://localhost:5678
+        NEXT_PUBLIC_N8N_UI_URL: https://krdn-n8n.duckdns.org
+        NEXT_PUBLIC_SOCKET_URL: ''
+        NEXT_PUBLIC_WS_URL: ''
+      context: /home/gon/projects/gonsai2
+      dockerfile: apps/frontend/Dockerfile
+    container_name: gonsai2-frontend
+    cpus: 0.5
+    depends_on:
+      gonsai2-backend:
+        condition: service_healthy
+    environment:
+      BACKEND_INTERNAL_URL: http://gonsai2-backend:3000/api/:path*
+      N8N_INTERNAL_URL: http://n8n:5678
+      NEXT_PUBLIC_N8N_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNGZjZGQ0ZS04M2FhLTRmNTAtODc5Mi1hODU2ZWNhM2YxMGUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzYyOTI0MjYwfQ.hyAirUwqDFUmQMGDxiFsONMJpFZxl8dve0Y1xrkkkrc
+      NODE_ENV: production
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 15s
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://127.0.0.1:3002
+      timeout: 10s
+    mem_limit: 256m
+    networks:
+      gonsai2-network: null
+      n8n-network: null
+    restart: unless-stopped
+  mongodb-prod:
+    container_name: gonsai2-mongodb-prod
+    cpus: 0.5
+    environment:
+      MONGO_INITDB_DATABASE: gonsai2_prod
+      MONGO_INITDB_ROOT_PASSWORD: gonsai2_prod_password
+      MONGO_INITDB_ROOT_USERNAME: gonsai2
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 40s
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      timeout: 10s
+    image: mongo:7
+    mem_limit: 512m
+    networks:
+      gonsai2-network: null
+    ports:
+      - 0.0.0.0:27018:27017/tcp
+    restart: unless-stopped
+    volumes:
+      - mongodb_prod_data:/data/db:rw
+      - mongodb_prod_config:/data/configdb:rw
+  nginx:
+    container_name: gonsai2-nginx
+    cpus: 0.25
+    depends_on:
+      gonsai2-backend:
+        condition: service_healthy
+      gonsai2-frontend:
+        condition: service_healthy
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://127.0.0.1/health
+      timeout: 10s
+    image: nginx:alpine
+    mem_limit: 64m
+    networks:
+      gonsai2-network: null
+    ports:
+      - published: 8081
+        target: 80
+    restart: unless-stopped
+    volumes:
+      - /home/gon/projects/gonsai2/deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+version: '3.8'
+volumes:
+  backend_logs:
+    name: gonsai2_backend_logs
+  backend_uploads:
+    name: gonsai2_backend_uploads
+  mongodb_prod_config:
+    name: gonsai2_mongodb_prod_config
+  mongodb_prod_data:
+    name: gonsai2_mongodb_prod_data
