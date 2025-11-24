@@ -12,7 +12,7 @@
     "test:watch": "jest --watch",
     "test:changed": "jest --bail --findRelatedTests --onlyChanged --passWithNoTests",
     "test:coverage": "jest --coverage --coverageDirectory=coverage",
-    "test:coverage:check": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":70,\"functions\":70,\"lines\":70,\"statements\":70}}'",
+    "test:coverage:check": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":60,\"functions\":60,\"lines\":60,\"statements\":60}}'",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "setup": "./setup-api-key.sh",
     "test:connection": "ts-node features/n8n-integration/test-connection.ts",

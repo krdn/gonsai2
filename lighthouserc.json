@@ -1,7 +1,7 @@
 {
   "ci": {
     "collect": {
-      "startServerCommand": "npm run start --workspace=apps/frontend",
+      "startServerCommand": "cd apps/frontend && npm ci && npm run start",
       "startServerReadyPattern": "ready on",
       "startServerReadyTimeout": 30000,
       "url": ["http://localhost:3002/", "http://localhost:3002/monitoring"],
