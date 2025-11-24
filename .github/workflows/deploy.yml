@@ -179,21 +179,34 @@ jobs:
           echo "Waiting for deployment to stabilize..."
           sleep 30
 
+          # PRODUCTION_URL 검증
+          if [ -z "${{ vars.PRODUCTION_URL }}" ]; then
+            echo "❌ Error: PRODUCTION_URL is not set!"
+            echo "Please configure PRODUCTION_URL in GitHub repository settings:"
+            echo "Settings → Environments → production → Environment variables"
+            exit 1
+          fi
+
+          echo "🔍 Health check URL: $HEALTH_URL"
+
           MAX_RETRIES=10
           RETRY_COUNT=0
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
-              echo "✅ Health check passed!"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Health check passed! (HTTP $HTTP_CODE)"
               exit 0
             fi
 
             RETRY_COUNT=$((RETRY_COUNT + 1))
-            echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES failed, retrying in 10s..."
+            echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE), retrying in 10s..."
             sleep 10
           done
 
           echo "❌ Health check failed after $MAX_RETRIES attempts"
+          echo "Last HTTP status: $HTTP_CODE"
+          echo "URL checked: $HEALTH_URL"
           exit 1
 
       - name: Notify deployment success
