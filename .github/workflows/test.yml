@@ -28,7 +28,6 @@ jobs:
         run: |
           npm ci
           cd apps/frontend && npm ci
-          cd ../backend && npm ci
 
       - name: Run unit tests
         run: npm run test:unit
@@ -89,7 +88,6 @@ jobs:
         run: |
           npm ci
           cd apps/frontend && npm ci
-          cd ../backend && npm ci
 
       - name: Run integration tests
         run: npm run test:integration -- --passWithNoTests
@@ -176,7 +174,6 @@ jobs:
         run: |
           npm ci
           cd apps/frontend && npm ci
-          cd ../backend && npm ci
 
       - name: Run all tests with coverage
         run: npm run test:coverage
