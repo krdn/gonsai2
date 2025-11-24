@@ -154,7 +154,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           start: npm run server & cd apps/frontend && npm run start
-          wait-on: 'http://localhost:8000/health, http://localhost:3000'
+          wait-on: 'http://localhost:8000/health, http://localhost:3002'
           wait-on-timeout: 180
           browser: chrome
           record: false
