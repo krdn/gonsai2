@@ -112,59 +112,27 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:7
-        env:
-          MONGO_INITDB_ROOT_USERNAME: test
-          MONGO_INITDB_ROOT_PASSWORD: test
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install dependencies
+      - name: Start Test Environment
         run: |
-          npm ci
-          cd apps/frontend && npm ci
-          cd ../backend && npm ci
-
-      - name: Build Backend
-        run: npx tsc -p apps/backend/tsconfig.build.json
-
-      - name: Build Frontend
-        run: cd apps/frontend && npm run build
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8000
-          NEXT_PUBLIC_WS_URL: ws://localhost:8001
+          docker compose -f docker-compose.test.yml up -d --build --wait
+          docker compose -f docker-compose.test.yml ps
 
       - name: Run Cypress E2E tests
         uses: cypress-io/github-action@v6
         with:
-          start: npm run start:e2e-ci
-          wait-on: 'http://localhost:8000/health, http://localhost:3002'
+          # Tests are run against the containerized frontend
+          # We don't need to start the server here as it's already running in Docker
+          wait-on: 'http://localhost:3002'
           wait-on-timeout: 180
           browser: chrome
           record: false
         env:
-          MONGODB_URI: mongodb://test:test@localhost:27017/test_db?authSource=admin
-          JWT_SECRET: test_jwt_secret_key_for_e2e_testing_minimum_32_characters
-          N8N_BASE_URL: http://localhost:5678
-          N8N_API_KEY: test_api_key_for_e2e_testing
-          NEXT_PUBLIC_API_URL: http://localhost:8000
-          NEXT_PUBLIC_WS_URL: ws://localhost:8001
           CYPRESS_BASE_URL: http://localhost:3002
 
       - name: Upload Cypress screenshots
@@ -183,10 +151,17 @@ jobs:
           path: tests/e2e/videos
           if-no-files-found: ignore
 
+      - name: Stop Test Environment
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
   coverage-report:
     name: Coverage Report
     needs: [unit-tests, integration-tests]
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
