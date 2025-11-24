@@ -173,7 +173,7 @@ jobs:
         run: npm ci
 
       - name: Build Backend
-        run: npm run build
+        run: npx tsc -p apps/backend/tsconfig.build.json
 
       - name: Start Backend Server
         run: |
