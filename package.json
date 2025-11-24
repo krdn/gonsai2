@@ -34,7 +34,8 @@
     "stop:prod": "pm2 stop gonsai2-backend",
     "restart:prod": "npm run build && pm2 restart gonsai2-backend --env production",
     "logs:prod": "pm2 logs gonsai2-backend",
-    "delete:prod": "pm2 delete gonsai2-backend"
+    "delete:prod": "pm2 delete gonsai2-backend",
+    "start:e2e-ci": "PORT=8000 WS_PORT=8001 npm run server & cd apps/frontend && npm run start"
   },
   "keywords": [
     "n8n",
