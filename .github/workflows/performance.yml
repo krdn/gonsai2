@@ -119,7 +119,7 @@ jobs:
           NEXT_PUBLIC_WS_URL: ws://localhost:3001
 
       - name: Upload bundle stats
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bundle-stats
           path: |
@@ -217,7 +217,7 @@ jobs:
 
       - name: Upload benchmark results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: k6-benchmark-results
           path: k6-results.json
