@@ -2,8 +2,19 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "."
+    "rootDir": "../.."
   },
-  "include": ["src/**/*.ts", "../features/**/*.ts", "../infrastructure/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": ["src/**/*.ts", "../../features/**/*.ts", "../../infrastructure/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/tests/**",
+    "**/test-*.ts",
+    "**/__tests__/**",
+    "../../features/**/tests/**",
+    "../../features/**/test-*.ts",
+    "../../features/**/*.test.ts"
+  ]
 }
