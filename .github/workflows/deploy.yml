@@ -161,14 +161,14 @@ jobs:
             export FRONTEND_IMAGE="${{ needs.build-images.outputs.frontend-tag }}"
 
             # Create backup of current state
-            docker-compose -f docker-compose.prod.yml config > docker-compose.backup.yml
+            docker compose -f docker-compose.prod.yml config > docker-compose.backup.yml
 
             # Deploy with zero downtime
-            docker-compose -f docker-compose.prod.yml up -d --no-deps --scale gonsai2-backend=2 gonsai2-backend
+            docker compose -f docker-compose.prod.yml up -d --no-deps --scale gonsai2-backend=2 gonsai2-backend
             sleep 10
-            docker-compose -f docker-compose.prod.yml up -d --no-deps gonsai2-backend
+            docker compose -f docker-compose.prod.yml up -d --no-deps gonsai2-backend
 
-            docker-compose -f docker-compose.prod.yml up -d --no-deps gonsai2-frontend
+            docker compose -f docker-compose.prod.yml up -d --no-deps gonsai2-frontend
 
             # Cleanup old images
             docker image prune -f
@@ -238,13 +238,13 @@ jobs:
 
             # Restore from backup if exists
             if [ -f docker-compose.backup.yml ]; then
-              docker-compose -f docker-compose.backup.yml up -d
+              docker compose -f docker-compose.backup.yml up -d
               echo "✅ Rollback completed from backup"
             else
               # Fallback to latest stable
-              docker-compose -f docker-compose.prod.yml down
-              docker-compose -f docker-compose.prod.yml pull
-              docker-compose -f docker-compose.prod.yml up -d
+              docker compose -f docker-compose.prod.yml down
+              docker compose -f docker-compose.prod.yml pull
+              docker compose -f docker-compose.prod.yml up -d
               echo "⚠️ Rollback to latest stable images"
             fi
           ENDSSH
