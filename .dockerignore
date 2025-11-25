@@ -2,7 +2,7 @@
 **/.dockerignore
 **/.env
 **/.env.local
-**/.env.production
+# **/.env.production  # Docker 빌드에서 필요하므로 허용
 **/.env.development
 **/.env.test
 **/.git

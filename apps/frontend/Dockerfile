@@ -28,29 +28,16 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy source code
 COPY apps/frontend ./
 
+# Copy .env.production for build (overrides .dockerignore)
+# Next.js will automatically load NEXT_PUBLIC_* variables during build
+COPY apps/frontend/.env.production ./.env.production
+
 # Set environment for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build arguments for environment variables
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_WS_URL
-ARG NEXT_PUBLIC_SOCKET_URL
-ARG NEXT_PUBLIC_N8N_BASE_URL
-ARG NEXT_PUBLIC_N8N_API_KEY
-ARG NEXT_PUBLIC_N8N_UI_URL
-ARG NEXT_PUBLIC_BACKEND_API_KEY
-
-# Set build-time environment variables
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
-ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
-ENV NEXT_PUBLIC_N8N_BASE_URL=$NEXT_PUBLIC_N8N_BASE_URL
-ENV NEXT_PUBLIC_N8N_API_KEY=$NEXT_PUBLIC_N8N_API_KEY
-ENV NEXT_PUBLIC_N8N_UI_URL=$NEXT_PUBLIC_N8N_UI_URL
-ENV NEXT_PUBLIC_BACKEND_API_KEY=$NEXT_PUBLIC_BACKEND_API_KEY
-
 # Build Next.js application
+# Next.js automatically reads .env.production and bundles NEXT_PUBLIC_* variables
 RUN npm run build
 
 # ==================================================

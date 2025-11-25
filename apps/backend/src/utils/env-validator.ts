@@ -10,9 +10,15 @@ import path from 'path';
 // NOTE: logger.ts를 여기서 import하면 순환 참조 발생
 // logger.ts가 envConfig를 import하기 때문에 printConfig()에서는 console.log 사용
 
-// .env 파일 로드 (백엔드 디렉토리 기준)
-// CI 환경에서는 환경 변수가 이미 설정되어 있으므로 override하지 않음
-config({ path: path.resolve(__dirname, '../../.env') });
+// .env 파일 로드 (개발 환경에서만)
+// 프로덕션 환경에서는 Docker Compose의 environment 또는 env_file 사용 (12-Factor App 원칙)
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = path.resolve(__dirname, '../../.env');
+  config({ path: envPath });
+  console.log(`📄 Loaded .env from: ${envPath}`);
+} else {
+  console.log('📦 Using environment variables from Docker Compose (production mode)');
+}
 
 export interface AppConfig {
   // Server Configuration
