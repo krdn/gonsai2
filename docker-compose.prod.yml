@@ -14,9 +14,7 @@ services:
   # Backend Service
   # ==================================================
   gonsai2-backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
+    image: ghcr.io/krdn/gonsai2/backend:latest
     container_name: gonsai2-backend
     restart: unless-stopped
     # 리소스 제한
@@ -50,18 +48,7 @@ services:
   # Frontend Service
   # ==================================================
   gonsai2-frontend:
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
-      args:
-        # 빈 문자열로 설정하여 클라이언트가 상대 경로 사용 (origin 기준)
-        - NEXT_PUBLIC_API_URL=
-        - NEXT_PUBLIC_WS_URL=
-        - NEXT_PUBLIC_SOCKET_URL=
-        - NEXT_PUBLIC_N8N_BASE_URL=http://localhost:5678
-        - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
-        - NEXT_PUBLIC_N8N_UI_URL=https://krdn-n8n.duckdns.org
-        - NEXT_PUBLIC_BACKEND_API_KEY=${N8N_API_KEY}
+    image: ghcr.io/krdn/gonsai2/frontend:latest
     container_name: gonsai2-frontend
     restart: unless-stopped
     # 리소스 제한
