@@ -95,8 +95,12 @@ jobs:
             docker tag ${{ steps.tags.outputs.backend }} ${{ env.BACKEND_IMAGE }}:latest
             docker tag ${{ steps.tags.outputs.frontend }} ${{ env.FRONTEND_IMAGE }}:latest
 
-            # 서비스 재시작
-            docker compose -f docker-compose.prod.yml up -d --no-deps gonsai2-backend gonsai2-frontend
+            # 기존 컨테이너 중지 및 삭제
+            docker compose -f docker-compose.prod.yml stop gonsai2-backend gonsai2-frontend
+            docker compose -f docker-compose.prod.yml rm -f gonsai2-backend gonsai2-frontend
+
+            # 새 컨테이너로 재시작
+            docker compose -f docker-compose.prod.yml up -d gonsai2-backend gonsai2-frontend
 
             # 정리
             docker image prune -f
