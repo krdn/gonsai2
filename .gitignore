@@ -56,7 +56,6 @@ temp/
 
 # Docker
 docker-compose.override.yml
-.dockerignore
 
 # AI-Generated artifacts
 .ai-cache/
