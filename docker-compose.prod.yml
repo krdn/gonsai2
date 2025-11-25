@@ -48,6 +48,13 @@ services:
   # Frontend Service
   # ==================================================
   gonsai2-frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
+        - NEXT_PUBLIC_BACKEND_API_KEY=${N8N_API_KEY}
+        - NEXT_PUBLIC_API_URL=http://gonsai2-backend:3000
     image: ghcr.io/krdn/gonsai2/frontend:latest
     container_name: gonsai2-frontend
     restart: unless-stopped
@@ -59,6 +66,8 @@ services:
       - BACKEND_INTERNAL_URL=http://gonsai2-backend:3000/api/:path*
       - N8N_INTERNAL_URL=http://n8n:5678
       - NEXT_PUBLIC_N8N_API_KEY=${N8N_API_KEY}
+      - NEXT_PUBLIC_BACKEND_API_KEY=${N8N_API_KEY}
+      - NEXT_PUBLIC_API_URL=http://gonsai2-backend:3000
     networks:
       - gonsai2-network
       - n8n-network
