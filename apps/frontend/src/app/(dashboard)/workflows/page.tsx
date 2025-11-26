@@ -109,14 +109,28 @@ function extractAIModels(nodes: any[]): string[] {
       // 모델 ID에서 이름 추출
       if (node.parameters?.model) {
         const model = node.parameters.model;
-        // "moonshotai/kimi-k2:free" -> "kimi-k2"
-        if (model.includes('/')) {
-          return model.split('/').pop()?.split(':')[0] || model;
+        // model이 문자열인지 확인
+        if (typeof model === 'string') {
+          // "moonshotai/kimi-k2:free" -> "kimi-k2"
+          if (model.includes('/')) {
+            return model.split('/').pop()?.split(':')[0] || model;
+          }
+          return model;
         }
-        return model;
+        // model이 객체인 경우 (예: { value: "..." })
+        if (typeof model === 'object' && model?.value) {
+          const modelValue = String(model.value);
+          if (modelValue.includes('/')) {
+            return modelValue.split('/').pop()?.split(':')[0] || modelValue;
+          }
+          return modelValue;
+        }
+        return String(model);
       }
       if (node.parameters?.modelId?.value) {
         const value = node.parameters.modelId.value;
+        // value가 문자열인지 확인
+        if (typeof value !== 'string') return 'unknown';
         // "={{ $json.body.aimodel }}" -> "dynamic"
         if (value.includes('$json')) return 'dynamic';
         // "models/gemini-2.5-pro" -> "gemini-2.5-pro"

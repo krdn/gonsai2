@@ -37,6 +37,10 @@ services:
         condition: service_healthy
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    # 포트 노출 제거 - Nginx가 내부 네트워크로 접근
+    # 개발 환경에서 직접 API 테스트가 필요하면 로컬 백엔드 사용
+    # ports:
+    #   - '3000:3000'
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:3000/health']
       interval: 30s
