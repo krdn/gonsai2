@@ -8,6 +8,16 @@ The core of the project is the AI agent orchestration, which manages and execute
 -- Markdown documents are always in Korean
 -- Make all documents such as Tasks, implementation plans, etc. in Korean.
 -- Make all task updates in Korean.
+-- Use Korean for all comments in the code.
+-- Use Korean for all console logs.
+-- Use Korean for all error messages.
+-- Use Korean for all user interface text.
+-- Use Korean for all user interface prompts.
+-- Use Korean for all user interface labels.
+-- Use Korean for all user interface buttons.
+-- Use Korean for all user interface messages.
+-- Use Korean for all user interface notifications.
+-- Use Korean for all Generated commit messages.
 
 ## Building and Running
 
