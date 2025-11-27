@@ -85,6 +85,21 @@
 
 ---
 
+### 🔧 도구 & 설정
+
+- **[포트 설정 가이드](PORT_CONFIGURATION)** - 개발/운영 환경 포트 설정
+  - 포트 구조 개요
+  - 개발 환경 설정
+  - 운영 환경 (Docker) 설정
+  - CORS 설정
+
+- **[Chrome DevTools MCP 설정](Chrome-DevTools-MCP-Setup)** - MCP 도구 설정
+  - Playwright MCP vs Chrome DevTools MCP 비교
+  - 설정 방법 (Headless, Xvfb, Docker)
+  - MCP 설정 파일
+
+---
+
 ### ❓ 문제 해결
 
 - **[문제 해결](Troubleshooting)** - FAQ 및 오류 해결
@@ -110,5 +125,5 @@
 
 ## 📅 최종 업데이트
 
-- **날짜**: 2025-11-26
+- **날짜**: 2025-11-27
 - **버전**: 1.0.0
