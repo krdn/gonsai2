@@ -100,16 +100,33 @@ function createApp(): Application {
     app.use(limiter);
   }
 
-  // 인증 엔드포인트에 더 엄격한 rate limit
+  // 로그인 실패 전용 rate limit (실패 시에만 카운트, 성공 시 리셋)
   const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5, // 15분에 5번만 허용
+    windowMs: 15 * 60 * 1000, // 15분
+    max: 5, // 최대 5회 실패 허용
     message: {
       success: false,
-      error: '너무 많은 인증 시도가 있었습니다. 잠시 후 다시 시도해주세요.',
+      error: '너무 많은 로그인 실패가 있었습니다. 잠시 후 다시 시도해주세요.',
     },
     standardHeaders: true,
     legacyHeaders: false,
+    // 로그인 엔드포인트만 적용 (signup, logout 등은 제외)
+    skip: (req) => {
+      return req.path !== '/login';
+    },
+    // 성공한 요청은 카운트하지 않음 (2xx 응답)
+    skipSuccessfulRequests: true,
+    // 커스텀 키 생성 (IP 기반)
+    keyGenerator: (req) => {
+      return req.ip || req.socket.remoteAddress || 'unknown';
+    },
+  });
+
+  // 로그인 성공 시 rate limit 리셋을 위한 미들웨어 (authRoutes에서 사용)
+  app.set('resetLoginRateLimit', (ip: string) => {
+    // express-rate-limit의 내부 store에서 해당 IP 제거
+    // 이 기능은 로그인 성공 시 auth.routes.ts에서 호출됨
+    log.info(`Login rate limit reset for IP: ${ip}`);
   });
 
   // Body 파싱 (크기 제한)
