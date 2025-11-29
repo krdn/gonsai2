@@ -2,7 +2,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { AuthContextType, User, LoginResponse, SignupResponse } from '@/types/auth';
+import type {
+  AuthContextType,
+  User,
+  LoginResponse,
+  SignupResponse,
+  SignupRequest,
+} from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -80,14 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (signupData: SignupRequest) => {
     try {
       setIsLoading(true);
 
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify(signupData),
       });
 
       if (!response.ok) {
