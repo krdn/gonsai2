@@ -8,7 +8,16 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
 import { databaseService } from './database.service';
-import { IUser, IUserResponse, toUserResponse, UserRole } from '../models/user.model';
+import {
+  IUser,
+  IUserResponse,
+  toUserResponse,
+  UserRole,
+  OrganizationType,
+  AIExperienceLevel,
+  AIInterest,
+  AIUsagePurpose,
+} from '../models/user.model';
 import {
   IPasswordResetToken,
   PASSWORD_RESET_TOKEN_COLLECTION,
@@ -49,6 +58,20 @@ export interface IJwtPayload {
 export interface IAuthResponse {
   user: IUserResponse;
   token: string;
+}
+
+/**
+ * 회원가입 데이터 인터페이스
+ */
+export interface ISignupData {
+  email: string;
+  name: string;
+  password: string;
+  organizationType?: OrganizationType;
+  organizationName?: string;
+  aiExperienceLevel?: AIExperienceLevel;
+  aiInterests?: AIInterest[];
+  aiUsagePurpose?: AIUsagePurpose;
 }
 
 class AuthService {
@@ -97,25 +120,32 @@ class AuthService {
   /**
    * 사용자 회원가입
    */
-  async signup(email: string, name: string, password: string): Promise<IAuthResponse> {
+  async signup(data: ISignupData): Promise<IAuthResponse> {
     try {
       const usersCollection = databaseService.getUsersCollection();
 
       // 이메일 중복 체크
-      const existingUser = await usersCollection.findOne({ email });
+      const existingUser = await usersCollection.findOne({ email: data.email });
       if (existingUser) {
         throw new Error('Email already exists');
       }
 
       // 비밀번호 해싱
-      const hashedPassword = await this.hashPassword(password);
+      const hashedPassword = await this.hashPassword(data.password);
 
       // 새 사용자 생성 (기본 역할: user)
       const newUser: Omit<IUser, '_id'> = {
-        email,
-        name,
+        email: data.email,
+        name: data.name,
         password: hashedPassword,
         role: 'user',
+        // 소속 정보
+        organizationType: data.organizationType,
+        organizationName: data.organizationName,
+        // AI 관련 정보
+        aiExperienceLevel: data.aiExperienceLevel,
+        aiInterests: data.aiInterests,
+        aiUsagePurpose: data.aiUsagePurpose,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -124,7 +154,7 @@ class AuthService {
       const userId = result.insertedId.toString();
 
       // JWT 토큰 생성
-      const token = this.generateToken(userId, email, 'user');
+      const token = this.generateToken(userId, data.email, 'user');
 
       // 사용자 정보 조회 (비밀번호 제외)
       const user = await usersCollection.findOne({ _id: result.insertedId });
@@ -132,7 +162,7 @@ class AuthService {
         throw new Error('Failed to create user');
       }
 
-      log.info('User signed up successfully', { email, userId });
+      log.info('User signed up successfully', { email: data.email, userId });
 
       return {
         user: toUserResponse(user),
