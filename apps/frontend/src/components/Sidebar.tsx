@@ -20,16 +20,20 @@ import {
   FolderOpen,
   Folder,
   Settings,
+  UserCog,
+  Shield,
 } from 'lucide-react';
 import { useTagList } from '@/hooks/useTags';
 import { useFolderTreeList } from '@/hooks/useFolders';
 import { workflowsApi } from '@/lib/api-client';
 import { FolderTreeNode } from '@/lib/api-client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavigationItem {
   name: string;
   href?: string;
   icon: LucideIcon;
+  adminOnly?: boolean; // 관리자 전용 메뉴 여부
   children?: {
     name: string;
     href: string;
@@ -51,18 +55,16 @@ const staticNavigation: NavigationItem[] = [
     icon: Home,
   },
   {
-    name: 'AI Agents',
-    href: '/ai-agents',
-    icon: Bot,
-  },
-  {
     name: 'Admin',
-    icon: LayoutDashboard,
+    icon: Shield,
+    adminOnly: true, // 관리자 전용 메뉴
     children: [
+      { name: 'AI Agents', href: '/ai-agents', icon: Bot },
       { name: 'Workflows', href: '/workflows', icon: Workflow },
       { name: 'Executions', href: '/executions', icon: Activity },
       { name: 'Monitoring', href: '/monitoring', icon: Eye },
       { name: 'Agents', href: '/agents', icon: Users },
+      { name: 'User Management', href: '/admin/users', icon: UserCog },
       { name: 'Folder Management', href: '/admin/folders', icon: Settings },
     ],
   },
@@ -85,6 +87,8 @@ function convertFolderTreeToNavItems(
 function SidebarContent({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [expandedItems, setExpandedItems] = useState<string[]>(['Admin', 'Folders']);
   const [workflows, setWorkflows] = useState<any[]>([]);
 
@@ -124,6 +128,9 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
 
   // 동적 네비게이션 생성 (Folders, Tags 포함)
   const navigation: NavigationItem[] = React.useMemo(() => {
+    // 관리자 권한에 따라 메뉴 필터링
+    const filteredStaticNav = staticNavigation.filter((item) => !item.adminOnly || isAdmin);
+
     // 폴더 네비게이션 항목
     const foldersNavItem: NavigationItem = {
       name: 'Folders',
@@ -145,8 +152,8 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
       })),
     };
 
-    return [...staticNavigation, foldersNavItem, tagsNavItem];
-  }, [tags, workflows, folderTree]);
+    return [...filteredStaticNav, foldersNavItem, tagsNavItem];
+  }, [tags, workflows, folderTree, isAdmin]);
 
   // ESC 키로 사이드바 닫기
   useEffect(() => {
