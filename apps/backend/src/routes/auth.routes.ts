@@ -192,6 +192,7 @@ router.post(
         secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
         sameSite: 'lax', // CSRF 방어
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+        path: '/', // 모든 경로에서 쿠키 접근 가능
       });
 
       res.status(201).json({
@@ -250,6 +251,7 @@ router.post(
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+        path: '/', // 모든 경로에서 쿠키 접근 가능
       });
 
       res.status(200).json({
@@ -275,8 +277,13 @@ router.post(
  * 사용자 로그아웃
  */
 router.post('/logout', (_req: Request, res: Response): void => {
-  // 쿠키 삭제
-  res.clearCookie('token');
+  // 쿠키 삭제 (설정 시와 동일한 옵션 필요)
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+  });
 
   res.status(200).json({
     success: true,
