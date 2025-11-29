@@ -112,9 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('[Auth] Logout started');
 
     // 클라이언트 측 상태 먼저 정리
-    setUser(null);
     localStorage.removeItem('user');
-    console.log('[Auth] Local state cleared');
+    console.log('[Auth] LocalStorage cleared');
 
     try {
       // 백엔드 로그아웃 API 호출 (서버 측 쿠키 삭제)
@@ -129,7 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log('[Auth] Redirecting to login page');
     // 페이지 강제 새로고침을 통한 완전한 상태 초기화
-    window.location.href = '/login';
+    // setUser(null)을 호출하지 않고 바로 리다이렉트하여
+    // 컴포넌트 언마운트로 인한 리다이렉트 실패 방지
+    window.location.replace('/login');
   };
 
   const updateUser = (data: Partial<User>) => {

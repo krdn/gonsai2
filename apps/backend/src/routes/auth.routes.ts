@@ -69,7 +69,10 @@ const router = Router();
 router.post(
   '/signup',
   [
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email')
+      .isEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
+      .withMessage('Valid email is required'),
     body('name')
       .trim()
       .isLength({ min: 2, max: 50 })
@@ -136,7 +139,10 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email')
+      .isEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
+      .withMessage('Valid email is required'),
     body('password').exists().notEmpty().withMessage('Password is required'),
   ],
   async (req: Request, res: Response): Promise<void> => {
@@ -203,7 +209,12 @@ router.post('/logout', (_req: Request, res: Response): void => {
  */
 router.post(
   '/forgot-password',
-  [body('email').isEmail().normalizeEmail().withMessage('Valid email is required')],
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
+      .withMessage('Valid email is required'),
+  ],
   async (req: Request, res: Response): Promise<void> => {
     try {
       // 유효성 검사 결과 확인
