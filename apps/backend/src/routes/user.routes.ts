@@ -115,6 +115,48 @@ router.patch(
       .optional()
       .isLength({ min: 6 })
       .withMessage('New password must be at least 6 characters'),
+    // 소속 정보
+    body('organizationType')
+      .optional()
+      .isIn(['school', 'company', 'other'])
+      .withMessage('Organization type must be school, company, or other'),
+    body('organizationName')
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Organization name must be 100 characters or less'),
+    // AI 관련 정보
+    body('aiExperienceLevel')
+      .optional()
+      .isIn(['beginner', 'elementary', 'intermediate', 'advanced'])
+      .withMessage('AI experience level must be beginner, elementary, intermediate, or advanced'),
+    body('aiInterests').optional().isArray().withMessage('AI interests must be an array'),
+    body('aiInterests.*')
+      .optional()
+      .isIn([
+        'chatbot',
+        'automation',
+        'data_analysis',
+        'image_generation',
+        'text_generation',
+        'voice_recognition',
+        'recommendation',
+        'other',
+      ])
+      .withMessage('Invalid AI interest value'),
+    body('aiUsagePurpose')
+      .optional()
+      .isIn([
+        'personal_learning',
+        'work_productivity',
+        'business_automation',
+        'research',
+        'development',
+        'other',
+      ])
+      .withMessage('Invalid AI usage purpose'),
+    // 아바타
+    body('avatar').optional().isString().withMessage('Avatar must be a string'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -130,7 +172,18 @@ router.patch(
       }
 
       const userId = req.userId;
-      const { name, email, currentPassword, newPassword } = req.body;
+      const {
+        name,
+        email,
+        currentPassword,
+        newPassword,
+        organizationType,
+        organizationName,
+        aiExperienceLevel,
+        aiInterests,
+        aiUsagePurpose,
+        avatar,
+      } = req.body;
 
       if (!userId) {
         res.status(401).json({
@@ -186,6 +239,30 @@ router.patch(
         // 새 비밀번호 해싱
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         updateData.password = hashedPassword;
+      }
+
+      // 소속 정보 업데이트
+      if (organizationType !== undefined) {
+        updateData.organizationType = organizationType;
+      }
+      if (organizationName !== undefined) {
+        updateData.organizationName = organizationName;
+      }
+
+      // AI 관련 정보 업데이트
+      if (aiExperienceLevel !== undefined) {
+        updateData.aiExperienceLevel = aiExperienceLevel;
+      }
+      if (aiInterests !== undefined) {
+        updateData.aiInterests = aiInterests;
+      }
+      if (aiUsagePurpose !== undefined) {
+        updateData.aiUsagePurpose = aiUsagePurpose;
+      }
+
+      // 아바타 업데이트
+      if (avatar !== undefined) {
+        updateData.avatar = avatar;
       }
 
       // 업데이트할 내용이 없으면 에러
