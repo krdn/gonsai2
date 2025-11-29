@@ -1,7 +1,7 @@
 /**
  * Workflows Routes
  *
- * @description n8n 워크플로우 관리 및 실행 API
+ * @description n8n 워크플로우 관리 및 실행 API (폴더 권한 기반 필터링)
  */
 
 import { Router, Request, Response } from 'express';
@@ -10,10 +10,11 @@ import { log } from '../utils/logger';
 import { getCorrelationId } from '../middleware/correlation-id.middleware';
 import { executionRepository } from '../repositories/workflow.repository';
 import { ApiResponse, ExecuteWorkflowRequest, ExecuteWorkflowResponse } from '../types/api.types';
-import { asyncHandler, authenticateN8nApiKey } from '../middleware';
+import { asyncHandler, authenticateJWT, requireWorkflowAccess } from '../middleware';
 import { N8nApiError, NotFoundError } from '../utils/errors';
 import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
 import { cacheService } from '../services/cache.service';
+import { workflowFolderService } from '../services/workflow-folder.service';
 
 // 캐시 TTL 상수 (초 단위)
 const CACHE_TTL = {
@@ -64,19 +65,23 @@ interface N8nExecutionResponse {
   };
 }
 
-// 모든 워크플로우 라우트는 인증 필요
-router.use(authenticateN8nApiKey);
+// 모든 워크플로우 라우트는 JWT 인증 필요
+router.use(authenticateJWT);
 
 /**
  * GET /api/workflows
- * 모든 워크플로우 조회 (n8n API 프록시)
+ * 모든 워크플로우 조회 (n8n API 프록시 + 폴더 권한 필터링)
  * - includeNodes=true 쿼리 파라미터로 nodes 정보 포함 가능
+ * - admin은 모든 워크플로우 조회 가능
+ * - 일반 사용자는 권한이 있는 폴더의 워크플로우만 조회
+ * - 폴더에 할당되지 않은 워크플로우는 admin만 조회 가능
  */
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const correlationId = getCorrelationId(req);
     const includeNodes = req.query.includeNodes === 'true';
+    const isAdmin = req.userRole === 'admin';
 
     // ⚡ 성능 최적화: 캐싱 적용
     const cacheKey = includeNodes ? 'workflows:list:withNodes' : 'workflows:list';
@@ -87,6 +92,24 @@ router.get(
     );
 
     let workflows = n8nData.data || [];
+
+    // 권한 기반 필터링 (admin이 아닌 경우)
+    if (!isAdmin && workflows.length > 0) {
+      // 사용자가 접근 가능한 워크플로우 ID 조회
+      const accessibleWorkflowIds = await workflowFolderService.getAccessibleWorkflowIds(
+        req.userId!,
+        false
+      );
+
+      if (accessibleWorkflowIds.length === 0) {
+        // 접근 가능한 워크플로우 없음
+        workflows = [];
+      } else {
+        // 접근 가능한 워크플로우만 필터링
+        const accessibleSet = new Set(accessibleWorkflowIds);
+        workflows = workflows.filter((w) => accessibleSet.has(w.id as string));
+      }
+    }
 
     // nodes 정보가 필요한 경우, 각 워크플로우의 상세 정보를 가져옴
     if (includeNodes && workflows.length > 0) {
@@ -116,10 +139,19 @@ router.get(
       workflows = workflowsWithNodes;
     }
 
+    // 워크플로우-폴더 매핑 정보 추가
+    const workflowFolderMap = await workflowFolderService.getWorkflowToFolderMap();
+    workflows = workflows.map((w) => ({
+      ...w,
+      folderId: workflowFolderMap.get(w.id as string) || null,
+    }));
+
     log.info('Workflows retrieved', {
       correlationId,
       count: workflows.length,
       includeNodes,
+      isAdmin,
+      userId: req.userId,
     });
 
     const response: ApiResponse = {
@@ -134,10 +166,11 @@ router.get(
 
 /**
  * GET /api/workflows/:id
- * 특정 워크플로우 조회 (n8n API 프록시)
+ * 특정 워크플로우 조회 (n8n API 프록시 + 권한 검증)
  */
 router.get(
   '/:id',
+  requireWorkflowAccess('view'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const correlationId = getCorrelationId(req);
@@ -150,14 +183,21 @@ router.get(
         CACHE_TTL.WORKFLOW_DETAIL
       );
 
+      // 폴더 정보 추가
+      const folderId = await workflowFolderService.getFolderForWorkflow(id);
+
       log.info('Workflow detail retrieved', {
         correlationId,
         workflowId: id,
+        folderId,
       });
 
       const response: ApiResponse = {
         success: true,
-        data: workflow,
+        data: {
+          ...workflow,
+          folderId,
+        },
         timestamp: new Date().toISOString(),
       };
 
@@ -173,10 +213,11 @@ router.get(
 
 /**
  * POST /api/workflows/:id/execute
- * 워크플로우 실행
+ * 워크플로우 실행 (실행 권한 검증)
  */
 router.post(
   '/:id/execute',
+  requireWorkflowAccess('execute'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const body = req.body as ExecuteWorkflowRequest;
@@ -386,10 +427,11 @@ router.post(
 
 /**
  * GET /api/workflows/:id/executions
- * 워크플로우 실행 기록 조회 (n8n API 프록시)
+ * 워크플로우 실행 기록 조회 (n8n API 프록시 + 권한 검증)
  */
 router.get(
   '/:id/executions',
+  requireWorkflowAccess('view'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { limit = 10 } = req.query;

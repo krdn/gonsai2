@@ -33,6 +33,7 @@ import userRoutes from './routes/user.routes';
 import agentsRoutes from './routes/agents.routes';
 import monitoringRoutes from './routes/monitoring.routes';
 import tagsRoutes from './routes/tags.routes';
+import foldersRoutes from './routes/folders.routes';
 
 /**
  * Express 애플리케이션 생성
@@ -165,6 +166,7 @@ function createApp(): Application {
   app.use('/api/monitoring', monitoringRoutes); // 모니터링 라우트
   app.use('/api/agents', agentsRoutes); // AI 에이전트 라우트
   app.use('/api/tags', tagsRoutes); // 태그 라우트
+  app.use('/api/folders', foldersRoutes); // 폴더 관리 라우트
   app.use('/api/auth', authLimiter, authRoutes); // 인증 라우트 (rate limit 적용)
   app.use('/api/users', userRoutes); // 사용자 프로필 라우트
 
