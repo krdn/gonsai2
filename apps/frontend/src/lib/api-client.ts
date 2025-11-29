@@ -56,13 +56,34 @@ export class ApiClientError extends Error {
 }
 
 /**
+ * JWT 토큰 조회 (클라이언트 사이드에서만)
+ */
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return localStorage.getItem('authToken');
+}
+
+/**
  * HTTP 헤더 생성
  * X-API-Key 헤더를 포함하여 백엔드 인증 처리
+ * JWT 토큰이 있으면 Authorization 헤더에 포함
  */
 function getHeaders(customHeaders: HeadersInit = {}): HeadersInit {
-  return {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-API-Key': API_KEY,
+  };
+
+  // JWT 토큰이 있으면 Authorization 헤더 추가
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return {
+    ...headers,
     ...customHeaders,
   };
 }
@@ -79,6 +100,7 @@ async function fetchWithErrorHandling<T = any>(url: string, options: RequestInit
   try {
     const response = await fetch(url, {
       ...options,
+      credentials: 'include', // 쿠키 포함 (JWT 토큰 전송)
       headers: getHeaders(options.headers),
     }).catch((fetchError) => {
       if (isDev) {
@@ -296,6 +318,321 @@ export const tagsApi = {
 };
 
 /**
+ * 폴더 권한 레벨 타입
+ */
+export type PermissionLevel = 'viewer' | 'executor' | 'editor' | 'admin';
+
+/**
+ * 폴더 응답 타입
+ */
+export interface FolderResponse {
+  id: string;
+  name: string;
+  description?: string;
+  parentId?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 폴더 트리 노드 타입
+ */
+export interface FolderTreeNode extends FolderResponse {
+  children: FolderTreeNode[];
+  workflowCount?: number;
+}
+
+/**
+ * 폴더 권한 응답 타입
+ */
+export interface FolderPermissionResponse {
+  id: string;
+  folderId: string;
+  userId: string;
+  permission: PermissionLevel;
+  grantedBy: string;
+  grantedAt: string;
+  updatedAt: string;
+  userName?: string;
+  userEmail?: string;
+  inherited?: boolean;
+}
+
+/**
+ * Folders API
+ */
+export const foldersApi = {
+  /**
+   * 사용자가 접근 가능한 폴더 목록 조회
+   */
+  list: (options?: { tree?: boolean }) => {
+    const params = new URLSearchParams();
+    if (options?.tree) {
+      params.set('tree', 'true');
+    }
+    const queryString = params.toString();
+    return fetchWithErrorHandling<{ success: boolean; data: FolderResponse[] | FolderTreeNode[] }>(
+      `${getApiUrl()}/api/folders${queryString ? `?${queryString}` : ''}`
+    );
+  },
+
+  /**
+   * 폴더 트리 구조 조회
+   */
+  tree: () =>
+    fetchWithErrorHandling<{ success: boolean; data: FolderTreeNode[] }>(
+      `${getApiUrl()}/api/folders?tree=true`
+    ),
+
+  /**
+   * 특정 폴더 조회
+   */
+  get: (id: string) =>
+    fetchWithErrorHandling<{ success: boolean; data: FolderResponse }>(
+      `${getApiUrl()}/api/folders/${id}`
+    ),
+
+  /**
+   * 폴더 생성 (admin 전용)
+   */
+  create: (data: { name: string; description?: string; parentId?: string }) =>
+    fetchWithErrorHandling<{ success: boolean; data: FolderResponse }>(
+      `${getApiUrl()}/api/folders`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  /**
+   * 폴더 수정
+   */
+  update: (id: string, data: { name?: string; description?: string; parentId?: string | null }) =>
+    fetchWithErrorHandling<{ success: boolean; data: FolderResponse }>(
+      `${getApiUrl()}/api/folders/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  /**
+   * 폴더 삭제 (admin 전용)
+   */
+  delete: (id: string, options?: { deleteChildren?: boolean }) =>
+    fetchWithErrorHandling(
+      `${getApiUrl()}/api/folders/${id}${options?.deleteChildren ? '?deleteChildren=true' : ''}`,
+      {
+        method: 'DELETE',
+      }
+    ),
+
+  /**
+   * 폴더 내 워크플로우 ID 목록 조회
+   */
+  getWorkflows: (id: string) =>
+    fetchWithErrorHandling<{ success: boolean; data: string[] }>(
+      `${getApiUrl()}/api/folders/${id}/workflows`
+    ),
+
+  /**
+   * 워크플로우를 폴더에 할당
+   */
+  assignWorkflow: (folderId: string, workflowId: string) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/folders/${folderId}/workflows`, {
+      method: 'POST',
+      body: JSON.stringify({ workflowId }),
+    }),
+
+  /**
+   * 여러 워크플로우를 폴더에 일괄 할당
+   */
+  assignWorkflows: (folderId: string, workflowIds: string[]) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/folders/${folderId}/workflows/bulk`, {
+      method: 'POST',
+      body: JSON.stringify({ workflowIds }),
+    }),
+
+  /**
+   * 워크플로우 폴더 할당 해제
+   */
+  unassignWorkflow: (folderId: string, workflowId: string) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/folders/${folderId}/workflows/${workflowId}`, {
+      method: 'DELETE',
+    }),
+
+  /**
+   * 폴더 권한 목록 조회
+   */
+  getPermissions: (id: string) =>
+    fetchWithErrorHandling<{ success: boolean; data: FolderPermissionResponse[] }>(
+      `${getApiUrl()}/api/folders/${id}/permissions`
+    ),
+
+  /**
+   * 사용자에게 폴더 권한 부여
+   */
+  addPermission: (folderId: string, userId: string, permission: PermissionLevel) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/folders/${folderId}/permissions`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, permission }),
+    }),
+
+  /**
+   * 폴더 권한 수정
+   */
+  updatePermission: (folderId: string, userId: string, permission: PermissionLevel) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/folders/${folderId}/permissions/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ permission }),
+    }),
+
+  /**
+   * 폴더 권한 삭제
+   */
+  removePermission: (folderId: string, userId: string) =>
+    fetchWithErrorHandling(`${getApiUrl()}/api/folders/${folderId}/permissions/${userId}`, {
+      method: 'DELETE',
+    }),
+
+  /**
+   * 현재 사용자의 모든 폴더 권한 조회
+   */
+  getMyPermissions: () => fetchWithErrorHandling(`${getApiUrl()}/api/folders/my-permissions`),
+};
+
+/**
+ * 사용자 응답 타입
+ */
+export interface UserResponse {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+  isActive?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 사용자 생성 DTO
+ */
+export interface CreateUserDto {
+  email: string;
+  password: string;
+  name: string;
+  role?: 'admin' | 'user';
+}
+
+/**
+ * 사용자 수정 DTO
+ */
+export interface UpdateUserDto {
+  name?: string;
+  email?: string;
+  role?: 'admin' | 'user';
+  isActive?: boolean;
+  password?: string;
+}
+
+/**
+ * Users API
+ */
+export const usersApi = {
+  /**
+   * 모든 사용자 목록 조회 (admin 전용)
+   */
+  list: () =>
+    fetchWithErrorHandling<{ success: boolean; data: UserResponse[] }>(`${getApiUrl()}/api/users`),
+
+  /**
+   * 현재 로그인한 사용자 정보 조회
+   */
+  me: () =>
+    fetchWithErrorHandling<{ success: boolean; user: UserResponse }>(`${getApiUrl()}/api/users/me`),
+
+  /**
+   * 특정 사용자 정보 조회 (admin 전용)
+   */
+  get: (id: string) =>
+    fetchWithErrorHandling<{ success: boolean; data: UserResponse }>(
+      `${getApiUrl()}/api/users/${id}`
+    ),
+
+  /**
+   * 새 사용자 생성 (admin 전용)
+   */
+  create: (data: CreateUserDto) =>
+    fetchWithErrorHandling<{ success: boolean; data: UserResponse; message: string }>(
+      `${getApiUrl()}/api/users`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  /**
+   * 사용자 정보 수정 (admin 전용)
+   */
+  update: (id: string, data: UpdateUserDto) =>
+    fetchWithErrorHandling<{ success: boolean; data: UserResponse; message: string }>(
+      `${getApiUrl()}/api/users/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  /**
+   * 사용자 삭제 (admin 전용)
+   */
+  delete: (id: string) =>
+    fetchWithErrorHandling<{ success: boolean; message: string }>(
+      `${getApiUrl()}/api/users/${id}`,
+      {
+        method: 'DELETE',
+      }
+    ),
+
+  /**
+   * 사용자 역할 변경 (admin 전용)
+   */
+  changeRole: (id: string, role: 'admin' | 'user') =>
+    fetchWithErrorHandling<{ success: boolean; message: string }>(
+      `${getApiUrl()}/api/users/${id}/role`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      }
+    ),
+
+  /**
+   * 사용자 활성화/비활성화 (admin 전용)
+   */
+  changeStatus: (id: string, isActive: boolean) =>
+    fetchWithErrorHandling<{ success: boolean; message: string }>(
+      `${getApiUrl()}/api/users/${id}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive }),
+      }
+    ),
+
+  /**
+   * 사용자 비밀번호 재설정 (admin 전용)
+   */
+  resetPassword: (id: string, password: string) =>
+    fetchWithErrorHandling<{ success: boolean; message: string }>(
+      `${getApiUrl()}/api/users/${id}/password`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ password }),
+      }
+    ),
+};
+
+/**
  * 전체 API 클라이언트 export
  */
 export const apiClient = {
@@ -305,6 +642,8 @@ export const apiClient = {
   system: systemApi,
   agents: agentsApi,
   tags: tagsApi,
+  folders: foldersApi,
+  users: usersApi,
 };
 
 export default apiClient;
