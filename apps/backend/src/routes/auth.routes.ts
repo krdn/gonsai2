@@ -43,6 +43,28 @@ const router = Router();
  *                 minLength: 8
  *                 description: Must contain uppercase, lowercase, number, and special character
  *                 example: Password123!
+ *               organizationType:
+ *                 type: string
+ *                 enum: [school, company, other]
+ *                 description: 소속 타입 (학교/회사/기타)
+ *               organizationName:
+ *                 type: string
+ *                 maxLength: 100
+ *                 description: 소속명
+ *               aiExperienceLevel:
+ *                 type: string
+ *                 enum: [beginner, elementary, intermediate, advanced]
+ *                 description: AI 활용 경험 수준
+ *               aiInterests:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [chatbot, automation, data_analysis, image_generation, text_generation, voice_recognition, recommendation, other]
+ *                 description: AI 관심 분야 (복수 선택)
+ *               aiUsagePurpose:
+ *                 type: string
+ *                 enum: [personal_learning, work_productivity, business_automation, research, development, other]
+ *                 description: AI 활용 목적
  *     responses:
  *       201:
  *         description: 회원가입 성공
@@ -86,6 +108,47 @@ router.post(
       .withMessage(
         'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
       ),
+    // 선택적 필드 유효성 검사
+    body('organizationType')
+      .optional()
+      .isIn(['school', 'company', 'other'])
+      .withMessage('organizationType must be one of: school, company, other'),
+    body('organizationName')
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('organizationName must be at most 100 characters'),
+    body('aiExperienceLevel')
+      .optional()
+      .isIn(['beginner', 'elementary', 'intermediate', 'advanced'])
+      .withMessage(
+        'aiExperienceLevel must be one of: beginner, elementary, intermediate, advanced'
+      ),
+    body('aiInterests').optional().isArray().withMessage('aiInterests must be an array'),
+    body('aiInterests.*')
+      .optional()
+      .isIn([
+        'chatbot',
+        'automation',
+        'data_analysis',
+        'image_generation',
+        'text_generation',
+        'voice_recognition',
+        'recommendation',
+        'other',
+      ])
+      .withMessage('Invalid aiInterest value'),
+    body('aiUsagePurpose')
+      .optional()
+      .isIn([
+        'personal_learning',
+        'work_productivity',
+        'business_automation',
+        'research',
+        'development',
+        'other',
+      ])
+      .withMessage('Invalid aiUsagePurpose value'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -100,10 +163,28 @@ router.post(
         return;
       }
 
-      const { email, name, password } = req.body;
+      const {
+        email,
+        name,
+        password,
+        organizationType,
+        organizationName,
+        aiExperienceLevel,
+        aiInterests,
+        aiUsagePurpose,
+      } = req.body;
 
       // 회원가입 처리
-      const result = await authService.signup(email, name, password);
+      const result = await authService.signup({
+        email,
+        name,
+        password,
+        organizationType,
+        organizationName,
+        aiExperienceLevel,
+        aiInterests,
+        aiUsagePurpose,
+      });
 
       // 쿠키에 토큰 저장 (HttpOnly, Secure 옵션 설정)
       res.cookie('token', result.token, {
