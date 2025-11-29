@@ -17,9 +17,14 @@ import {
   X,
   Tags,
   Tag,
+  FolderOpen,
+  Folder,
+  Settings,
 } from 'lucide-react';
 import { useTagList } from '@/hooks/useTags';
+import { useFolderTreeList } from '@/hooks/useFolders';
 import { workflowsApi } from '@/lib/api-client';
+import { FolderTreeNode } from '@/lib/api-client';
 
 interface NavigationItem {
   name: string;
@@ -38,7 +43,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-// 정적 네비게이션 항목 (Tags는 동적으로 추가)
+// 정적 네비게이션 항목 (Tags, Folders는 동적으로 추가)
 const staticNavigation: NavigationItem[] = [
   {
     name: 'Dashboard',
@@ -58,19 +63,36 @@ const staticNavigation: NavigationItem[] = [
       { name: 'Executions', href: '/executions', icon: Activity },
       { name: 'Monitoring', href: '/monitoring', icon: Eye },
       { name: 'Agents', href: '/agents', icon: Users },
+      { name: 'Folder Management', href: '/admin/folders', icon: Settings },
     ],
   },
 ];
+
+// 폴더 트리를 네비게이션 아이템으로 변환하는 헬퍼 함수
+function convertFolderTreeToNavItems(
+  folders: FolderTreeNode[],
+  getWorkflowCount: (folderId: string) => number
+): NavigationItem['children'] {
+  return folders.map((folder) => ({
+    name: folder.name,
+    href: `/workflows?folder=${encodeURIComponent(folder.id)}`,
+    icon: folder.children && folder.children.length > 0 ? FolderOpen : Folder,
+    count: folder.workflowCount ?? getWorkflowCount(folder.id),
+  }));
+}
 
 // 내부 사이드바 콘텐츠 컴포넌트 (useSearchParams 사용)
 function SidebarContent({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Admin']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['Admin', 'Folders']);
   const [workflows, setWorkflows] = useState<any[]>([]);
 
   // n8n 태그 목록 가져오기 (30초마다 자동 갱신)
   const tags = useTagList(30000);
+
+  // 폴더 트리 목록 가져오기 (30초마다 자동 갱신)
+  const folderTree = useFolderTreeList(30000);
 
   // 워크플로우 목록 가져오기
   useEffect(() => {
@@ -95,8 +117,22 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
       .length;
   };
 
-  // 동적 네비게이션 생성 (Tags 폴더 포함)
+  // 각 폴더별 워크플로우 개수 계산
+  const getFolderWorkflowCount = (folderId: string): number => {
+    return workflows.filter((workflow) => workflow.folderId === folderId).length;
+  };
+
+  // 동적 네비게이션 생성 (Folders, Tags 포함)
   const navigation: NavigationItem[] = React.useMemo(() => {
+    // 폴더 네비게이션 항목
+    const foldersNavItem: NavigationItem = {
+      name: 'Folders',
+      icon: FolderOpen,
+      href: '/workflows', // Folders 클릭 시 워크플로우 페이지로 이동
+      children: convertFolderTreeToNavItems(folderTree, getFolderWorkflowCount),
+    };
+
+    // 태그 네비게이션 항목
     const tagsNavItem: NavigationItem = {
       name: 'Tags',
       icon: Tags,
@@ -109,8 +145,8 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
       })),
     };
 
-    return [...staticNavigation, tagsNavItem];
-  }, [tags, workflows]);
+    return [...staticNavigation, foldersNavItem, tagsNavItem];
+  }, [tags, workflows, folderTree]);
 
   // ESC 키로 사이드바 닫기
   useEffect(() => {
@@ -243,7 +279,7 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
                 {isExpanded && item.children && (
                   <div className="ml-6 mt-1 space-y-1">
                     {item.children.map((child) => {
-                      // Tags 자식 메뉴인 경우 쿼리 파라미터까지 비교
+                      // Tags/Folders 자식 메뉴인 경우 쿼리 파라미터까지 비교
                       let isActive = false;
 
                       if (child.href.includes('?tag=')) {
@@ -253,11 +289,21 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
                         const currentTag = searchParams.get('tag');
 
                         isActive = pathname === childPath && currentTag === childTagParam;
+                      } else if (child.href.includes('?folder=')) {
+                        // Folders 자식 메뉴: pathname과 folder 파라미터 모두 확인
+                        const [childPath, childQuery] = child.href.split('?');
+                        const childFolderParam = new URLSearchParams(childQuery).get('folder');
+                        const currentFolder = searchParams.get('folder');
+
+                        isActive = pathname === childPath && currentFolder === childFolderParam;
                       } else {
                         // 일반 자식 메뉴: pathname으로 비교
-                        // /workflows 경로인 경우, tag 파라미터가 없을 때만 활성화
+                        // /workflows 경로인 경우, tag/folder 파라미터가 없을 때만 활성화
                         if (child.href === '/workflows') {
-                          isActive = pathname === '/workflows' && !searchParams.get('tag');
+                          isActive =
+                            pathname === '/workflows' &&
+                            !searchParams.get('tag') &&
+                            !searchParams.get('folder');
                         } else {
                           isActive = pathname.startsWith(child.href);
                         }

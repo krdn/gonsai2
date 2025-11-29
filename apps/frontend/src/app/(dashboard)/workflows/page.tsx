@@ -19,8 +19,9 @@ import {
   FileText,
   Bot,
   Info,
+  FolderOpen,
 } from 'lucide-react';
-import { workflowsApi, tagsApi } from '@/lib/api-client';
+import { workflowsApi, tagsApi, foldersApi, FolderResponse } from '@/lib/api-client';
 import WorkflowExecutionModal from '@/components/workflow/WorkflowExecutionModal';
 
 import { WORKFLOW_IDS } from '@/config/workflows.config';
@@ -164,6 +165,7 @@ interface Workflow {
   connections: any;
   settings: any;
   tags?: Tag[];
+  folderId?: string | null; // 폴더 ID (백엔드에서 추가)
   createdAt: string;
   updatedAt: string;
 }
@@ -173,9 +175,11 @@ function WorkflowsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedTagId = searchParams.get('tag');
+  const selectedFolderId = searchParams.get('folder');
 
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [folders, setFolders] = useState<FolderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -210,15 +214,17 @@ function WorkflowsContent() {
       setLoading(true);
       setError(null);
 
-      // 워크플로우와 태그를 병렬로 조회
+      // 워크플로우, 태그, 폴더를 병렬로 조회
       // includeNodes: true - Sticky Note에서 설명 추출, AI 모델/트리거 타입 분석을 위해 nodes 정보 필요
-      const [workflowsData, tagsData] = await Promise.all([
+      const [workflowsData, tagsData, foldersData] = await Promise.all([
         workflowsApi.list({ includeNodes: true }),
         tagsApi.list().catch(() => ({ data: [] })), // 태그 조회 실패해도 워크플로우는 표시
+        foldersApi.list().catch(() => ({ data: [] })), // 폴더 조회 실패해도 워크플로우는 표시
       ]);
 
       setWorkflows(workflowsData.data || []);
       setTags(tagsData.data || []);
+      setFolders((foldersData.data as FolderResponse[]) || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '데이터 조회 중 오류 발생');
       console.error('데이터 조회 오류:', err);
@@ -244,14 +250,37 @@ function WorkflowsContent() {
     });
   };
 
-  // 태그별 워크플로우 필터링
-  const filteredWorkflows = selectedTagId
-    ? workflows.filter((workflow) => workflow.tags?.some((tag) => tag.id === selectedTagId))
-    : workflows;
+  // 태그/폴더별 워크플로우 필터링
+  const filteredWorkflows = React.useMemo(() => {
+    let result = workflows;
+
+    // 태그 필터링
+    if (selectedTagId) {
+      result = result.filter((workflow) => workflow.tags?.some((tag) => tag.id === selectedTagId));
+    }
+
+    // 폴더 필터링
+    if (selectedFolderId) {
+      result = result.filter((workflow) => workflow.folderId === selectedFolderId);
+    }
+
+    return result;
+  }, [workflows, selectedTagId, selectedFolderId]);
 
   // 태그 선택 핸들러
   const handleTagSelect = (tagId: string) => {
     router.push(`/workflows?tag=${tagId}`);
+  };
+
+  // 폴더 선택 핸들러
+  const handleFolderSelect = (folderId: string) => {
+    router.push(`/workflows?folder=${folderId}`);
+  };
+
+  // 현재 선택된 폴더 이름 가져오기
+  const getSelectedFolderName = () => {
+    if (!selectedFolderId) return null;
+    return folders.find((f) => f.id === selectedFolderId)?.name || '선택한 폴더';
   };
 
   const formatDate = (dateString: string) => {
@@ -275,11 +304,13 @@ function WorkflowsContent() {
             <div className="flex items-center gap-3">
               <WorkflowIcon className="w-8 h-8 text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Tags 목록</h1>
+                <h1 className="text-2xl font-bold text-gray-900">워크플로우 목록</h1>
                 <p className="text-sm text-gray-500">
-                  {selectedTagId
-                    ? `${tags.find((t) => t.id === selectedTagId)?.name || '선택한 태그'} 태그의 워크플로우`
-                    : '작업중 태그와 워크플로우'}
+                  {selectedFolderId
+                    ? `${getSelectedFolderName()} 폴더의 워크플로우`
+                    : selectedTagId
+                      ? `${tags.find((t) => t.id === selectedTagId)?.name || '선택한 태그'} 태그의 워크플로우`
+                      : '모든 워크플로우'}
                 </p>
               </div>
             </div>
@@ -330,14 +361,18 @@ function WorkflowsContent() {
               <div className="text-center">
                 <WorkflowIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600 text-lg mb-2">
-                  {selectedTagId
-                    ? '이 태그에 해당하는 워크플로우가 없습니다'
-                    : '워크플로우가 없습니다'}
+                  {selectedFolderId
+                    ? '이 폴더에 해당하는 워크플로우가 없습니다'
+                    : selectedTagId
+                      ? '이 태그에 해당하는 워크플로우가 없습니다'
+                      : '워크플로우가 없습니다'}
                 </p>
                 <p className="text-gray-500 text-sm">
-                  {selectedTagId
-                    ? '다른 태그를 선택하거나 n8n에서 태그를 추가하세요'
-                    : 'n8n에서 워크플로우를 생성하세요'}
+                  {selectedFolderId
+                    ? '다른 폴더를 선택하거나 관리자에게 워크플로우 할당을 요청하세요'
+                    : selectedTagId
+                      ? '다른 태그를 선택하거나 n8n에서 태그를 추가하세요'
+                      : 'n8n에서 워크플로우를 생성하세요'}
                 </p>
               </div>
             </div>
@@ -435,6 +470,19 @@ function WorkflowsContent() {
                         </span>
                       ))}
                     </div>
+
+                    {/* Folder */}
+                    {workflow.folderId && (
+                      <div className="mb-3">
+                        <button
+                          onClick={() => handleFolderSelect(workflow.folderId!)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
+                        >
+                          <FolderOpen className="w-3 h-3" />
+                          {folders.find((f) => f.id === workflow.folderId)?.name || '폴더'}
+                        </button>
+                      </div>
+                    )}
 
                     {/* Tags */}
                     {workflow.tags && workflow.tags.length > 0 && (

@@ -6,13 +6,52 @@
 
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateJWT } from '../middleware/auth.middleware';
+import { authenticateJWT, requireAdmin } from '../middleware';
 import { databaseService } from '../services/database.service';
 import bcrypt from 'bcryptjs';
 import { log } from '../utils/logger';
 import { ObjectId } from 'mongodb';
 
 const router = Router();
+
+/**
+ * GET /api/users
+ * 모든 사용자 목록 조회 (admin 전용)
+ */
+router.get(
+  '/',
+  authenticateJWT,
+  requireAdmin(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const db = databaseService.getDb();
+      const users = await db
+        .collection('users')
+        .find({})
+        .project({ password: 0 }) // 비밀번호 제외
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      // ObjectId를 string으로 변환
+      const formattedUsers = users.map((user) => ({
+        ...user,
+        id: user._id.toString(),
+        _id: undefined,
+      }));
+
+      res.status(200).json({
+        success: true,
+        data: formattedUsers,
+      });
+    } catch (error) {
+      log.error('Get users list error', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get users list',
+      });
+    }
+  }
+);
 
 /**
  * GET /api/users/me

@@ -63,9 +63,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data: LoginResponse = await response.json();
 
-      // 사용자 정보 저장 (쿠키는 백엔드에서 HttpOnly로 설정됨)
+      // 사용자 정보 및 토큰 저장
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+      }
 
       // 대시보드로 리다이렉트
       router.push('/workflows');
@@ -94,9 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data: SignupResponse = await response.json();
 
-      // 사용자 정보 저장 (쿠키는 백엔드에서 HttpOnly로 설정됨)
+      // 사용자 정보 및 토큰 저장
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+      }
 
       // 대시보드로 리다이렉트
       router.push('/workflows');
@@ -113,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 클라이언트 측 상태 먼저 정리
     localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
     console.log('[Auth] LocalStorage cleared');
 
     try {
