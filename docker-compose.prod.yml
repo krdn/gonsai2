@@ -101,8 +101,8 @@ services:
       - mongodb_prod_data:/data/db
       - mongodb_prod_config:/data/configdb
     ports:
-      # 27018로 외부 노출 (원격 접속 허용)
-      - '0.0.0.0:27018:27017'
+      # 27018로 localhost만 노출 (SSH 터널을 통해서만 원격 접속)
+      - '127.0.0.1:27018:27017'
     networks:
       - gonsai2-network
     healthcheck:
