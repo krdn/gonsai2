@@ -96,8 +96,9 @@ jobs:
             docker tag ${{ steps.tags.outputs.backend }} ${{ env.BACKEND_IMAGE }}:latest
             docker tag ${{ steps.tags.outputs.frontend }} ${{ env.FRONTEND_IMAGE }}:latest
 
-            # 새 이미지로 컨테이너 강제 재생성
-            docker compose -f docker-compose.prod.yml up -d --force-recreate gonsai2-backend gonsai2-frontend
+            # 새 이미지로 컨테이너 강제 재생성 (--pull always로 최신 이미지 보장)
+            docker compose -f docker-compose.prod.yml pull gonsai2-backend gonsai2-frontend
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps gonsai2-backend gonsai2-frontend
 
             # 정리
             docker image prune -f
