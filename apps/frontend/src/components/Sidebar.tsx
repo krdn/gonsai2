@@ -91,7 +91,7 @@ function SidebarContent({ isOpen, onClose }: SidebarProps) {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Admin', 'Folders']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['Folders']);
   const [workflows, setWorkflows] = useState<any[]>([]);
 
   // n8n 태그 목록 가져오기 (30초마다 자동 갱신)
