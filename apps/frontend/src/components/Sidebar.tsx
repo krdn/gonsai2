@@ -22,6 +22,7 @@ import {
   Settings,
   UserCog,
   Shield,
+  BarChart3,
 } from 'lucide-react';
 import { useTagList } from '@/hooks/useTags';
 import { useFolderTreeList } from '@/hooks/useFolders';
@@ -59,6 +60,7 @@ const staticNavigation: NavigationItem[] = [
     icon: Shield,
     adminOnly: true, // 관리자 전용 메뉴
     children: [
+      { name: 'Admin Dashboard', href: '/admin/dashboard', icon: BarChart3 },
       { name: 'AI Agents', href: '/ai-agents', icon: Bot },
       { name: 'Workflows', href: '/workflows', icon: Workflow },
       { name: 'Executions', href: '/executions', icon: Activity },
