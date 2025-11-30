@@ -11,6 +11,8 @@ import {
   AIExperienceLevel,
   AIInterest,
   AIUsagePurpose,
+  PreferredNotificationChannel,
+  PreferredLanguage,
 } from '@/types/auth';
 import { useRouter } from 'next/navigation';
 
@@ -48,6 +50,29 @@ const AI_PURPOSE_LABELS: Record<AIUsagePurpose, string> = {
   other: '기타',
 };
 
+const NOTIFICATION_CHANNEL_LABELS: Record<PreferredNotificationChannel, string> = {
+  email: '이메일',
+  telegram: 'Telegram',
+  kakao: 'KakaoTalk',
+};
+
+const LANGUAGE_LABELS: Record<PreferredLanguage, string> = {
+  ko: '한국어',
+  en: 'English',
+  ja: '日本語',
+  zh: '中文',
+};
+
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: 'Asia/Seoul', label: '한국 (UTC+9)' },
+  { value: 'Asia/Tokyo', label: '일본 (UTC+9)' },
+  { value: 'Asia/Shanghai', label: '중국 (UTC+8)' },
+  { value: 'America/New_York', label: '미국 동부 (UTC-5)' },
+  { value: 'America/Los_Angeles', label: '미국 서부 (UTC-8)' },
+  { value: 'Europe/London', label: '영국 (UTC+0)' },
+  { value: 'Europe/Paris', label: '프랑스 (UTC+1)' },
+];
+
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
   const router = useRouter();
@@ -71,6 +96,14 @@ export default function ProfilePage() {
     aiExperienceLevel: '' as AIExperienceLevel | '',
     aiInterests: [] as AIInterest[],
     aiUsagePurpose: '' as AIUsagePurpose | '',
+    // 연락처 정보
+    phoneNumber: '',
+    telegramId: '',
+    kakaoTalkId: '',
+    // 사용자 환경설정
+    preferredNotificationChannel: '' as PreferredNotificationChannel | '',
+    timezone: 'Asia/Seoul',
+    preferredLanguage: 'ko' as PreferredLanguage | '',
     // 비밀번호
     currentPassword: '',
     newPassword: '',
@@ -90,6 +123,12 @@ export default function ProfilePage() {
         aiExperienceLevel: user.aiExperienceLevel || '',
         aiInterests: user.aiInterests || [],
         aiUsagePurpose: user.aiUsagePurpose || '',
+        phoneNumber: user.phoneNumber || '',
+        telegramId: user.telegramId || '',
+        kakaoTalkId: user.kakaoTalkId || '',
+        preferredNotificationChannel: user.preferredNotificationChannel || '',
+        timezone: user.timezone || 'Asia/Seoul',
+        preferredLanguage: user.preferredLanguage || 'ko',
       }));
     }
   }, [user]);
@@ -192,6 +231,28 @@ export default function ProfilePage() {
         updateData.aiUsagePurpose = formData.aiUsagePurpose || null;
       }
 
+      // 연락처 정보
+      if (formData.phoneNumber !== (user?.phoneNumber || '')) {
+        updateData.phoneNumber = formData.phoneNumber;
+      }
+      if (formData.telegramId !== (user?.telegramId || '')) {
+        updateData.telegramId = formData.telegramId;
+      }
+      if (formData.kakaoTalkId !== (user?.kakaoTalkId || '')) {
+        updateData.kakaoTalkId = formData.kakaoTalkId;
+      }
+
+      // 사용자 환경설정
+      if (formData.preferredNotificationChannel !== (user?.preferredNotificationChannel || '')) {
+        updateData.preferredNotificationChannel = formData.preferredNotificationChannel || null;
+      }
+      if (formData.timezone !== (user?.timezone || 'Asia/Seoul')) {
+        updateData.timezone = formData.timezone;
+      }
+      if (formData.preferredLanguage !== (user?.preferredLanguage || 'ko')) {
+        updateData.preferredLanguage = formData.preferredLanguage || null;
+      }
+
       // 비밀번호
       if (formData.newPassword) {
         updateData.currentPassword = formData.currentPassword;
@@ -255,6 +316,12 @@ export default function ProfilePage() {
         aiExperienceLevel: user.aiExperienceLevel || '',
         aiInterests: user.aiInterests || [],
         aiUsagePurpose: user.aiUsagePurpose || '',
+        phoneNumber: user.phoneNumber || '',
+        telegramId: user.telegramId || '',
+        kakaoTalkId: user.kakaoTalkId || '',
+        preferredNotificationChannel: user.preferredNotificationChannel || '',
+        timezone: user.timezone || 'Asia/Seoul',
+        preferredLanguage: user.preferredLanguage || 'ko',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
@@ -463,6 +530,71 @@ export default function ProfilePage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
                 </div>
+
+                {/* 구분선 - 연락처 */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">연락처 정보</h3>
+                </div>
+
+                {/* 휴대폰 번호 */}
+                <div>
+                  <label
+                    htmlFor="phoneNumber"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    휴대폰 번호
+                  </label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    placeholder="010-1234-5678"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+
+                {/* Telegram / KakaoTalk */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="telegramId"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Telegram 아이디
+                    </label>
+                    <input
+                      type="text"
+                      id="telegramId"
+                      name="telegramId"
+                      value={formData.telegramId}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      placeholder="@username"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="kakaoTalkId"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      KakaoTalk 아이디
+                    </label>
+                    <input
+                      type="text"
+                      id="kakaoTalkId"
+                      name="kakaoTalkId"
+                      value={formData.kakaoTalkId}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      placeholder="카카오톡 ID"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -576,6 +708,84 @@ export default function ProfilePage() {
                     입력하신 정보를 바탕으로 맞춤형 AI 워크플로우를 추천하고, 더 나은 학습 경험을
                     제공해 드립니다.
                   </p>
+                </div>
+
+                {/* 구분선 - 환경설정 */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">환경설정</h3>
+                </div>
+
+                {/* 선호 알림 채널 */}
+                <div>
+                  <label
+                    htmlFor="preferredNotificationChannel"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    선호 알림 채널
+                  </label>
+                  <select
+                    id="preferredNotificationChannel"
+                    name="preferredNotificationChannel"
+                    value={formData.preferredNotificationChannel}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                  >
+                    <option value="">선택하세요</option>
+                    {Object.entries(NOTIFICATION_CHANNEL_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 타임존 / 선호 언어 */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="timezone"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      타임존
+                    </label>
+                    <select
+                      id="timezone"
+                      name="timezone"
+                      value={formData.timezone}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    >
+                      {TIMEZONES.map((tz) => (
+                        <option key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="preferredLanguage"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      선호 언어
+                    </label>
+                    <select
+                      id="preferredLanguage"
+                      name="preferredLanguage"
+                      value={formData.preferredLanguage}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    >
+                      {Object.entries(LANGUAGE_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
@@ -788,10 +998,44 @@ export default function ProfilePage() {
               </dd>
             </div>
           )}
+          {(user.phoneNumber || user.telegramId || user.kakaoTalkId) && (
+            <div className="md:col-span-2 border-t border-gray-100 pt-4 mt-2">
+              <dt className="text-sm text-gray-500 mb-2">연락처</dt>
+              <dd className="flex flex-wrap gap-4 text-sm text-gray-900">
+                {user.phoneNumber && <span>📱 {user.phoneNumber}</span>}
+                {user.telegramId && <span>💬 Telegram: {user.telegramId}</span>}
+                {user.kakaoTalkId && <span>💬 KakaoTalk: {user.kakaoTalkId}</span>}
+              </dd>
+            </div>
+          )}
+          {(user.preferredNotificationChannel || user.timezone || user.preferredLanguage) && (
+            <div className="md:col-span-2 border-t border-gray-100 pt-4 mt-2">
+              <dt className="text-sm text-gray-500 mb-2">환경설정</dt>
+              <dd className="flex flex-wrap gap-4 text-sm text-gray-900">
+                {user.preferredNotificationChannel && (
+                  <span>
+                    🔔 알림: {NOTIFICATION_CHANNEL_LABELS[user.preferredNotificationChannel]}
+                  </span>
+                )}
+                {user.timezone && (
+                  <span>
+                    🌍 타임존:{' '}
+                    {TIMEZONES.find((tz) => tz.value === user.timezone)?.label || user.timezone}
+                  </span>
+                )}
+                {user.preferredLanguage && (
+                  <span>🌐 언어: {LANGUAGE_LABELS[user.preferredLanguage]}</span>
+                )}
+              </dd>
+            </div>
+          )}
           {!user.organizationType &&
             !user.aiExperienceLevel &&
             !user.aiUsagePurpose &&
-            (!user.aiInterests || user.aiInterests.length === 0) && (
+            (!user.aiInterests || user.aiInterests.length === 0) &&
+            !user.phoneNumber &&
+            !user.telegramId &&
+            !user.kakaoTalkId && (
               <div className="md:col-span-2 text-center py-4">
                 <p className="text-sm text-gray-500">
                   추가 정보가 입력되지 않았습니다.
