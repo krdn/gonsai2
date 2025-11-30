@@ -28,7 +28,7 @@ export function DashboardHeader({ onMenuClick, isOpen = false }: DashboardHeader
             </button>
 
             {/* 로고 */}
-            <Link href="/workflows" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Workflow className="w-5 h-5 text-white" />
               </div>

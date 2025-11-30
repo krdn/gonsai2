@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 대시보드로 리다이렉트
-      router.push('/workflows');
+      router.push('/');
     } catch (error) {
       console.error('[Auth] Login error:', error);
       throw error;
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 대시보드로 리다이렉트
-      router.push('/workflows');
+      router.push('/');
     } catch (error) {
       console.error('[Auth] Signup error:', error);
       throw error;
