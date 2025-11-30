@@ -633,6 +633,216 @@ export const usersApi = {
 };
 
 /**
+ * 관리자 대시보드 개요 데이터 타입
+ */
+export interface AdminDashboardOverview {
+  users: {
+    total: number;
+    active: number;
+    inactive: number;
+    admins: number;
+    regularUsers: number;
+    recentSignups: number;
+  };
+  folders: {
+    total: number;
+    permissions: number;
+    workflowAssignments: number;
+  };
+  charts: {
+    usersByRole: Array<{ role: string; count: number }>;
+    usersByMonth: Array<{ month: string; count: number }>;
+  };
+}
+
+/**
+ * 사용자 활동 데이터 타입
+ */
+export interface UserActivityData {
+  dailySignups: Array<{ date: string; count: number }>;
+  userStatusDistribution: Array<{ status: string; count: number }>;
+  recentlyActiveUsers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    lastActivity: string;
+  }>;
+}
+
+/**
+ * 폴더 통계 데이터 타입
+ */
+export interface FolderStatsData {
+  permissionsByLevel: Array<{ level: string; count: number }>;
+  topFoldersWithPermissions: Array<{
+    folderId: string;
+    folderName: string;
+    permissionCount: number;
+  }>;
+  foldersWithoutPermissions: number;
+  usersWithoutFolderAccess: number;
+}
+
+/**
+ * 시스템 헬스 데이터 타입
+ */
+export interface SystemHealthData {
+  services: Array<{
+    name: string;
+    status: 'healthy' | 'unhealthy' | 'degraded';
+    latency: string;
+  }>;
+  memory: {
+    heapUsed: string;
+    heapTotal: string;
+    external: string;
+    rss: string;
+    usagePercent: string;
+  };
+  uptime: string;
+  uptimeSeconds: number;
+  database: {
+    collections: number;
+    documents: number;
+    dataSize: string;
+    indexSize: string;
+  };
+  nodeVersion: string;
+  platform: string;
+  timestamp: string;
+}
+
+/**
+ * AI 인사이트 데이터 타입
+ */
+export interface AIInsight {
+  type: 'success' | 'warning' | 'info' | 'danger';
+  title: string;
+  description: string;
+  metric?: string;
+  action?: string;
+}
+
+export interface AIInsightsData {
+  insights: AIInsight[];
+  generatedAt: string;
+}
+
+/**
+ * 빠른 액션 데이터 타입
+ */
+export interface QuickAction {
+  id: string;
+  title: string;
+  description: string;
+  count: number;
+  priority: 'high' | 'medium' | 'low';
+  href: string;
+}
+
+export interface QuickActionsData {
+  quickActions: QuickAction[];
+  recentUsers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    createdAt: string;
+  }>;
+}
+
+/**
+ * 감사 로그 데이터 타입
+ */
+export interface AuditLogData {
+  userChanges: Array<{
+    id: string;
+    type: string;
+    action: string;
+    targetName: string;
+    targetEmail: string;
+    timestamp: string;
+  }>;
+  permissionChanges: Array<{
+    id: string;
+    type: string;
+    action: string;
+    userName: string;
+    folderName: string;
+    permission: string;
+    timestamp: string;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Admin Dashboard API
+ */
+export const adminApi = {
+  /**
+   * 대시보드 개요 통계
+   */
+  getOverview: () =>
+    fetchWithErrorHandling<{ success: boolean; data: AdminDashboardOverview }>(
+      `${getApiUrl()}/api/admin/dashboard/overview`
+    ),
+
+  /**
+   * 사용자 활동 통계
+   */
+  getUserActivity: (days: number = 30) =>
+    fetchWithErrorHandling<{ success: boolean; data: UserActivityData }>(
+      `${getApiUrl()}/api/admin/dashboard/user-activity?days=${days}`
+    ),
+
+  /**
+   * 폴더 및 권한 통계
+   */
+  getFolderStats: () =>
+    fetchWithErrorHandling<{ success: boolean; data: FolderStatsData }>(
+      `${getApiUrl()}/api/admin/dashboard/folder-stats`
+    ),
+
+  /**
+   * 시스템 상태 및 헬스 체크
+   */
+  getSystemHealth: () =>
+    fetchWithErrorHandling<{ success: boolean; data: SystemHealthData }>(
+      `${getApiUrl()}/api/admin/dashboard/system-health`
+    ),
+
+  /**
+   * AI 인사이트
+   */
+  getAIInsights: () =>
+    fetchWithErrorHandling<{ success: boolean; data: AIInsightsData }>(
+      `${getApiUrl()}/api/admin/dashboard/ai-insights`
+    ),
+
+  /**
+   * 빠른 액션
+   */
+  getQuickActions: () =>
+    fetchWithErrorHandling<{ success: boolean; data: QuickActionsData }>(
+      `${getApiUrl()}/api/admin/dashboard/quick-actions`
+    ),
+
+  /**
+   * 감사 로그
+   */
+  getAuditLog: (page: number = 1, limit: number = 20) =>
+    fetchWithErrorHandling<{ success: boolean; data: AuditLogData }>(
+      `${getApiUrl()}/api/admin/dashboard/audit-log?page=${page}&limit=${limit}`
+    ),
+};
+
+/**
  * 전체 API 클라이언트 export
  */
 export const apiClient = {
@@ -644,6 +854,7 @@ export const apiClient = {
   tags: tagsApi,
   folders: foldersApi,
   users: usersApi,
+  admin: adminApi,
 };
 
 export default apiClient;
