@@ -37,6 +37,17 @@
 
 ---
 
+### 📊 분석 & 보고서
+
+- **[시스템 종합 분석 보고서](System-Analysis-Report)** - 프로젝트 심층 분석 (2025-11-30)
+  - [아키텍처 분석](System-Analysis-Report#아키텍처-분석): 백엔드/프론트엔드 구조
+  - [보안 분석](System-Analysis-Report#보안-분석): 취약점 및 개선사항
+  - [성능 최적화](System-Analysis-Report#성능-최적화-포인트): 최적화 포인트
+  - [DevOps 분석](System-Analysis-Report#devops-분석): Docker, CI/CD
+  - [누락된 기능](System-Analysis-Report#누락된-기능-및-개선사항): 개선 로드맵
+
+---
+
 ### 🏗️ 아키텍처 & 개발
 
 - **[아키텍처](Architecture)** - 시스템 구조 및 기술 스택
@@ -125,5 +136,5 @@
 
 ## 📅 최종 업데이트
 
-- **날짜**: 2025-11-27
+- **날짜**: 2025-11-30
 - **버전**: 1.0.0

@@ -3,10 +3,28 @@
 # Kent Beck's Augmented Coding Principles
 # ============================================
 
-# Environment Variables
+# Environment Variables (IMPORTANT: Never commit real secrets!)
 .env
 .env.local
 .env.*.local
+
+# Environment files with actual values (not examples)
+apps/backend/.env
+apps/backend/.env.production
+apps/backend/.env.development
+apps/backend/.env.staging
+apps/frontend/.env.local
+apps/frontend/.env.production
+apps/frontend/.env.development
+apps/frontend/.env.staging
+deployment/.env.development
+deployment/.env.staging
+deployment/.env.production
+deployment/production/.env
+
+# Only .env.example files should be committed
+!*.env.example
+!**/.env.example
 
 # Dependencies
 node_modules/
