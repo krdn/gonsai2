@@ -42,7 +42,7 @@ export default function WorkflowExecutionModal({
   const [webhookEnvironment, setWebhookEnvironment] = useState<'test' | 'production'>('test');
   const [formSchema, setFormSchema] = useState<FormSchema | null>(null);
 
-  const n8nUrl = process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678';
+  const n8nUrl = process.env.NEXT_PUBLIC_N8N_UI_URL || 'https://n8n.krdn.kr';
   const n8nBaseUrl = process.env.NEXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678';
 
   // 워크플로우별 동적 폼 컴포넌트

@@ -207,7 +207,7 @@ NEXT_PUBLIC_SOCKET_URL=
 
 # n8n
 NEXT_PUBLIC_N8N_BASE_URL=http://localhost:5678
-NEXT_PUBLIC_N8N_UI_URL=https://krdn-n8n.duckdns.org
+NEXT_PUBLIC_N8N_UI_URL=https://n8n.krdn.kr
 ```
 
 **`apps/backend/.env.production`** (운영용)

@@ -50,7 +50,7 @@ export default function KnowledgeLearningModal({
 }: KnowledgeLearningModalProps) {
   const [status, setStatus] = useState<LearningExecutionStatus>('idle');
   const [result, setResult] = useState<LearningExecutionResult>({});
-  const n8nUrl = process.env.NEXT_PUBLIC_N8N_UI_URL || 'http://localhost:5678';
+  const n8nUrl = process.env.NEXT_PUBLIC_N8N_UI_URL || 'https://n8n.krdn.kr';
 
   // 폼 데이터 상태
   const [formData, setFormData] = useState<LearningFormData>({
