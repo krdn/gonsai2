@@ -46,6 +46,16 @@ export type AIUsagePurpose =
   | 'other';
 
 /**
+ * 선호 알림 채널
+ */
+export type PreferredNotificationChannel = 'email' | 'telegram' | 'kakao';
+
+/**
+ * 선호 언어
+ */
+export type PreferredLanguage = 'ko' | 'en' | 'ja' | 'zh';
+
+/**
  * 사용자 인터페이스
  */
 export interface IUser {
@@ -62,6 +72,14 @@ export interface IUser {
   aiExperienceLevel?: AIExperienceLevel; // AI 활용 경험 수준
   aiInterests?: AIInterest[]; // AI 관심 분야 (복수 선택)
   aiUsagePurpose?: AIUsagePurpose; // AI 활용 목적
+  // 연락처 정보
+  phoneNumber?: string; // 휴대폰 번호
+  telegramId?: string; // Telegram 아이디
+  kakaoTalkId?: string; // KakaoTalk 아이디
+  // 사용자 환경설정
+  preferredNotificationChannel?: PreferredNotificationChannel; // 선호 알림 채널
+  timezone?: string; // 타임존 (예: 'Asia/Seoul')
+  preferredLanguage?: PreferredLanguage; // 선호 언어
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,6 +100,14 @@ export interface IUserResponse {
   aiExperienceLevel?: AIExperienceLevel;
   aiInterests?: AIInterest[];
   aiUsagePurpose?: AIUsagePurpose;
+  // 연락처 정보
+  phoneNumber?: string;
+  telegramId?: string;
+  kakaoTalkId?: string;
+  // 사용자 환경설정
+  preferredNotificationChannel?: PreferredNotificationChannel;
+  timezone?: string;
+  preferredLanguage?: PreferredLanguage;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -101,6 +127,12 @@ export function toUserResponse(user: IUser): IUserResponse {
     aiExperienceLevel: user.aiExperienceLevel,
     aiInterests: user.aiInterests,
     aiUsagePurpose: user.aiUsagePurpose,
+    phoneNumber: user.phoneNumber,
+    telegramId: user.telegramId,
+    kakaoTalkId: user.kakaoTalkId,
+    preferredNotificationChannel: user.preferredNotificationChannel,
+    timezone: user.timezone,
+    preferredLanguage: user.preferredLanguage,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

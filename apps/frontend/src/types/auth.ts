@@ -36,6 +36,16 @@ export type AIUsagePurpose =
   | 'development'
   | 'other';
 
+/**
+ * 선호 알림 채널
+ */
+export type PreferredNotificationChannel = 'email' | 'telegram' | 'kakao';
+
+/**
+ * 선호 언어
+ */
+export type PreferredLanguage = 'ko' | 'en' | 'ja' | 'zh';
+
 export interface User {
   id: string;
   _id?: string; // MongoDB ObjectId (문자열 형태)
@@ -50,6 +60,14 @@ export interface User {
   aiExperienceLevel?: AIExperienceLevel;
   aiInterests?: AIInterest[];
   aiUsagePurpose?: AIUsagePurpose;
+  // 연락처 정보
+  phoneNumber?: string;
+  telegramId?: string;
+  kakaoTalkId?: string;
+  // 사용자 환경설정
+  preferredNotificationChannel?: PreferredNotificationChannel;
+  timezone?: string;
+  preferredLanguage?: PreferredLanguage;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +92,12 @@ export interface SignupRequest {
   aiExperienceLevel?: AIExperienceLevel;
   aiInterests?: AIInterest[];
   aiUsagePurpose?: AIUsagePurpose;
+  phoneNumber?: string;
+  telegramId?: string;
+  kakaoTalkId?: string;
+  preferredNotificationChannel?: PreferredNotificationChannel;
+  timezone?: string;
+  preferredLanguage?: PreferredLanguage;
 }
 
 export interface SignupResponse {

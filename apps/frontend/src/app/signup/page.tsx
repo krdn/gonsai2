@@ -7,7 +7,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Workflow, ArrowRight, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
-import type { OrganizationType, AIExperienceLevel, AIInterest, AIUsagePurpose } from '@/types/auth';
+import type {
+  OrganizationType,
+  AIExperienceLevel,
+  AIInterest,
+  AIUsagePurpose,
+  PreferredNotificationChannel,
+  PreferredLanguage,
+} from '@/types/auth';
 
 // 옵션 상수 정의
 const ORGANIZATION_TYPES: { value: OrganizationType; label: string }[] = [
@@ -47,6 +54,29 @@ const AI_USAGE_PURPOSES: { value: AIUsagePurpose; label: string }[] = [
   { value: 'other', label: '기타' },
 ];
 
+const NOTIFICATION_CHANNELS: { value: PreferredNotificationChannel; label: string }[] = [
+  { value: 'email', label: '이메일' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'kakao', label: 'KakaoTalk' },
+];
+
+const LANGUAGES: { value: PreferredLanguage; label: string }[] = [
+  { value: 'ko', label: '한국어' },
+  { value: 'en', label: 'English' },
+  { value: 'ja', label: '日本語' },
+  { value: 'zh', label: '中文' },
+];
+
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: 'Asia/Seoul', label: '한국 (UTC+9)' },
+  { value: 'Asia/Tokyo', label: '일본 (UTC+9)' },
+  { value: 'Asia/Shanghai', label: '중국 (UTC+8)' },
+  { value: 'America/New_York', label: '미국 동부 (UTC-5)' },
+  { value: 'America/Los_Angeles', label: '미국 서부 (UTC-8)' },
+  { value: 'Europe/London', label: '영국 (UTC+0)' },
+  { value: 'Europe/Paris', label: '프랑스 (UTC+1)' },
+];
+
 export default function SignupPage() {
   const { signup, isLoading } = useAuth();
   const [name, setName] = useState('');
@@ -60,6 +90,16 @@ export default function SignupPage() {
   const [aiExperienceLevel, setAiExperienceLevel] = useState<AIExperienceLevel | ''>('');
   const [aiInterests, setAiInterests] = useState<AIInterest[]>([]);
   const [aiUsagePurpose, setAiUsagePurpose] = useState<AIUsagePurpose | ''>('');
+  // 연락처 정보
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [telegramId, setTelegramId] = useState('');
+  const [kakaoTalkId, setKakaoTalkId] = useState('');
+  // 사용자 환경설정
+  const [preferredNotificationChannel, setPreferredNotificationChannel] = useState<
+    PreferredNotificationChannel | ''
+  >('');
+  const [timezone, setTimezone] = useState('Asia/Seoul');
+  const [preferredLanguage, setPreferredLanguage] = useState<PreferredLanguage | ''>('ko');
 
   // AI 관심 분야 토글 함수
   const toggleAiInterest = (interest: AIInterest) => {
@@ -108,6 +148,12 @@ export default function SignupPage() {
         aiExperienceLevel: aiExperienceLevel || undefined,
         aiInterests: aiInterests.length > 0 ? aiInterests : undefined,
         aiUsagePurpose: aiUsagePurpose || undefined,
+        phoneNumber: phoneNumber || undefined,
+        telegramId: telegramId || undefined,
+        kakaoTalkId: kakaoTalkId || undefined,
+        preferredNotificationChannel: preferredNotificationChannel || undefined,
+        timezone: timezone || undefined,
+        preferredLanguage: preferredLanguage || undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
@@ -327,6 +373,150 @@ export default function SignupPage() {
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* 구분선 - 연락처/환경설정 */}
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-3 bg-white text-gray-500">연락처 및 환경설정 (선택사항)</span>
+              </div>
+            </div>
+
+            {/* 휴대폰 번호 */}
+            <div>
+              <label
+                htmlFor="phoneNumber"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                휴대폰 번호
+              </label>
+              <input
+                id="phoneNumber"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="010-1234-5678"
+                maxLength={20}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+            </div>
+
+            {/* Telegram / KakaoTalk 아이디 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="telegramId"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  Telegram 아이디
+                </label>
+                <input
+                  id="telegramId"
+                  type="text"
+                  value={telegramId}
+                  onChange={(e) => setTelegramId(e.target.value)}
+                  placeholder="@username"
+                  maxLength={50}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="kakaoTalkId"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  KakaoTalk 아이디
+                </label>
+                <input
+                  id="kakaoTalkId"
+                  type="text"
+                  value={kakaoTalkId}
+                  onChange={(e) => setKakaoTalkId(e.target.value)}
+                  placeholder="카카오톡 ID"
+                  maxLength={50}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
+
+            {/* 선호 알림 채널 */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                선호 알림 채널
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {NOTIFICATION_CHANNELS.map((channel) => (
+                  <button
+                    key={channel.value}
+                    type="button"
+                    onClick={() =>
+                      setPreferredNotificationChannel(
+                        preferredNotificationChannel === channel.value ? '' : channel.value
+                      )
+                    }
+                    className={`px-4 py-2 text-sm rounded-lg border transition-all ${
+                      preferredNotificationChannel === channel.value
+                        ? 'border-purple-500 bg-purple-100 text-purple-700'
+                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                    }`}
+                  >
+                    {channel.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 타임존 / 선호 언어 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="timezone"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  타임존
+                </label>
+                <div className="relative">
+                  <select
+                    id="timezone"
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none bg-white"
+                  >
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="preferredLanguage"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                  선호 언어
+                </label>
+                <div className="relative">
+                  <select
+                    id="preferredLanguage"
+                    value={preferredLanguage}
+                    onChange={(e) => setPreferredLanguage(e.target.value as PreferredLanguage)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none bg-white"
+                  >
+                    {LANGUAGES.map((lang) => (
+                      <option key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             </div>
 
