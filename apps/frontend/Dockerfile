@@ -4,7 +4,7 @@
 # ==================================================
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
 
 # Install dependencies for native modules
@@ -19,7 +19,7 @@ RUN npm ci
 # ==================================================
 # Stage 2: Builder
 # ==================================================
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 
 # Build arguments for NEXT_PUBLIC_* environment variables
@@ -58,7 +58,7 @@ RUN npm run build
 # ==================================================
 # Stage 3: Production
 # ==================================================
-FROM node:20-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 
 # Set environment
