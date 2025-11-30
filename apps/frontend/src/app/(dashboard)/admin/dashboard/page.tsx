@@ -31,6 +31,8 @@ import {
   LineChart,
   AlertCircle,
   Sparkles,
+  HelpCircle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -219,6 +221,195 @@ const priorityColors = {
   low: 'bg-gray-100 text-gray-700 border-gray-200',
 };
 
+// 도움말 데이터
+const helpContent: Record<
+  string,
+  { title: string; icon: React.ReactNode; description: string; tips: string[] }
+> = {
+  stats: {
+    title: '주요 지표',
+    icon: <BarChart3 className="w-6 h-6 text-blue-600" />,
+    description:
+      '시스템의 핵심 지표를 한눈에 확인할 수 있습니다. 각 카드를 클릭하면 상세 페이지로 이동합니다.',
+    tips: [
+      '총 사용자: 시스템에 등록된 전체 사용자 수',
+      '관리자: 관리자 권한을 가진 사용자 수',
+      '총 폴더: 생성된 폴더의 총 개수',
+      '신규 가입: 최근 7일간 새로 가입한 사용자 수',
+      '트렌드 화살표는 증감 추세를 나타냅니다',
+    ],
+  },
+  systemHealth: {
+    title: '시스템 상태',
+    icon: <Server className="w-6 h-6 text-green-600" />,
+    description:
+      '서버와 데이터베이스의 실시간 상태를 모니터링합니다. 장애 발생 시 즉시 확인할 수 있습니다.',
+    tips: [
+      'MongoDB: 데이터베이스 연결 상태 및 응답 시간',
+      'Backend API: API 서버의 동작 상태',
+      '메모리: 현재 서버 메모리 사용률',
+      'DB 크기: 데이터베이스 저장 용량',
+      '업타임: 서버 재시작 없이 운영된 시간',
+      '녹색: 정상 / 빨간색: 이상 감지',
+    ],
+  },
+  aiInsights: {
+    title: 'AI 인사이트',
+    icon: <Sparkles className="w-6 h-6 text-purple-600" />,
+    description: 'AI가 시스템 데이터를 분석하여 자동으로 인사이트와 권장 사항을 제공합니다.',
+    tips: [
+      '녹색: 긍정적인 지표 또는 성과',
+      '노란색: 주의가 필요한 사항',
+      '파란색: 참고 정보 및 일반 알림',
+      '빨간색: 즉시 조치가 필요한 경고',
+      '권장 액션이 있으면 클릭하여 바로 이동할 수 있습니다',
+    ],
+  },
+  userActivation: {
+    title: '사용자 활성화율',
+    icon: <Activity className="w-6 h-6 text-blue-600" />,
+    description: '전체 등록 사용자 중 활성 상태인 사용자의 비율을 보여줍니다.',
+    tips: [
+      '원형 그래프는 활성화 비율을 시각화합니다',
+      '높은 활성화율은 서비스 건강도를 나타냅니다',
+      '역할별 분포에서 관리자와 일반 사용자 비율을 확인할 수 있습니다',
+      '관리자 비율이 너무 높으면 보안 검토가 필요할 수 있습니다',
+    ],
+  },
+  quickActions: {
+    title: '빠른 액션',
+    icon: <Zap className="w-6 h-6 text-orange-600" />,
+    description: '즉시 처리가 필요한 작업을 우선순위에 따라 보여줍니다.',
+    tips: [
+      '빨간색: 높은 우선순위 - 즉시 처리 필요',
+      '노란색: 중간 우선순위 - 가능한 빨리 처리',
+      '회색: 낮은 우선순위 - 여유 있을 때 처리',
+      '숫자는 해당 작업의 대기 건수입니다',
+      '클릭하면 해당 관리 페이지로 바로 이동합니다',
+    ],
+  },
+  permissionDistribution: {
+    title: '권한 레벨 분포',
+    icon: <PieChart className="w-6 h-6 text-indigo-600" />,
+    description: '폴더 접근 권한이 어떻게 분배되어 있는지 보여줍니다.',
+    tips: [
+      '뷰어(Viewer): 읽기만 가능',
+      '실행자(Executor): 워크플로우 실행 가능',
+      '편집자(Editor): 수정 및 삭제 가능',
+      '관리자(Admin): 모든 권한 + 권한 관리 가능',
+      '경고 메시지가 있으면 권한 설정을 검토하세요',
+    ],
+  },
+  recentUsers: {
+    title: '최근 활동 사용자',
+    icon: <Clock className="w-6 h-6 text-green-600" />,
+    description: '최근에 활동(정보 업데이트)이 있었던 사용자 목록입니다.',
+    tips: [
+      '초록색 점: 현재 활성 상태',
+      '회색 점: 비활성 상태',
+      '관리자 배지가 있으면 관리자 계정입니다',
+      '전체 사용자 보기를 클릭하면 사용자 관리 페이지로 이동합니다',
+    ],
+  },
+  adminMenu: {
+    title: '관리 메뉴',
+    icon: <Settings className="w-6 h-6 text-gray-600" />,
+    description: '관리자 기능에 빠르게 접근할 수 있는 바로가기입니다.',
+    tips: [
+      '사용자 관리: 계정 생성, 수정, 삭제, 권한 변경',
+      '폴더 관리: 폴더 구조 생성 및 설정',
+      '권한 관리: 사용자별 폴더 접근 권한 설정',
+      '모니터링: 실시간 시스템 및 워크플로우 상태 확인',
+    ],
+  },
+};
+
+// 도움말 모달 컴포넌트
+function HelpModal({
+  isOpen,
+  onClose,
+  helpKey,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  helpKey: string;
+}) {
+  const content = helpContent[helpKey];
+
+  if (!isOpen || !content) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* 오버레이 */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      {/* 모달 */}
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
+              {content.icon}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{content.title}</h3>
+              <p className="text-sm text-gray-500">도움말</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* 본문 */}
+        <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+          <p className="text-gray-700 mb-6 leading-relaxed">{content.description}</p>
+
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Info className="w-4 h-4 text-blue-500" />
+              주요 정보
+            </h4>
+            <ul className="space-y-2">
+              {content.tips.map((tip, index) => (
+                <li key={index} className="flex items-start gap-3 text-sm text-gray-600">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-medium">
+                    {index + 1}
+                  </span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* 푸터 */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 도움말 버튼 컴포넌트
+function HelpButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+      title="도움말"
+    >
+      <HelpCircle className="w-5 h-5" />
+    </button>
+  );
+}
+
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -234,6 +425,20 @@ export default function AdminDashboardPage() {
   const [systemHealth, setSystemHealth] = useState<SystemHealthData | null>(null);
   const [aiInsights, setAIInsights] = useState<AIInsightsData | null>(null);
   const [quickActions, setQuickActions] = useState<QuickActionsData | null>(null);
+
+  // 도움말 모달 상태
+  const [helpModal, setHelpModal] = useState<{ isOpen: boolean; helpKey: string }>({
+    isOpen: false,
+    helpKey: '',
+  });
+
+  const openHelp = (helpKey: string) => {
+    setHelpModal({ isOpen: true, helpKey });
+  };
+
+  const closeHelp = () => {
+    setHelpModal({ isOpen: false, helpKey: '' });
+  };
 
   // 현재 시간
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -386,47 +591,53 @@ export default function AdminDashboardPage() {
       ) : (
         <>
           {/* 주요 지표 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              title="총 사용자"
-              value={overview?.users.total || 0}
-              subtitle={`활성: ${overview?.users.active || 0} / 비활성: ${overview?.users.inactive || 0}`}
-              icon={<Users className="w-6 h-6" />}
-              color={COLORS.primary}
-              href="/admin/users"
-            />
-            <StatCard
-              title="관리자"
-              value={overview?.users.admins || 0}
-              subtitle={`일반 사용자: ${overview?.users.regularUsers || 0}`}
-              icon={<Shield className="w-6 h-6" />}
-              color={COLORS.purple}
-            />
-            <StatCard
-              title="총 폴더"
-              value={overview?.folders.total || 0}
-              subtitle={`워크플로우 할당: ${overview?.folders.workflowAssignments || 0}`}
-              icon={<FolderOpen className="w-6 h-6" />}
-              color={COLORS.success}
-              href="/admin/folders"
-            />
-            <StatCard
-              title="신규 가입"
-              value={overview?.users.recentSignups || 0}
-              subtitle="최근 7일"
-              icon={<UserPlus className="w-6 h-6" />}
-              color={COLORS.info}
-              trend={
-                overview?.users.recentSignups
-                  ? {
-                      value: Math.round(
-                        (overview.users.recentSignups / overview.users.total) * 100
-                      ),
-                      isPositive: true,
-                    }
-                  : undefined
-              }
-            />
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">주요 지표</h2>
+              <HelpButton onClick={() => openHelp('stats')} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="총 사용자"
+                value={overview?.users.total || 0}
+                subtitle={`활성: ${overview?.users.active || 0} / 비활성: ${overview?.users.inactive || 0}`}
+                icon={<Users className="w-6 h-6" />}
+                color={COLORS.primary}
+                href="/admin/users"
+              />
+              <StatCard
+                title="관리자"
+                value={overview?.users.admins || 0}
+                subtitle={`일반 사용자: ${overview?.users.regularUsers || 0}`}
+                icon={<Shield className="w-6 h-6" />}
+                color={COLORS.purple}
+              />
+              <StatCard
+                title="총 폴더"
+                value={overview?.folders.total || 0}
+                subtitle={`워크플로우 할당: ${overview?.folders.workflowAssignments || 0}`}
+                icon={<FolderOpen className="w-6 h-6" />}
+                color={COLORS.success}
+                href="/admin/folders"
+              />
+              <StatCard
+                title="신규 가입"
+                value={overview?.users.recentSignups || 0}
+                subtitle="최근 7일"
+                icon={<UserPlus className="w-6 h-6" />}
+                color={COLORS.info}
+                trend={
+                  overview?.users.recentSignups
+                    ? {
+                        value: Math.round(
+                          (overview.users.recentSignups / overview.users.total) * 100
+                        ),
+                        isPositive: true,
+                      }
+                    : undefined
+                }
+              />
+            </div>
           </div>
 
           {/* 2단 레이아웃 */}
@@ -445,9 +656,12 @@ export default function AdminDashboardPage() {
                       <p className="text-sm text-gray-500">실시간 서비스 모니터링</p>
                     </div>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    업타임: {systemHealth?.uptime || '-'}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500">
+                      업타임: {systemHealth?.uptime || '-'}
+                    </span>
+                    <HelpButton onClick={() => openHelp('systemHealth')} />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -496,14 +710,17 @@ export default function AdminDashboardPage() {
 
               {/* AI 인사이트 */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">AI 인사이트</h2>
+                      <p className="text-sm text-gray-500">시스템 분석 기반 권장 사항</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">AI 인사이트</h2>
-                    <p className="text-sm text-gray-500">시스템 분석 기반 권장 사항</p>
-                  </div>
+                  <HelpButton onClick={() => openHelp('aiInsights')} />
                 </div>
 
                 <div className="space-y-4">
@@ -546,14 +763,17 @@ export default function AdminDashboardPage() {
             <div className="space-y-6">
               {/* 사용자 활성화율 */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-blue-600" />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">사용자 활성화율</h2>
+                      <p className="text-sm text-gray-500">전체 사용자 대비</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">사용자 활성화율</h2>
-                    <p className="text-sm text-gray-500">전체 사용자 대비</p>
-                  </div>
+                  <HelpButton onClick={() => openHelp('userActivation')} />
                 </div>
 
                 <div className="flex flex-col items-center">
@@ -597,14 +817,17 @@ export default function AdminDashboardPage() {
 
               {/* 빠른 액션 */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-orange-600" />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">빠른 액션</h2>
+                      <p className="text-sm text-gray-500">처리 필요한 작업</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">빠른 액션</h2>
-                    <p className="text-sm text-gray-500">처리 필요한 작업</p>
-                  </div>
+                  <HelpButton onClick={() => openHelp('quickActions')} />
                 </div>
 
                 <div className="space-y-3">
@@ -642,14 +865,17 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* 권한 분포 */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <PieChart className="w-5 h-5 text-indigo-600" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <PieChart className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">권한 레벨 분포</h2>
+                    <p className="text-sm text-gray-500">폴더 접근 권한 현황</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">권한 레벨 분포</h2>
-                  <p className="text-sm text-gray-500">폴더 접근 권한 현황</p>
-                </div>
+                <HelpButton onClick={() => openHelp('permissionDistribution')} />
               </div>
 
               <div className="space-y-4">
@@ -718,14 +944,17 @@ export default function AdminDashboardPage() {
 
             {/* 최근 활동 사용자 */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-green-600" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">최근 활동 사용자</h2>
+                    <p className="text-sm text-gray-500">최근 업데이트 기준</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">최근 활동 사용자</h2>
-                  <p className="text-sm text-gray-500">최근 업데이트 기준</p>
-                </div>
+                <HelpButton onClick={() => openHelp('recentUsers')} />
               </div>
 
               <div className="space-y-3">
@@ -775,7 +1004,10 @@ export default function AdminDashboardPage() {
 
           {/* 하단 관리자 메뉴 바로가기 */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">관리 메뉴</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">관리 메뉴</h2>
+              <HelpButton onClick={() => openHelp('adminMenu')} />
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Link
                 href="/admin/users"
@@ -824,6 +1056,9 @@ export default function AdminDashboardPage() {
           </div>
         </>
       )}
+
+      {/* 도움말 모달 */}
+      <HelpModal isOpen={helpModal.isOpen} onClose={closeHelp} helpKey={helpModal.helpKey} />
     </div>
   );
 }
