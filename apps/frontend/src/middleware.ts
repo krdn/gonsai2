@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
  * Next.js Middleware - 보호된 라우트 인증 체크
  *
  * 비인증 사용자는 /login으로 리다이렉트
- * 인증된 사용자가 /login, /signup 접근 시 /workflows로 리다이렉트
+ * 인증된 사용자가 /login, /signup 접근 시 대시보드(/)로 리다이렉트
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
 
   // 인증된 사용자가 로그인/회원가입 페이지 접근 시 대시보드로 리다이렉트
   if (token && (pathname === '/login' || pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/workflows', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();

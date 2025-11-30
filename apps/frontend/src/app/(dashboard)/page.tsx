@@ -3,126 +3,342 @@
 // Next.js 15 정적 생성 비활성화
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Activity,
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  Workflow,
+  Folder,
   Bot,
   Clock,
   ArrowRight,
   RefreshCw,
+  Sparkles,
+  Zap,
+  Shield,
+  Settings,
+  Play,
+  Eye,
+  Edit3,
+  Users,
+  Server,
+  Database,
+  Wifi,
+  ChevronRight,
+  Lightbulb,
+  Target,
+  Award,
+  Calendar,
+  HelpCircle,
+  X,
 } from 'lucide-react';
-import { workflowsApi } from '@/lib/api-client';
+import {
+  dashboardApi,
+  UserDashboardOverview,
+  WorkflowStatsData,
+  AIRecommendationsData,
+  UserQuickActionsData,
+  SystemStatusData,
+  ActivityTimelineData,
+  AIRecommendation,
+  ApiClientError,
+} from '@/lib/api-client';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface DashboardStats {
-  totalWorkflows: number;
-  activeWorkflows: number;
-  totalExecutions: number;
-  successRate: number;
-  activeAgents: number;
-  errorCount: number;
+// 도움말 콘텐츠
+const helpContent: Record<
+  string,
+  { title: string; icon: React.ReactNode; description: string; tips: string[] }
+> = {
+  greeting: {
+    title: '환영 인사',
+    icon: <Sparkles className="w-5 h-5" />,
+    description: '개인화된 인사말과 현재 접속 정보를 표시합니다.',
+    tips: [
+      '시간대에 따라 인사말이 변경됩니다',
+      '사용자 이름과 역할이 표시됩니다',
+      '관리자와 일반 사용자에게 다른 정보가 제공됩니다',
+    ],
+  },
+  quickActions: {
+    title: '빠른 액션',
+    icon: <Zap className="w-5 h-5" />,
+    description: '자주 사용하는 기능에 빠르게 접근할 수 있습니다.',
+    tips: [
+      '권한에 따라 표시되는 액션이 달라집니다',
+      '관리자는 추가 관리 메뉴에 접근할 수 있습니다',
+      '클릭하여 해당 페이지로 바로 이동합니다',
+    ],
+  },
+  aiRecommendations: {
+    title: 'AI 추천',
+    icon: <Bot className="w-5 h-5" />,
+    description: 'AI가 분석한 개인화된 추천 및 인사이트를 제공합니다.',
+    tips: [
+      '사용 패턴을 분석하여 맞춤 추천을 제공합니다',
+      '권한 현황 및 시스템 상태를 기반으로 조언합니다',
+      '액션 버튼을 클릭하여 바로 실행할 수 있습니다',
+    ],
+  },
+  summary: {
+    title: '요약 통계',
+    icon: <TrendingUp className="w-5 h-5" />,
+    description: '접근 가능한 폴더와 워크플로우의 요약 정보입니다.',
+    tips: [
+      '총 접근 가능한 폴더 수를 확인할 수 있습니다',
+      '할당된 워크플로우 수가 표시됩니다',
+      '권한별 폴더 분포를 확인할 수 있습니다',
+    ],
+  },
+  folders: {
+    title: '내 폴더',
+    icon: <Folder className="w-5 h-5" />,
+    description: '접근 가능한 폴더 목록과 워크플로우 수입니다.',
+    tips: [
+      '각 폴더에 포함된 워크플로우 수를 확인합니다',
+      '클릭하여 폴더 상세 페이지로 이동합니다',
+      '최근 업데이트된 폴더가 상단에 표시됩니다',
+    ],
+  },
+  systemStatus: {
+    title: '시스템 상태',
+    icon: <Server className="w-5 h-5" />,
+    description: '현재 시스템의 가동 상태를 실시간으로 확인합니다.',
+    tips: [
+      '모든 서비스가 정상인지 확인할 수 있습니다',
+      '서버 가동 시간이 표시됩니다',
+      '문제 발생 시 상태 표시가 변경됩니다',
+    ],
+  },
+  timeline: {
+    title: '활동 타임라인',
+    icon: <Clock className="w-5 h-5" />,
+    description: '접근 가능한 폴더의 최근 활동 내역입니다.',
+    tips: [
+      '폴더 변경 및 워크플로우 할당 내역을 확인합니다',
+      '시간순으로 정렬되어 표시됩니다',
+      '관련 페이지로 빠르게 이동할 수 있습니다',
+    ],
+  },
+};
+
+// 도움말 모달 컴포넌트
+function HelpModal({
+  isOpen,
+  onClose,
+  helpKey,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  helpKey: string;
+}) {
+  if (!isOpen) return null;
+
+  const content = helpContent[helpKey];
+  if (!content) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white">
+                {content.icon}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{content.title}</h3>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+        </div>
+        <div className="p-6">
+          <p className="text-gray-600 mb-4">{content.description}</p>
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-yellow-500" />
+              활용 팁
+            </h4>
+            <ul className="space-y-2">
+              {content.tips.map((tip, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="px-6 pb-6">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-interface RecentExecution {
-  id: string;
-  workflowId: string;
-  workflowName: string;
-  status: 'success' | 'error' | 'running';
-  startedAt: string;
-  duration?: number;
+// 도움말 버튼 컴포넌트
+function HelpButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600"
+      title="도움말"
+    >
+      <HelpCircle className="w-4 h-4" />
+    </button>
+  );
 }
+
+// 아이콘 맵핑
+const iconMap: Record<string, React.ReactNode> = {
+  '📋': <Activity className="w-5 h-5" />,
+  '▶️': <Play className="w-5 h-5" />,
+  '📊': <TrendingUp className="w-5 h-5" />,
+  '📜': <Clock className="w-5 h-5" />,
+  '👥': <Users className="w-5 h-5" />,
+  '📁': <Folder className="w-5 h-5" />,
+  '👑': <Award className="w-5 h-5" />,
+  '⚠️': <AlertCircle className="w-5 h-5" />,
+  '🔒': <Shield className="w-5 h-5" />,
+  '👁️': <Eye className="w-5 h-5" />,
+  '✏️': <Edit3 className="w-5 h-5" />,
+  '🌙': <Clock className="w-5 h-5" />,
+  '💡': <Lightbulb className="w-5 h-5" />,
+  '🎯': <Target className="w-5 h-5" />,
+};
+
+// 색상 맵핑
+const colorMap: Record<string, string> = {
+  blue: 'from-blue-500 to-blue-600',
+  green: 'from-green-500 to-green-600',
+  purple: 'from-purple-500 to-purple-600',
+  orange: 'from-orange-500 to-orange-600',
+  red: 'from-red-500 to-red-600',
+  yellow: 'from-yellow-500 to-yellow-600',
+  indigo: 'from-indigo-500 to-indigo-600',
+  pink: 'from-pink-500 to-pink-600',
+};
+
+// 추천 타입별 스타일
+const recommendationStyles: Record<string, { bg: string; border: string; icon: string }> = {
+  action: { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600' },
+  insight: { bg: 'bg-purple-50', border: 'border-purple-200', icon: 'text-purple-600' },
+  tip: { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-600' },
+  warning: { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600' },
+};
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalWorkflows: 0,
-    activeWorkflows: 0,
-    totalExecutions: 0,
-    successRate: 0,
-    activeAgents: 0,
-    errorCount: 0,
-  });
-  const [recentExecutions, setRecentExecutions] = useState<RecentExecution[]>([]);
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const [overview, setOverview] = useState<UserDashboardOverview | null>(null);
+  const [workflowStats, setWorkflowStats] = useState<WorkflowStatsData | null>(null);
+  const [recommendations, setRecommendations] = useState<AIRecommendationsData | null>(null);
+  const [quickActions, setQuickActions] = useState<UserQuickActionsData | null>(null);
+  const [systemStatus, setSystemStatus] = useState<SystemStatusData | null>(null);
+  const [timeline, setTimeline] = useState<ActivityTimelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeHelpKey, setActiveHelpKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  const loadDashboardData = useCallback(async () => {
+    // 인증되지 않은 경우 API 호출하지 않음
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-  const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // 워크플로우 목록 조회
-      const workflowsData = await workflowsApi.list();
-      const workflows = workflowsData.data || [];
+      // 모든 API 병렬 호출 - 개별 에러 처리로 부분 실패 허용
+      const [overviewRes, statsRes, recsRes, actionsRes, statusRes, timelineRes] =
+        await Promise.all([
+          dashboardApi.getOverview().catch((err) => {
+            // 401 에러는 조용히 처리 (인증 문제)
+            if (err instanceof ApiClientError && err.status === 401) {
+              return null;
+            }
+            console.error('Overview API error:', err);
+            return null;
+          }),
+          dashboardApi.getWorkflowStats().catch((err) => {
+            if (err instanceof ApiClientError && err.status === 401) return null;
+            console.error('WorkflowStats API error:', err);
+            return null;
+          }),
+          dashboardApi.getAIRecommendations().catch((err) => {
+            if (err instanceof ApiClientError && err.status === 401) return null;
+            console.error('AIRecommendations API error:', err);
+            return null;
+          }),
+          dashboardApi.getQuickActions().catch((err) => {
+            if (err instanceof ApiClientError && err.status === 401) return null;
+            console.error('QuickActions API error:', err);
+            return null;
+          }),
+          dashboardApi.getSystemStatus().catch((err) => {
+            if (err instanceof ApiClientError && err.status === 401) return null;
+            console.error('SystemStatus API error:', err);
+            return null;
+          }),
+          dashboardApi.getActivityTimeline().catch((err) => {
+            if (err instanceof ApiClientError && err.status === 401) return null;
+            console.error('ActivityTimeline API error:', err);
+            return null;
+          }),
+        ]);
 
-      const totalWorkflows = workflows.length;
-      const activeWorkflows = workflows.filter((w: any) => w.active).length;
-
-      // 각 워크플로우의 최근 실행 내역 조회
-      const allExecutions: RecentExecution[] = [];
-      let totalExecutionsCount = 0;
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const workflow of workflows.slice(0, 10)) {
-        // 처음 10개 워크플로우만
-        try {
-          const execData = await workflowsApi.executions(workflow.id, 5);
-          const executions = execData.data || [];
-          totalExecutionsCount += executions.length;
-
-          executions.forEach((exec: any) => {
-            if (exec.status === 'success') successCount++;
-            if (exec.status === 'error') errorCount++;
-
-            allExecutions.push({
-              id: exec.id,
-              workflowId: workflow.id,
-              workflowName: workflow.name,
-              status: exec.status,
-              startedAt: exec.startedAt,
-              duration: exec.stoppedAt
-                ? new Date(exec.stoppedAt).getTime() - new Date(exec.startedAt).getTime()
-                : undefined,
-            });
-          });
-        } catch (err) {
-          console.error(`워크플로우 ${workflow.id} 실행 내역 조회 실패:`, err);
-        }
-      }
-
-      // 최근 실행 정렬 (시작 시간 기준 내림차순)
-      allExecutions.sort(
-        (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-      );
-
-      const successRate =
-        totalExecutionsCount > 0 ? (successCount / totalExecutionsCount) * 100 : 0;
-
-      setStats({
-        totalWorkflows,
-        activeWorkflows,
-        totalExecutions: totalExecutionsCount,
-        successRate: Math.round(successRate),
-        activeAgents: 4, // TODO: API 연동 필요
-        errorCount,
-      });
-
-      setRecentExecutions(allExecutions.slice(0, 10));
+      if (overviewRes?.success) setOverview(overviewRes.data);
+      if (statsRes?.success) setWorkflowStats(statsRes.data);
+      if (recsRes?.success) setRecommendations(recsRes.data);
+      if (actionsRes?.success) setQuickActions(actionsRes.data);
+      if (statusRes?.success) setSystemStatus(statusRes.data);
+      if (timelineRes?.success) setTimeline(timelineRes.data);
     } catch (err) {
+      // 401 에러는 로그인 페이지로 리다이렉트하지 않고 조용히 처리
+      if (err instanceof ApiClientError && err.status === 401) {
+        console.log('인증 만료 - 재로그인 필요');
+        return;
+      }
       setError(err instanceof Error ? err.message : '대시보드 데이터 조회 중 오류 발생');
       console.error('대시보드 데이터 조회 오류:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // 인증 상태 확인 후 데이터 로드
+  useEffect(() => {
+    // 인증 로딩 중이면 대기
+    if (authLoading) return;
+
+    // 인증되지 않은 경우 로그인 페이지로 리다이렉트 (미들웨어가 처리하지만 안전장치)
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    loadDashboardData();
+
+    // 30초마다 자동 새로고침
+    const interval = setInterval(loadDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, [authLoading, user, loadDashboardData, router]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -135,60 +351,153 @@ export default function DashboardPage() {
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   };
 
-  const formatDuration = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    if (seconds < 60) return `${seconds}초`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}분 ${seconds % 60}초`;
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      case 'running':
-        return <Clock className="w-5 h-5 text-blue-500 animate-spin" />;
+  const getPermissionIcon = (permission: string) => {
+    switch (permission) {
+      case 'admin':
+        return <Shield className="w-4 h-4 text-red-500" />;
+      case 'editor':
+        return <Edit3 className="w-4 h-4 text-blue-500" />;
+      case 'executor':
+        return <Play className="w-4 h-4 text-green-500" />;
       default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
+        return <Eye className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'success':
-        return '성공';
-      case 'error':
-        return '실패';
-      case 'running':
-        return '실행 중';
+  const getPermissionLabel = (permission: string) => {
+    switch (permission) {
+      case 'admin':
+        return '관리자';
+      case 'editor':
+        return '편집자';
+      case 'executor':
+        return '실행자';
       default:
-        return '대기';
+        return '뷰어';
     }
   };
+
+  // 인증 로딩 중이거나 데이터 로딩 중일 때 로딩 표시
+  if (authLoading || (loading && !overview)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-spin border-t-blue-600 mx-auto"></div>
+            <Sparkles className="w-6 h-6 text-blue-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="mt-4 text-gray-600 font-medium">
+            {authLoading ? '인증 확인 중...' : 'AI 대시보드 로딩 중...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 (미들웨어가 리다이렉트하기 전에 잠시 표시될 수 있음)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">로그인 페이지로 이동 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">대시보드</h1>
-          <p className="text-gray-500 mt-1">시스템 전체 개요 및 주요 메트릭</p>
+    <div className="space-y-6 pb-8">
+      {/* 도움말 모달 */}
+      <HelpModal
+        isOpen={activeHelpKey !== null}
+        onClose={() => setActiveHelpKey(null)}
+        helpKey={activeHelpKey || ''}
+      />
+
+      {/* 인사말 헤더 */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-6 text-white relative overflow-hidden">
+        {/* 배경 그라데이션 효과 */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/20"></div>
         </div>
-        <button
-          onClick={loadDashboardData}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          <span>새로고침</span>
-        </button>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">{overview?.user.greeting || '안녕하세요!'}</h1>
+                <p className="text-white/80 text-sm">
+                  {overview?.user.role === 'admin' ? '시스템 관리자' : '일반 사용자'} •{' '}
+                  {new Date().toLocaleDateString('ko-KR', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <HelpButton onClick={() => setActiveHelpKey('greeting')} />
+              <button
+                onClick={loadDashboardData}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span className="text-sm font-medium">새로고침</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 요약 통계 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Folder className="w-5 h-5" />
+                <span className="text-sm text-white/80">내 폴더</span>
+              </div>
+              <p className="text-2xl font-bold">{overview?.summary.totalFolders || 0}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-5 h-5" />
+                <span className="text-sm text-white/80">워크플로우</span>
+              </div>
+              <p className="text-2xl font-bold">{overview?.summary.totalWorkflows || 0}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-5 h-5" />
+                <span className="text-sm text-white/80">권한 수준</span>
+              </div>
+              <p className="text-2xl font-bold">
+                {overview?.user.role === 'admin'
+                  ? '전체'
+                  : Object.keys(overview?.summary.permissionBreakdown || {}).length}
+              </p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Server className="w-5 h-5" />
+                <span className="text-sm text-white/80">시스템 상태</span>
+              </div>
+              <p className="text-2xl font-bold flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full ${systemStatus?.overall === 'operational' ? 'bg-green-400' : 'bg-yellow-400'}`}
+                ></span>
+                {systemStatus?.overall === 'operational' ? '정상' : '점검중'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
           <div className="flex items-center gap-2 text-red-800">
             <AlertCircle className="w-5 h-5" />
             <span className="font-semibold">{error}</span>
@@ -196,177 +505,278 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 총 워크플로우 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+      {/* 빠른 액션 */}
+      {quickActions && quickActions.quickActions.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-              <Workflow className="w-6 h-6 text-blue-600" />
-            </div>
-            <Link
-              href="/workflows"
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>자세히</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              빠른 액션
+            </h2>
+            <HelpButton onClick={() => setActiveHelpKey('quickActions')} />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">총 워크플로우</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalWorkflows}</p>
-            <p className="text-sm text-gray-500">
-              활성화: <span className="font-semibold text-green-600">{stats.activeWorkflows}</span>
-            </p>
-          </div>
-        </div>
-
-        {/* 총 실행 수 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-purple-600" />
-            </div>
-            <Link
-              href="/executions"
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>자세히</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">총 실행 수</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalExecutions}</p>
-            <p className="text-sm text-gray-500">
-              오류: <span className="font-semibold text-red-600">{stats.errorCount}</span>
-            </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {quickActions.quickActions.map((action) => (
+              <Link
+                key={action.id}
+                href={action.href}
+                className="group flex flex-col items-center p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all hover:scale-105"
+              >
+                <div
+                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorMap[action.color] || colorMap.blue} flex items-center justify-center text-white mb-3 group-hover:shadow-lg transition-shadow`}
+                >
+                  {iconMap[action.icon] || <Activity className="w-5 h-5" />}
+                </div>
+                <span className="text-sm font-medium text-gray-900 text-center">
+                  {action.title}
+                </span>
+                <span className="text-xs text-gray-500 text-center mt-1">{action.description}</span>
+              </Link>
+            ))}
           </div>
         </div>
+      )}
 
-        {/* 성공률 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-            <Link
-              href="/monitoring"
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>자세히</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">성공률</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.successRate}%</p>
-            <p className="text-sm text-gray-500">최근 {stats.totalExecutions}개 실행 기준</p>
-          </div>
-        </div>
-
-        {/* 활성 에이전트 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center">
-              <Bot className="w-6 h-6 text-orange-600" />
-            </div>
-            <Link
-              href="/agents"
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>자세히</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">활성 에이전트</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.activeAgents}</p>
-            <p className="text-sm text-green-500 font-medium">● 모두 정상 작동 중</p>
-          </div>
-        </div>
-
-        {/* 시스템 상태 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 md:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-gray-600" />
-            </div>
-            <span className="text-sm text-green-500 font-medium">● 정상</span>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">시스템 상태</p>
-            <p className="text-2xl font-bold text-gray-900">모든 서비스 정상</p>
-            <div className="flex gap-4 mt-3 text-sm text-gray-500">
-              <span>✓ Backend API</span>
-              <span>✓ n8n Integration</span>
-              <span>✓ MongoDB</span>
-              <span>✓ WebSocket</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 최근 워크플로우 실행 */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">최근 워크플로우 실행</h2>
-            <Link
-              href="/executions"
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>전체 보기</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="p-8 flex items-center justify-center">
-            <div className="text-center">
-              <RefreshCw className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-2" />
-              <p className="text-gray-600">데이터를 불러오는 중...</p>
-            </div>
-          </div>
-        ) : recentExecutions.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <Activity className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p>최근 실행 내역이 없습니다</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {recentExecutions.map((execution) => (
-              <div key={execution.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 flex-1">
-                    {getStatusIcon(execution.status)}
-                    <div>
-                      <p className="font-medium text-gray-900">{execution.workflowName}</p>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                        <span>{getStatusText(execution.status)}</span>
-                        <span>•</span>
-                        <span>{formatDate(execution.startedAt)}</span>
-                        {execution.duration && (
-                          <>
-                            <span>•</span>
-                            <span>{formatDuration(execution.duration)}</span>
-                          </>
-                        )}
+      {/* 메인 콘텐츠 그리드 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 왼쪽: AI 추천 */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* AI 추천 */}
+          {recommendations && recommendations.recommendations.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-purple-600" />
+                  AI 맞춤 추천
+                  <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {recommendations.recommendations.length}개
+                  </span>
+                </h2>
+                <HelpButton onClick={() => setActiveHelpKey('aiRecommendations')} />
+              </div>
+              <div className="space-y-3">
+                {recommendations.recommendations.map((rec: AIRecommendation) => {
+                  const style = recommendationStyles[rec.type] || recommendationStyles.tip;
+                  return (
+                    <div
+                      key={rec.id}
+                      className={`${style.bg} ${style.border} border rounded-xl p-4 transition-all hover:shadow-md`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg bg-white flex items-center justify-center ${style.icon} flex-shrink-0`}
+                        >
+                          {iconMap[rec.icon] || <Lightbulb className="w-5 h-5" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-gray-900">{rec.title}</h3>
+                            {rec.priority === 'high' && (
+                              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                중요
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{rec.description}</p>
+                          {rec.actionText && rec.actionHref && (
+                            <Link
+                              href={rec.actionHref}
+                              className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                            >
+                              {rec.actionText}
+                              <ChevronRight className="w-4 h-4" />
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 내 폴더 */}
+          {overview && overview.folders.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Folder className="w-5 h-5 text-blue-600" />내 폴더
+                  <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {overview.folders.length}개
+                  </span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  <HelpButton onClick={() => setActiveHelpKey('folders')} />
                   <Link
-                    href={`/executions?workflowId=${execution.workflowId}`}
-                    className="text-sm text-blue-600 hover:text-blue-700"
+                    href="/folders"
+                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
                   >
-                    상세보기
+                    전체 보기
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {overview.folders.slice(0, 6).map((folder) => (
+                  <Link
+                    key={folder.id}
+                    href={`/folders/${folder.id}`}
+                    className="group flex items-center gap-3 p-4 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-200 transition-colors">
+                      <Folder className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{folder.name}</h3>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span>{folder.workflowCount} 워크플로우</span>
+                        <span>•</span>
+                        <span>{formatDate(folder.updatedAt)}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 워크플로우 통계 */}
+          {workflowStats && workflowStats.folderStats.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  폴더별 워크플로우
+                </h2>
+                <HelpButton onClick={() => setActiveHelpKey('summary')} />
+              </div>
+              <div className="space-y-3">
+                {workflowStats.folderStats.slice(0, 5).map((stat) => (
+                  <div key={stat.folderId} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {stat.folderName}
+                        </span>
+                        <span className="text-sm text-gray-500">{stat.workflowCount}개</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all"
+                          style={{
+                            width: `${Math.min((stat.workflowCount / (workflowStats.totalWorkflows || 1)) * 100, 100)}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 오른쪽 사이드바 */}
+        <div className="space-y-6">
+          {/* 시스템 상태 */}
+          {systemStatus && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Server className="w-5 h-5 text-gray-600" />
+                  시스템 상태
+                </h2>
+                <HelpButton onClick={() => setActiveHelpKey('systemStatus')} />
+              </div>
+              <div className="space-y-3">
+                {systemStatus.services.map((service) => (
+                  <div
+                    key={service.name}
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{service.icon}</span>
+                      <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          service.status === 'operational'
+                            ? 'bg-green-500'
+                            : service.status === 'degraded'
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                        }`}
+                      ></span>
+                      <span className="text-xs text-gray-500">
+                        {service.status === 'operational' ? '정상' : '점검중'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">서버 가동 시간</span>
+                  <span className="font-medium text-gray-900">{systemStatus.uptime}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 권한 현황 */}
+          {overview && Object.keys(overview.summary.permissionBreakdown).length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-indigo-600" />내 권한 현황
+              </h2>
+              <div className="space-y-2">
+                {Object.entries(overview.summary.permissionBreakdown).map(([permission, count]) => (
+                  <div
+                    key={permission}
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      {getPermissionIcon(permission)}
+                      <span className="text-sm font-medium text-gray-900">
+                        {getPermissionLabel(permission)}
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-500">{count}개 폴더</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 활동 타임라인 */}
+          {timeline && timeline.timeline.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-600" />
+                  최근 활동
+                </h2>
+                <HelpButton onClick={() => setActiveHelpKey('timeline')} />
+              </div>
+              <div className="space-y-3">
+                {timeline.timeline.slice(0, 5).map((item) => (
+                  <div key={item.id} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">{item.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+                      <p className="text-xs text-gray-500">{formatDate(item.timestamp)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
