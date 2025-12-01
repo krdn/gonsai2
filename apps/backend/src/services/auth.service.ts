@@ -26,6 +26,7 @@ import {
 import { emailService } from './email.service';
 import { log } from '../utils/logger';
 import { ObjectId } from 'mongodb';
+import { ErrorMessages } from '../utils/error-messages';
 
 /**
  * JWT 시크릿 키 (환경 변수에서 가져옴)
@@ -113,7 +114,7 @@ class AuthService {
     try {
       return jwt.verify(token, JWT_SECRET) as IJwtPayload;
     } catch (error) {
-      throw new Error('Invalid or expired token');
+      throw new Error(ErrorMessages.auth.tokenInvalid);
     }
   }
 
@@ -127,7 +128,7 @@ class AuthService {
       // 이메일 중복 체크
       const existingUser = await usersCollection.findOne({ email: data.email });
       if (existingUser) {
-        throw new Error('Email already exists');
+        throw new Error(ErrorMessages.auth.emailExists);
       }
 
       // 비밀번호 해싱
@@ -159,7 +160,7 @@ class AuthService {
       // 사용자 정보 조회 (비밀번호 제외)
       const user = await usersCollection.findOne({ _id: result.insertedId });
       if (!user) {
-        throw new Error('Failed to create user');
+        throw new Error(ErrorMessages.auth.userCreationFailed);
       }
 
       log.info('User signed up successfully', { email: data.email, userId });
@@ -184,13 +185,13 @@ class AuthService {
       // 사용자 조회
       const user = await usersCollection.findOne({ email });
       if (!user) {
-        throw new Error('Invalid email or password');
+        throw new Error(ErrorMessages.auth.invalidCredentials);
       }
 
       // 비밀번호 검증
       const isPasswordValid = await this.verifyPassword(password, user.password);
       if (!isPasswordValid) {
-        throw new Error('Invalid email or password');
+        throw new Error(ErrorMessages.auth.invalidCredentials);
       }
 
       // JWT 토큰 생성
@@ -221,7 +222,7 @@ class AuthService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw new Error(ErrorMessages.auth.userNotFound);
       }
 
       return toUserResponse(user);
@@ -286,7 +287,7 @@ class AuthService {
       log.info('Password reset email sent', { email, userId: user._id!.toString() });
     } catch (error) {
       log.error('Failed to request password reset', error);
-      throw new Error('Failed to send password reset email. Please try again later.');
+      throw new Error(ErrorMessages.auth.passwordResetFailed);
     }
   }
 
@@ -316,7 +317,7 @@ class AuthService {
       });
 
       if (!resetTokenDoc) {
-        throw new Error('Invalid or expired reset token');
+        throw new Error(ErrorMessages.auth.invalidResetToken);
       }
 
       // 비밀번호 해싱

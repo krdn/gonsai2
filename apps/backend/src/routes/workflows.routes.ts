@@ -15,13 +15,10 @@ import { N8nApiError, NotFoundError } from '../utils/errors';
 import { parseN8nResponse, checkN8nResponse } from '../utils/n8n-helpers';
 import { cacheService } from '../services/cache.service';
 import { workflowFolderService } from '../services/workflow-folder.service';
+import { appConfig } from '../config/app.config';
 
-// 캐시 TTL 상수 (초 단위)
-const CACHE_TTL = {
-  WORKFLOWS: 30, // 워크플로우 목록: 30초
-  WORKFLOW_DETAIL: 60, // 워크플로우 상세: 60초
-  EXECUTIONS: 10, // 실행 목록: 10초
-};
+// 캐시 TTL (app.config.ts에서 관리)
+const CACHE_TTL = appConfig.cache;
 
 // n8n API 호출 헬퍼 함수
 async function fetchN8nApi<T>(endpoint: string, cacheKey?: string, ttl?: number): Promise<T> {
@@ -88,7 +85,7 @@ router.get(
     const n8nData = await fetchN8nApi<{ data?: Record<string, unknown>[] }>(
       '/api/v1/workflows',
       cacheKey,
-      CACHE_TTL.WORKFLOWS
+      CACHE_TTL.workflows
     );
 
     let workflows = n8nData.data || [];
@@ -119,7 +116,7 @@ router.get(
             const detail = await fetchN8nApi<Record<string, unknown>>(
               `/api/v1/workflows/${workflow.id}`,
               `workflow:detail:${workflow.id}`,
-              CACHE_TTL.WORKFLOW_DETAIL
+              CACHE_TTL.workflowDetail
             );
             return {
               ...workflow,
@@ -180,7 +177,7 @@ router.get(
       const workflow = await fetchN8nApi<any>(
         `/api/v1/workflows/${id}`,
         `workflow:detail:${id}`,
-        CACHE_TTL.WORKFLOW_DETAIL
+        CACHE_TTL.workflowDetail
       );
 
       // 폴더 정보 추가
@@ -442,7 +439,7 @@ router.get(
       const n8nData = await fetchN8nApi<{ data?: any[] }>(
         `/api/v1/executions?workflowId=${id}&limit=${limit}`,
         `executions:workflow:${id}:${limit}`,
-        CACHE_TTL.EXECUTIONS
+        CACHE_TTL.executions
       );
 
       log.info('Workflow executions retrieved', {
