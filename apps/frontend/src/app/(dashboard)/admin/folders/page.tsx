@@ -14,18 +14,11 @@ import {
   RefreshCw,
   ChevronRight,
   ChevronDown,
-  Workflow,
+  Workflow as WorkflowIcon,
   X,
-  Save,
   AlertCircle,
 } from 'lucide-react';
-import {
-  foldersApi,
-  workflowsApi,
-  FolderTreeNode,
-  FolderResponse,
-  PermissionLevel,
-} from '@/lib/api-client';
+import { foldersApi, workflowsApi, FolderTreeNode, FolderResponse } from '@/lib/api-client';
 import {
   useFolderTree,
   useCreateFolder,
@@ -421,7 +414,7 @@ function FolderManagementContent() {
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <Workflow className="w-5 h-5 text-blue-600" />
+                      <WorkflowIcon className="w-5 h-5 text-blue-600" />
                       할당된 워크플로우 ({folderWorkflows.length})
                     </h3>
                     <button
@@ -435,7 +428,7 @@ function FolderManagementContent() {
 
                   {folderWorkflows.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      <Workflow className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <WorkflowIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                       <p>할당된 워크플로우가 없습니다</p>
                     </div>
                   ) : (
@@ -446,7 +439,7 @@ function FolderManagementContent() {
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                         >
                           <div className="flex items-center gap-3">
-                            <Workflow className="w-5 h-5 text-blue-500" />
+                            <WorkflowIcon className="w-5 h-5 text-blue-500" />
                             <div>
                               <p className="font-medium text-gray-900">{workflow.name}</p>
                               <p className="text-xs text-gray-500">ID: {workflow.id}</p>
@@ -648,7 +641,7 @@ function FolderManagementContent() {
             <div className="max-h-96 overflow-y-auto space-y-2">
               {unassignedWorkflows.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <Workflow className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <WorkflowIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                   <p>할당 가능한 워크플로우가 없습니다</p>
                 </div>
               ) : (
@@ -658,7 +651,7 @@ function FolderManagementContent() {
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
                   >
                     <div className="flex items-center gap-3">
-                      <Workflow className="w-5 h-5 text-blue-500" />
+                      <WorkflowIcon className="w-5 h-5 text-blue-500" />
                       <div>
                         <p className="font-medium text-gray-900">{workflow.name}</p>
                         <p className="text-xs text-gray-500">ID: {workflow.id}</p>

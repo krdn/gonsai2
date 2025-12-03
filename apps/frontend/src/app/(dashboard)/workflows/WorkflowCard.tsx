@@ -13,7 +13,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { FolderResponse } from '@/lib/api-client';
-import { Workflow, Tag } from './types';
+import { Workflow } from './types';
 import {
   extractDescriptionFromStickyNote,
   extractTriggerType,

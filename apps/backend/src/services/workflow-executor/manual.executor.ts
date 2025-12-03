@@ -6,7 +6,6 @@ import { IWorkflowExecutor } from './executor.interface';
 import { ExecutionContext, ExecutionResult, WorkflowNode } from './types';
 import { envConfig } from '../../utils/env-validator';
 import { log } from '../../utils/logger';
-import { N8nApiError } from '../../utils/errors';
 import { executionRepository } from '../../repositories/workflow.repository';
 import { checkN8nResponse, parseN8nResponse } from '../../utils/n8n-helpers';
 

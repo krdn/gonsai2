@@ -19,7 +19,7 @@ export default function MonitoringPage() {
   const [isConnecting, setIsConnecting] = useState(true);
 
   // React Query로 통계 데이터 관리 (자동 캐싱 및 갱신)
-  const { data: stats, isLoading: isLoadingStats } = useMonitoringStats({
+  const { data: stats } = useMonitoringStats({
     refetchInterval: 60000, // 1분마다 자동 갱신
   });
 

@@ -6,7 +6,6 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  User,
   OrganizationType,
   AIExperienceLevel,
   AIInterest,
@@ -22,7 +21,6 @@ import {
   Building,
   Phone,
   Brain,
-  Shield,
   Settings,
   Bell,
   Globe,

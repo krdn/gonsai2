@@ -9,7 +9,6 @@ import {
   Zap,
   TrendingUp,
   CheckCircle2,
-  XCircle,
   Clock,
   Loader2,
   AlertCircle,

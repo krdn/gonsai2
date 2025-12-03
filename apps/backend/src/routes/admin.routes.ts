@@ -11,7 +11,6 @@ import { USER_COLLECTION } from '../models/user.model';
 import { FOLDER_COLLECTION } from '../models/folder.model';
 import { FOLDER_PERMISSION_COLLECTION } from '../models/folder-permission.model';
 import { WORKFLOW_FOLDER_COLLECTION } from '../models/workflow-folder.model';
-import { ObjectId } from 'mongodb';
 import { log } from '../utils/logger';
 
 const router = Router();
