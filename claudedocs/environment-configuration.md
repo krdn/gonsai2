@@ -84,7 +84,7 @@ NODE_ENV=production
 PORT=3000
 WS_PORT=3001
 MONGODB_URI=mongodb://gonsai2:gonsai2_prod_password@mongodb-prod:27017/gonsai2_prod?authSource=admin
-N8N_BASE_URL=http://n8n:5678
+N8N_BASE_URL=http://localhost:5678
 CORS_ORIGINS=http://localhost:8081,http://192.168.0.50:8081,http://krdn.iptime.org:8081
 FRONTEND_URL=http://localhost:8081
 ```

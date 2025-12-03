@@ -11,7 +11,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Docker 내부 네트워크 사용 (런타임 환경변수 또는 빌드타임 폴백)
     const n8nBaseUrl =
-      process.env.N8N_INTERNAL_URL || process.env.NEXT_PUBLIC_N8N_BASE_URL || 'http://n8n:5678';
+      process.env.N8N_INTERNAL_URL ||
+      process.env.NEXT_PUBLIC_N8N_BASE_URL ||
+      'http://localhost:5678';
     const n8nApiKey =
       process.env.NEXT_PUBLIC_N8N_API_KEY || process.env.NEXT_PUBLIC_BACKEND_API_KEY || '';
 

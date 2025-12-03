@@ -113,7 +113,7 @@ jobs:
             --network ${{ job.services.n8n.network }} \
             -p 3000:3000 \
             -e NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
-            -e NEXT_PUBLIC_N8N_URL=http://n8n:5678 \
+            -e NEXT_PUBLIC_N8N_URL=http://localhost:5678 \
             -e NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }} \
             -e NEXT_PUBLIC_WS_URL=${{ secrets.NEXT_PUBLIC_WS_URL }} \
             ${{ needs.build-and-push.outputs.image-tag }}
@@ -125,7 +125,7 @@ jobs:
 
       - name: Test n8n connectivity from container
         run: |
-          docker exec frontend curl -f http://n8n:5678/healthz
+          docker exec frontend curl -f http://localhost:5678/healthz
           echo "✅ n8n connectivity verified"
 
       - name: Cleanup

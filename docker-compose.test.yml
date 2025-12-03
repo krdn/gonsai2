@@ -12,7 +12,7 @@ services:
       WS_PORT: 3001
       MONGODB_URI: mongodb://test:test@mongodb:27017/test_db?authSource=admin
       REDIS_URI: redis://redis:6379
-      N8N_BASE_URL: http://n8n:5678
+      N8N_BASE_URL: http://localhost:5678
       N8N_API_KEY: test_api_key_for_e2e_testing
       ALLOWED_ORIGINS: http://localhost:3002,http://frontend:3002
       LOG_LEVEL: debug

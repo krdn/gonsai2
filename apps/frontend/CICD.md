@@ -330,7 +330,7 @@ docker-compose logs -f frontend
 curl http://localhost:3000/api/health
 
 # n8n 연동 확인
-docker exec gonsai2-frontend curl -f http://n8n:5678/healthz
+docker exec gonsai2-frontend curl -f http://localhost:5678/healthz
 ```
 
 ---
@@ -438,7 +438,7 @@ curl http://localhost:3000/api/health
 docker-compose logs frontend
 
 # n8n 연결 확인
-docker exec gonsai2-frontend curl http://n8n:5678/healthz
+docker exec gonsai2-frontend curl http://localhost:5678/healthz
 
 # 네트워크 확인
 docker network inspect n8n-network
