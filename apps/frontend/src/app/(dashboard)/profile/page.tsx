@@ -15,6 +15,19 @@ import {
   PreferredLanguage,
 } from '@/types/auth';
 import { useRouter } from 'next/navigation';
+import {
+  HelpCircle,
+  X,
+  User as UserIcon,
+  Building,
+  Phone,
+  Brain,
+  Shield,
+  Settings,
+  Bell,
+  Globe,
+  Lock,
+} from 'lucide-react';
 
 // 라벨 매핑
 const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = {
@@ -81,6 +94,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 폼 상태
@@ -340,9 +354,19 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* 헤더 */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">프로필 설정</h1>
-        <p className="mt-1 text-sm text-gray-500">계정 정보를 확인하고 수정할 수 있습니다.</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">프로필 설정</h1>
+          <p className="mt-1 text-sm text-gray-500">계정 정보를 확인하고 수정할 수 있습니다.</p>
+        </div>
+        <button
+          onClick={() => setIsHelpModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          title="도움말"
+        >
+          <HelpCircle className="w-4 h-4" />
+          도움말
+        </button>
       </div>
 
       {/* 성공/에러 메시지 */}
@@ -1054,6 +1078,163 @@ export default function ProfilePage() {
             )}
         </dl>
       </div>
+
+      {/* 도움말 모달 */}
+      {isHelpModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <HelpCircle className="w-6 h-6 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">프로필 설정 도움말</h3>
+              </div>
+              <button
+                onClick={() => setIsHelpModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* 개요 */}
+              <section>
+                <h4 className="text-md font-semibold text-gray-800 mb-2">개요</h4>
+                <p className="text-sm text-gray-600">
+                  프로필 설정 페이지에서는 개인 정보, AI 관련 설정, 보안 설정을 관리할 수 있습니다.
+                  수정하려면 &apos;수정하기&apos; 버튼을 클릭한 후 정보를 변경하세요.
+                </p>
+              </section>
+
+              {/* 탭 설명 */}
+              <section>
+                <h4 className="text-md font-semibold text-gray-800 mb-2">탭 구성</h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                    <UserIcon className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-700">기본 정보</p>
+                      <p className="text-sm text-gray-600">
+                        프로필 이미지, 이름, 이메일, 소속 정보, 연락처를 관리합니다.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                    <Brain className="w-5 h-5 text-purple-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-purple-700">추가 정보</p>
+                      <p className="text-sm text-gray-600">
+                        AI 활용 경험, 관심 분야, 활용 목적 및 환경설정(알림, 타임존, 언어)을
+                        관리합니다.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
+                    <Lock className="w-5 h-5 text-orange-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-orange-700">보안</p>
+                      <p className="text-sm text-gray-600">
+                        비밀번호를 변경합니다. 현재 비밀번호 확인 후 새 비밀번호를 설정할 수
+                        있습니다.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 기본 정보 설명 */}
+              <section>
+                <h4 className="text-md font-semibold text-gray-800 mb-2">기본 정보 항목</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <UserIcon className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">프로필 이미지 (2MB 이하)</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <UserIcon className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">이름 (필수)</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Globe className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">이메일 (필수)</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Building className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">소속 구분/소속명</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Phone className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">휴대폰 번호</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Bell className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-600">Telegram / KakaoTalk ID</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* AI 정보 설명 */}
+              <section>
+                <h4 className="text-md font-semibold text-gray-800 mb-2">AI 관련 정보</h4>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>왜 AI 관련 정보를 입력하나요?</strong>
+                  </p>
+                  <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                    <li>맞춤형 AI 워크플로우 추천</li>
+                    <li>경험 수준에 맞는 가이드 제공</li>
+                    <li>관심 분야 기반 콘텐츠 큐레이션</li>
+                  </ul>
+                </div>
+              </section>
+
+              {/* 환경설정 설명 */}
+              <section>
+                <h4 className="text-md font-semibold text-gray-800 mb-2">환경설정</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Bell className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-600">
+                      선호 알림 채널: 이메일, Telegram, KakaoTalk
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Globe className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-gray-600">
+                      타임존: 알림 및 스케줄 기준 시간대
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg">
+                    <Settings className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm text-gray-600">선호 언어: 인터페이스 언어 설정</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* 주의사항 */}
+              <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="text-md font-semibold text-yellow-800 mb-2">주의사항</h4>
+                <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                  <li>이름과 이메일은 필수 항목입니다.</li>
+                  <li>프로필 이미지는 JPG, PNG 형식만 지원하며 최대 2MB입니다.</li>
+                  <li>비밀번호 변경 시 현재 비밀번호를 먼저 입력해야 합니다.</li>
+                  <li>새 비밀번호는 최소 6자 이상이어야 합니다.</li>
+                  <li>변경사항은 &apos;저장하기&apos; 버튼을 클릭해야 저장됩니다.</li>
+                </ul>
+              </section>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setIsHelpModalOpen(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
