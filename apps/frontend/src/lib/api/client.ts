@@ -82,8 +82,38 @@ function getHeaders(customHeaders: HeadersInit = {}): HeadersInit {
 const isDev = process.env.NODE_ENV === 'development';
 
 /**
+ * 401 에러 발생 시 자동 로그아웃 처리
+ * - localStorage 정리
+ * - 로그인 페이지로 리다이렉트
+ */
+function handleUnauthorized(): void {
+  if (typeof window === 'undefined') return;
+
+  // 이미 로그인 페이지에 있으면 무시
+  if (window.location.pathname === '/login') return;
+
+  console.log('[API Client] 401 Unauthorized - 자동 로그아웃 처리');
+
+  // localStorage 정리
+  localStorage.removeItem('user');
+  localStorage.removeItem('authToken');
+
+  // 백엔드 로그아웃 API 호출 (쿠키 삭제)
+  fetch('/api/auth/logout', { method: 'POST' }).catch(() => {
+    // 에러 무시 - 이미 만료된 상태일 수 있음
+  });
+
+  // 로그인 페이지로 리다이렉트
+  const currentPath = window.location.pathname;
+  window.location.replace(
+    `/login?redirect=${encodeURIComponent(currentPath)}&reason=session_expired`
+  );
+}
+
+/**
  * Fetch 래퍼 함수 - 공통 에러 처리
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchWithErrorHandling<T = any>(
   url: string,
   options: RequestInit = {}
@@ -105,6 +135,12 @@ export async function fetchWithErrorHandling<T = any>(
       if (isDev) {
         console.error('[API Client] Error response:', response.status, errorText);
       }
+
+      // 401 Unauthorized 응답 시 자동 로그아웃 처리
+      if (response.status === 401) {
+        handleUnauthorized();
+      }
+
       throw new ApiClientError(
         response.status,
         response.statusText,
