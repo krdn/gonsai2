@@ -5,7 +5,7 @@
  */
 
 import type { Node, Edge } from 'reactflow';
-import type { N8nWorkflow, N8nNode, N8nConnections } from '@/types/workflow';
+import type { N8nWorkflow, N8nNode } from '@/types/workflow';
 
 export interface WorkflowFlowData {
   nodes: Node[];

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Send, Play } from 'lucide-react';
+import { Send } from 'lucide-react';
 import {
   LearningFormData,
   LearningFormErrors,

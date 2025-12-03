@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Activity, Clock, TrendingUp, Bot, CheckCircle2, XCircle } from 'lucide-react';
+import { Activity, Clock, TrendingUp, Bot, CheckCircle2 } from 'lucide-react';
 import { formatExecutionTime } from '@/lib/workflow-utils';
 import type { WorkflowStatistics } from '@/types/workflow';
 

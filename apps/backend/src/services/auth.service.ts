@@ -113,7 +113,7 @@ class AuthService {
   verifyToken(token: string): IJwtPayload {
     try {
       return jwt.verify(token, JWT_SECRET) as IJwtPayload;
-    } catch (error) {
+    } catch {
       throw new Error(ErrorMessages.auth.tokenInvalid);
     }
   }

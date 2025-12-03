@@ -16,7 +16,7 @@ import {
   HelpCircle,
   X,
 } from 'lucide-react';
-import { workflowsApi, ApiClientError } from '@/lib/api-client';
+import { workflowsApi } from '@/lib/api-client';
 
 interface WorkflowExecution {
   id: string;

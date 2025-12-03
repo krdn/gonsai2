@@ -4,8 +4,6 @@
  */
 
 import { WorkflowFormComponent } from './WorkflowFormProps';
-import KnowledgeLearningForm from './KnowledgeLearningForm';
-import DefaultWorkflowForm from './DefaultWorkflowForm';
 import DynamicWorkflowForm from './DynamicWorkflowForm';
 
 /**

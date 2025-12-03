@@ -8,7 +8,6 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   Node,
-  Edge,
   Panel,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
