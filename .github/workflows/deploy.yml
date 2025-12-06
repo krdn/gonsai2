@@ -44,7 +44,7 @@ jobs:
           echo "frontend=${{ env.FRONTEND_IMAGE }}:$SHA" >> $GITHUB_OUTPUT
 
       - name: Build & Push Backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/backend/Dockerfile
@@ -56,7 +56,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push Frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/frontend/Dockerfile
