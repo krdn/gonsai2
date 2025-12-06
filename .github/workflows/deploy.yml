@@ -76,7 +76,7 @@ jobs:
             NEXT_PUBLIC_BACKEND_API_KEY=${{ secrets.N8N_API_KEY }}
 
       - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.4
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
