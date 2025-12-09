@@ -157,6 +157,32 @@ router.patch(
       .withMessage('Invalid AI usage purpose'),
     // 아바타
     body('avatar').optional().isString().withMessage('Avatar must be a string'),
+    // 연락처 정보
+    body('phoneNumber')
+      .optional()
+      .trim()
+      .isLength({ max: 20 })
+      .withMessage('Phone number must be 20 characters or less'),
+    body('telegramId')
+      .optional()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Telegram ID must be 50 characters or less'),
+    body('kakaoTalkId')
+      .optional()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('KakaoTalk ID must be 50 characters or less'),
+    // 사용자 환경설정
+    body('preferredNotificationChannel')
+      .optional()
+      .isIn(['email', 'telegram', 'kakao'])
+      .withMessage('Preferred notification channel must be email, telegram, or kakao'),
+    body('timezone').optional().isString().withMessage('Timezone must be a string'),
+    body('preferredLanguage')
+      .optional()
+      .isIn(['ko', 'en', 'ja', 'zh'])
+      .withMessage('Preferred language must be ko, en, ja, or zh'),
   ],
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -183,6 +209,14 @@ router.patch(
         aiInterests,
         aiUsagePurpose,
         avatar,
+        // 연락처 정보
+        phoneNumber,
+        telegramId,
+        kakaoTalkId,
+        // 사용자 환경설정
+        preferredNotificationChannel,
+        timezone,
+        preferredLanguage,
       } = req.body;
 
       if (!userId) {
@@ -263,6 +297,28 @@ router.patch(
       // 아바타 업데이트
       if (avatar !== undefined) {
         updateData.avatar = avatar;
+      }
+
+      // 연락처 정보 업데이트
+      if (phoneNumber !== undefined) {
+        updateData.phoneNumber = phoneNumber;
+      }
+      if (telegramId !== undefined) {
+        updateData.telegramId = telegramId;
+      }
+      if (kakaoTalkId !== undefined) {
+        updateData.kakaoTalkId = kakaoTalkId;
+      }
+
+      // 사용자 환경설정 업데이트
+      if (preferredNotificationChannel !== undefined) {
+        updateData.preferredNotificationChannel = preferredNotificationChannel;
+      }
+      if (timezone !== undefined) {
+        updateData.timezone = timezone;
+      }
+      if (preferredLanguage !== undefined) {
+        updateData.preferredLanguage = preferredLanguage;
       }
 
       // 업데이트할 내용이 없으면 에러
