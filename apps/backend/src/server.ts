@@ -84,19 +84,26 @@ function createApp(): Application {
   if (envConfig.NODE_ENV === 'production') {
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15분
-      max: 100,
+      max: 1000, // 15분당 1000회로 상향 (기존 100회)
       message: 'Too many requests from this IP, please try again later.',
       standardHeaders: true,
       legacyHeaders: false,
       skip: (req) => {
         // health check와 일부 엔드포인트는 rate limit에서 제외
         // OPTIONS 요청(preflight)도 제외
+        // 인증된 사용자의 API 요청은 별도로 관리
         return (
           req.method === 'OPTIONS' ||
           req.path === '/health' ||
           req.path === '/api/health' ||
           req.path === '/' ||
-          req.path.startsWith('/api-docs')
+          req.path.startsWith('/api-docs') ||
+          req.path.startsWith('/api/workflows') ||
+          req.path.startsWith('/api/monitoring') ||
+          req.path.startsWith('/api/dashboard') ||
+          req.path.startsWith('/api/agents') ||
+          req.path.startsWith('/api/tags') ||
+          req.path.startsWith('/api/folders')
         );
       },
     });
