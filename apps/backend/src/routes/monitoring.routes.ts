@@ -9,7 +9,7 @@ import { envConfig } from '../utils/env-validator';
 import { log } from '../utils/logger';
 import { getCorrelationId } from '../middleware/correlation-id.middleware';
 import { ApiResponse } from '../types/api.types';
-import { asyncHandler, authenticateN8nApiKey } from '../middleware';
+import { asyncHandler, authenticateJWT } from '../middleware';
 import { N8nApiError } from '../utils/errors';
 import { cacheService } from '../services/cache.service';
 import {
@@ -64,8 +64,8 @@ async function fetchN8nApi<T>(endpoint: string, cacheKey?: string, ttl?: number)
 
 const router = Router();
 
-// 모든 모니터링 라우트는 인증 필요
-router.use(authenticateN8nApiKey);
+// 모든 모니터링 라우트는 JWT 인증 필요
+router.use(authenticateJWT);
 
 /**
  * GET /api/monitoring/stats
