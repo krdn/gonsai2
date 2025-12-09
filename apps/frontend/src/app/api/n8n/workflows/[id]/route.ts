@@ -9,13 +9,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
 
-    // Docker 내부 네트워크 사용 (런타임 환경변수 또는 빌드타임 폴백)
+    // 서버 사이드 전용 환경 변수 사용 (보안 강화)
+    // N8N_INTERNAL_URL: 개발환경 localhost, 운영환경 Docker 내부 네트워크
     const n8nBaseUrl =
       process.env.N8N_INTERNAL_URL ||
       process.env.NEXT_PUBLIC_N8N_BASE_URL ||
       'http://localhost:5678';
-    const n8nApiKey =
-      process.env.NEXT_PUBLIC_N8N_API_KEY || process.env.NEXT_PUBLIC_BACKEND_API_KEY || '';
+    // N8N_API_KEY: 서버 사이드 전용 (NEXT_PUBLIC_ 접두사 없음 = 클라이언트 노출 안됨)
+    const n8nApiKey = process.env.N8N_API_KEY || '';
 
     if (!n8nApiKey) {
       console.error('[n8n API Proxy] Missing API key');
