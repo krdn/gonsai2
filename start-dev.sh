@@ -1,6 +1,10 @@
 #!/bin/bash
 # gonsai2 개발 서버 시작 스크립트
 
+# NVM 환경 로드
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 cd /home/gon/projects/n8n/gonsai2
 
 echo "==================================="
