@@ -47,7 +47,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@cypress/webpack-preprocessor": "^7.0.2",
+    "@cypress/webpack-preprocessor": "^7.1.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
