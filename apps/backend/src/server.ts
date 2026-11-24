@@ -8,7 +8,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { createServer, Server as HTTPServer } from 'http';
 import swaggerUi from 'swagger-ui-express';
 import { envConfig, printConfig } from './utils/env-validator';
@@ -42,6 +42,10 @@ import dashboardRoutes from './routes/dashboard.routes';
  */
 function createApp(): Application {
   const app = express();
+
+  // 호스트 Nginx → gonsai2-nginx 2홉 프록시 뒤에서 실제 클라이언트 IP를 식별하여
+  // rate-limit 버킷이 프록시 단일 IP로 합쳐지는 문제를 방지한다.
+  app.set('trust proxy', 2);
 
   // CORS 설정 (가장 먼저 적용)
   app.use(
@@ -126,9 +130,10 @@ function createApp(): Application {
     },
     // 성공한 요청은 카운트하지 않음 (2xx 응답)
     skipSuccessfulRequests: true,
-    // 커스텀 키 생성 (IP 기반)
+    // 커스텀 키 생성 (IPv6 서브넷 정규화 헬퍼를 통해 ERR_ERL_KEY_GEN_IPV6 우회 방지)
     keyGenerator: (req) => {
-      return req.ip || req.socket.remoteAddress || 'unknown';
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      return ip === 'unknown' ? ip : ipKeyGenerator(ip);
     },
   });
 
